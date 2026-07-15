@@ -14,16 +14,347 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      areas: {
+        Row: {
+          created_at: string
+          id: string
+          name_en: string
+          name_th: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name_en: string
+          name_th: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_th?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name_en: string
+          name_th: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name_en: string
+          name_th: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_th?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      comparisons: {
+        Row: {
+          category_id: string
+          created_at: string
+          dish_hi_id: string
+          dish_lo_id: string
+          id: string
+          updated_at: string
+          user_id: string
+          winner_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          dish_hi_id: string
+          dish_lo_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          winner_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          dish_hi_id?: string
+          dish_lo_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          winner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comparisons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparisons_dish_hi_id_fkey"
+            columns: ["dish_hi_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparisons_dish_lo_id_fkey"
+            columns: ["dish_lo_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparisons_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dish_tries: {
+        Row: {
+          created_at: string
+          dish_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dish_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dish_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_tries_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dishes: {
+        Row: {
+          category_id: string
+          comparisons_count: number
+          created_at: string
+          elo: number
+          id: string
+          name_en: string
+          name_th: string | null
+          needs_update: boolean
+          note: string | null
+          photo_url: string | null
+          place_id: string
+          price_thb: number | null
+          status: Database["public"]["Enums"]["dish_status"]
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          comparisons_count?: number
+          created_at?: string
+          elo?: number
+          id?: string
+          name_en: string
+          name_th?: string | null
+          needs_update?: boolean
+          note?: string | null
+          photo_url?: string | null
+          place_id: string
+          price_thb?: number | null
+          status?: Database["public"]["Enums"]["dish_status"]
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          comparisons_count?: number
+          created_at?: string
+          elo?: number
+          id?: string
+          name_en?: string
+          name_th?: string | null
+          needs_update?: boolean
+          note?: string | null
+          photo_url?: string | null
+          place_id?: string
+          price_thb?: number | null
+          status?: Database["public"]["Enums"]["dish_status"]
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dishes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dishes_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      places: {
+        Row: {
+          address: string | null
+          area_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          address?: string | null
+          area_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          address?: string | null
+          area_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          dish_id: string
+          id: string
+          note: string | null
+          reason: string
+          status: Database["public"]["Enums"]["report_status"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dish_id: string
+          id?: string
+          note?: string | null
+          reason: string
+          status?: Database["public"]["Enums"]["report_status"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dish_id?: string
+          id?: string
+          note?: string | null
+          reason?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      apply_elo: {
+        Args: {
+          _a: string
+          _b: string
+          _is_update: boolean
+          _prev_winner: string
+          _winner: string
+        }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      dish_status: "pending" | "approved" | "rejected"
+      report_status: "open" | "resolved" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +481,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      dish_status: ["pending", "approved", "rejected"],
+      report_status: ["open", "resolved", "dismissed"],
+    },
   },
 } as const
