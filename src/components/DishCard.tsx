@@ -1,24 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
-
-function statusLabel(d: any, t: (k: any) => string) {
-  if (d.needs_update) return { text: t("status_needs_update"), tone: "amber" };
-  if (d.comparisons_count < 5) return { text: d.comparisons_count === 0 ? t("status_new") : t("status_gathering"), tone: "neutral" };
-  if (d.elo >= 1100) return { text: t("status_top"), tone: "primary" };
-  return { text: t("status_gathering"), tone: "neutral" };
-}
+import { dishStatusLabel, toneClass } from "@/lib/dish-status";
 
 export function DishCard({ dish }: { dish: any }) {
   const { t, lang } = useI18n();
   const days = Math.max(0, Math.floor((Date.now() - new Date(dish.created_at).getTime()) / 86400000));
-  const s = statusLabel(dish, t);
+  const s = dishStatusLabel(dish, t);
   const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
   const areaName = dish.place?.area ? (lang === "th" ? dish.place.area.name_th : dish.place.area.name_en) : null;
-
-  const toneCls =
-    s.tone === "primary" ? "bg-primary/10 text-primary" :
-    s.tone === "amber" ? "bg-accent/20 text-accent-foreground" :
-    "bg-muted text-muted-foreground";
+  const toneCls = toneClass(s.tone);
 
   return (
     <Link to="/dish/$id" params={{ id: dish.id }} className="group block">
