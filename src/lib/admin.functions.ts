@@ -103,7 +103,13 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         if (existingPlace) placeId = existingPlace.id;
         else {
           const { data: np, error: npe } = await context.supabase.from("places")
-            .insert({ name: placeName, area_id: areaId, address: get("address") || null, created_by: context.userId })
+            .insert({
+              name: placeName,
+              area_id: areaId,
+              address: get("address") || null,
+              created_by: context.userId,
+              status: data.autoApprove ? "approved" : "pending",
+            })
             .select("id").single();
           if (npe) throw new Error(npe.message);
           placeId = np.id;
