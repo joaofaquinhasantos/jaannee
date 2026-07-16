@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { dishStatusLabel, toneClass } from "@/lib/dish-status";
 
 export const Route = createFileRoute("/dish/$id")({ component: DishPage });
 
@@ -40,6 +41,7 @@ function DishPage() {
   const name = lang === "th" && d.name_th ? d.name_th : d.name_en;
   const areaName = d.place?.area ? (lang === "th" ? d.place.area.name_th : d.place.area.name_en) : null;
   const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
+  const s = dishStatusLabel(d, t);
 
   return (
     <AppShell>
@@ -56,6 +58,7 @@ function DishPage() {
           <p className="mt-2 text-lg text-muted-foreground">
             {d.place?.name}{areaName ? ` · ${areaName}` : ""}
           </p>
+          <span className={`mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass(s.tone)}`}>{s.text}</span>
           {d.price_thb != null && <p className="mt-1 text-foreground/80">฿{Number(d.price_thb).toFixed(0)}</p>}
           {d.note && <p className="mt-4 rounded-xl bg-muted p-4 text-sm">{d.note}</p>}
 
