@@ -227,6 +227,7 @@ export type Database = {
           created_by: string | null
           id: string
           name: string
+          status: string
         }
         Insert: {
           address?: string | null
@@ -235,6 +236,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           name: string
+          status?: string
         }
         Update: {
           address?: string | null
@@ -243,6 +245,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           name?: string
+          status?: string
         }
         Relationships: [
           {
