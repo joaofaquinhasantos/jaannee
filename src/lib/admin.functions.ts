@@ -103,7 +103,13 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         if (existingPlace) placeId = existingPlace.id;
         else {
           const { data: np, error: npe } = await context.supabase.from("places")
-            .insert({ name: placeName, area_id: areaId, address: get("address") || null, created_by: context.userId })
+            .insert({
+              name: placeName,
+              area_id: areaId,
+              address: get("address") || null,
+              created_by: context.userId,
+              status: data.autoApprove ? "approved" : "pending",
+            })
             .select("id").single();
           if (npe) throw new Error(npe.message);
           placeId = np.id;
@@ -172,11 +178,41 @@ export const upsertArea = createServerFn({ method: "POST" })
 export const grantAdminSelf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    // Bootstrap: allow the very first user to become admin.
+    // Static email allowlist. ADMIN_EMAILS is a comma-separated list configured server-side.
+    const raw = process.env.ADMIN_EMAILS ?? "";
+    const allow = raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const email = (context.claims?.email as string | undefined)?.toLowerCase();
+    if (!email) throw new Error("No email on session");
+    if (!allow.includes(email)) throw new Error("This email is not in the admin allowlist");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count } = await supabaseAdmin.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
-    if ((count ?? 0) > 0) throw new Error("Admin already exists");
-    const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: context.userId, role: "admin" });
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .upsert({ user_id: context.userId, role: "admin" }, { onConflict: "user_id,role" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listPendingPlaces = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("places")
+      .select("id, name, address, status, created_at, area:areas(name_en)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const moderatePlace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; action: "approve" | "reject" }) =>
+    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject"]) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const status = data.action === "approve" ? "approved" : "rejected";
+    const { error } = await context.supabase.from("places").update({ status }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { useQuery } from "@tanstack/react-query";
+import { amIAdmin } from "@/lib/admin.functions";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
@@ -15,11 +17,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const adminQ = useQuery({ queryKey: ["is-admin", email], queryFn: () => amIAdmin(), enabled: !!email });
+  const isAdmin = !!adminQ.data?.admin;
+
   const nav = [
     { to: "/", label: t("nav_feed") },
     { to: "/rankings", label: t("nav_rankings") },
     { to: "/compare", label: t("nav_compare") },
     { to: "/submit", label: t("nav_submit") },
+    ...(isAdmin ? [{ to: "/admin", label: t("nav_admin") }] : []),
   ];
 
   return (
