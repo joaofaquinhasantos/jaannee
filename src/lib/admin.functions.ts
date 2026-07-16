@@ -19,10 +19,14 @@ export const listPending = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureAdmin(context);
-    const { data, error } = await context.supabase.from("dishes")
-      .select(`id, name_en, name_th, price_thb, photo_url, note, status, created_at,
-        category:categories(name_en, slug), place:places(name, area:areas(name_en))`)
-      .eq("status", "pending").order("created_at", { ascending: false });
+    const { data, error } = await context.supabase
+      .from("dishes")
+      .select(
+        `id, name_en, name_th, price_thb, photo_url, note, status, created_at,
+        category:categories(name_en, slug), place:places(name, area:areas(name_en))`,
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -30,14 +34,18 @@ export const listPending = createServerFn({ method: "GET" })
 export const moderateDish = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; action: "approve" | "reject" | "needs_update" | "clear_update" }) =>
-    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject", "needs_update", "clear_update"]) }).parse(i))
+    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject", "needs_update", "clear_update"]) }).parse(i),
+  )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const patch =
-      data.action === "approve" ? { status: "approved" as const } :
-      data.action === "reject" ? { status: "rejected" as const } :
-      data.action === "needs_update" ? { needs_update: true } :
-      { needs_update: false };
+      data.action === "approve"
+        ? { status: "approved" as const }
+        : data.action === "reject"
+          ? { status: "rejected" as const }
+          : data.action === "needs_update"
+            ? { needs_update: true }
+            : { needs_update: false };
     const { error } = await context.supabase.from("dishes").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -47,9 +55,11 @@ export const listReports = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureAdmin(context);
-    const { data, error } = await context.supabase.from("reports")
+    const { data, error } = await context.supabase
+      .from("reports")
       .select(`id, reason, note, status, created_at, dish:dishes(id, name_en, place:places(name))`)
-      .eq("status", "open").order("created_at", { ascending: false });
+      .eq("status", "open")
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -57,7 +67,8 @@ export const listReports = createServerFn({ method: "GET" })
 export const resolveReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; status: "resolved" | "dismissed" }) =>
-    z.object({ id: z.string().uuid(), status: z.enum(["resolved", "dismissed"]) }).parse(i))
+    z.object({ id: z.string().uuid(), status: z.enum(["resolved", "dismissed"]) }).parse(i),
+  )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const { error } = await context.supabase.from("reports").update({ status: data.status }).eq("id", data.id);
@@ -69,7 +80,8 @@ export const resolveReport = createServerFn({ method: "POST" })
 export const bulkImportCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { csv: string; autoApprove?: boolean }) =>
-    z.object({ csv: z.string().min(1).max(500000), autoApprove: z.boolean().optional() }).parse(i))
+    z.object({ csv: z.string().min(1).max(500000), autoApprove: z.boolean().optional() }).parse(i),
+  )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const lines = data.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -86,10 +98,11 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
     const catMap = new Map((cats ?? []).map((c: any) => [c.slug, c.id]));
     const areaMap = new Map((areas ?? []).map((a: any) => [a.slug, a.id]));
 
-    let created = 0; const errors: string[] = [];
+    let created = 0;
+    const errors: string[] = [];
     for (let li = 1; li < lines.length; li++) {
       const row = parseCsvRow(lines[li]);
-      const get = (k: string) => (idx(k) >= 0 ? row[idx(k)]?.trim() ?? "" : "");
+      const get = (k: string) => (idx(k) >= 0 ? (row[idx(k)]?.trim() ?? "") : "");
       try {
         const catId = catMap.get(get("category_slug"));
         const areaId = areaMap.get(get("area_slug"));
@@ -98,11 +111,16 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         const placeName = get("place_name");
         // find or create place
         let placeId: string | null = null;
-        const { data: existingPlace } = await context.supabase.from("places")
-          .select("id").eq("area_id", areaId).ilike("name", placeName).maybeSingle();
+        const { data: existingPlace } = await context.supabase
+          .from("places")
+          .select("id")
+          .eq("area_id", areaId)
+          .ilike("name", placeName)
+          .maybeSingle();
         if (existingPlace) placeId = existingPlace.id;
         else {
-          const { data: np, error: npe } = await context.supabase.from("places")
+          const { data: np, error: npe } = await context.supabase
+            .from("places")
             .insert({
               name: placeName,
               area_id: areaId,
@@ -110,7 +128,8 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
               created_by: context.userId,
               status: data.autoApprove ? "approved" : "pending",
             })
-            .select("id").single();
+            .select("id")
+            .single();
           if (npe) throw new Error(npe.message);
           placeId = np.id;
         }
@@ -119,8 +138,11 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         const { error: die } = await context.supabase.from("dishes").insert({
           name_en: get("dish_name_en"),
           name_th: get("dish_name_th") || null,
-          place_id: placeId, category_id: catId,
-          price_thb: price, photo_url: get("photo_url") || null, note: get("note") || null,
+          place_id: placeId,
+          category_id: catId,
+          price_thb: price,
+          photo_url: get("photo_url") || null,
+          note: get("note") || null,
           status: data.autoApprove ? "approved" : "pending",
           submitted_by: context.userId,
         });
@@ -135,16 +157,24 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
 
 function parseCsvRow(line: string): string[] {
   const out: string[] = [];
-  let cur = ""; let inQ = false;
+  let cur = "";
+  let inQ = false;
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
     if (inQ) {
       if (c === '"') {
-        if (line[i + 1] === '"') { cur += '"'; i++; } else { inQ = false; }
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQ = false;
+        }
       } else cur += c;
     } else {
-      if (c === ",") { out.push(cur); cur = ""; }
-      else if (c === '"') inQ = true;
+      if (c === ",") {
+        out.push(cur);
+        cur = "";
+      } else if (c === '"') inQ = true;
       else cur += c;
     }
   }
@@ -156,7 +186,18 @@ function parseCsvRow(line: string): string[] {
 export const upsertCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { slug: string; name_en: string; name_th: string }) =>
-    z.object({ slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/), name_en: z.string().min(1).max(80), name_th: z.string().min(1).max(80) }).parse(i))
+    z
+      .object({
+        slug: z
+          .string()
+          .min(1)
+          .max(60)
+          .regex(/^[a-z0-9-]+$/),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const { error } = await context.supabase.from("categories").upsert(data, { onConflict: "slug" });
@@ -167,7 +208,18 @@ export const upsertCategory = createServerFn({ method: "POST" })
 export const upsertArea = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { slug: string; name_en: string; name_th: string }) =>
-    z.object({ slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/), name_en: z.string().min(1).max(80), name_th: z.string().min(1).max(80) }).parse(i))
+    z
+      .object({
+        slug: z
+          .string()
+          .min(1)
+          .max(60)
+          .regex(/^[a-z0-9-]+$/),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const { error } = await context.supabase.from("areas").upsert(data, { onConflict: "slug" });
@@ -180,7 +232,10 @@ export const grantAdminSelf = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     // Static email allowlist. ADMIN_EMAILS is a comma-separated list configured server-side.
     const raw = process.env.ADMIN_EMAILS ?? "";
-    const allow = raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const allow = raw
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
     const email = (context.claims?.email as string | undefined)?.toLowerCase();
     if (!email) throw new Error("No email on session");
     if (!allow.includes(email)) throw new Error("This email is not in the admin allowlist");
@@ -208,7 +263,8 @@ export const listPendingPlaces = createServerFn({ method: "GET" })
 export const moderatePlace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; action: "approve" | "reject" }) =>
-    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject"]) }).parse(i))
+    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject"]) }).parse(i),
+  )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const status = data.action === "approve" ? "approved" : "rejected";
