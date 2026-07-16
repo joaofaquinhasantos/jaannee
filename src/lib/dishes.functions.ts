@@ -159,14 +159,18 @@ export const submitComparison = createServerFn({ method: "POST" })
     if (existing) {
       const { error } = await context.supabase.from("comparisons").update({ winner_id: data.winnerId }).eq("id", existing.id);
       if (error) throw new Error(error.message);
-      await context.supabase.rpc("apply_elo", { _a: lo, _b: hi, _winner: data.winnerId, _prev_winner: existing.winner_id, _is_update: true });
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: re } = await supabaseAdmin.rpc("apply_elo", { _a: lo, _b: hi, _winner: data.winnerId, _prev_winner: existing.winner_id, _is_update: true });
+      if (re) throw new Error(re.message);
     } else {
       const { error } = await context.supabase.from("comparisons").insert({
         user_id: context.userId, category_id: dishes[0].category_id,
         dish_lo_id: lo, dish_hi_id: hi, winner_id: data.winnerId,
       });
       if (error) throw new Error(error.message);
-      await context.supabase.rpc("apply_elo", { _a: lo, _b: hi, _winner: data.winnerId, _prev_winner: data.winnerId, _is_update: false });
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: re } = await supabaseAdmin.rpc("apply_elo", { _a: lo, _b: hi, _winner: data.winnerId, _prev_winner: data.winnerId, _is_update: false });
+      if (re) throw new Error(re.message);
     }
     return { ok: true };
   });

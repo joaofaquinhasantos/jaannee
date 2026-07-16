@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, grantAdminSelf } from "@/lib/admin.functions";
+import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, grantAdminSelf, listPendingPlaces, moderatePlace } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,11 +25,13 @@ function Admin() {
       <Tabs defaultValue="pending" className="mt-6">
         <TabsList>
           <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="places">Pending places</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="taxonomy">Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
         </TabsList>
         <TabsContent value="pending"><PendingList /></TabsContent>
+        <TabsContent value="places"><PendingPlaces /></TabsContent>
         <TabsContent value="reports"><Reports /></TabsContent>
         <TabsContent value="taxonomy"><Taxonomy /></TabsContent>
         <TabsContent value="import"><Import /></TabsContent>
@@ -48,9 +50,33 @@ function Bootstrap({ onGranted }: { onGranted: () => void }) {
     <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-6 text-center">
       <h1 className="font-display text-xl font-semibold">Admin access</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        This account isn't an admin yet. If no admin exists yet, you can claim it now.
+        This account isn't an admin yet. If your email is on the server-side allowlist, you can activate admin now.
       </p>
-      <Button className="mt-4" onClick={() => mut.mutate()} disabled={mut.isPending}>Claim admin</Button>
+      <Button className="mt-4" onClick={() => mut.mutate()} disabled={mut.isPending}>Activate admin</Button>
+    </div>
+  );
+}
+
+function PendingPlaces() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["pending-places"], queryFn: () => listPendingPlaces() });
+  const mut = useMutation({
+    mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderatePlace({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pending-places"] }),
+  });
+  return (
+    <div className="mt-4 space-y-3">
+      {(q.data ?? []).map((p: any) => (
+        <div key={p.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-3 text-sm">
+          <div className="min-w-0 flex-1">
+            <div className="font-medium">{p.name}</div>
+            <div className="text-xs text-muted-foreground">{p.area?.name_en}{p.address ? ` · ${p.address}` : ""}</div>
+          </div>
+          <Button size="sm" onClick={() => mut.mutate({ id: p.id, action: "approve" })}>Approve</Button>
+          <Button size="sm" variant="outline" onClick={() => mut.mutate({ id: p.id, action: "reject" })}>Reject</Button>
+        </div>
+      ))}
+      {(q.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No pending places.</p>}
     </div>
   );
 }
