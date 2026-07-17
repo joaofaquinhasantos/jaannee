@@ -2,10 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { dishStatusLabel, toneClass } from "@/lib/dish-status";
 
+export const statusLabel = dishStatusLabel;
+export { toneClass };
+
 export function DishCard({ dish }: { dish: any }) {
   const { t, lang } = useI18n();
   const days = Math.max(0, Math.floor((Date.now() - new Date(dish.created_at).getTime()) / 86400000));
-  const s = dishStatusLabel(dish, t);
+  const s = statusLabel(dish, t);
   const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
   const areaName = dish.place?.area ? (lang === "th" ? dish.place.area.name_th : dish.place.area.name_en) : null;
   const toneCls = toneClass(s.tone);
