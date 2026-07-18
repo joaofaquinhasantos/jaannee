@@ -48,6 +48,24 @@ export const moderateDish = createServerFn({ method: "POST" })
             : { needs_update: false };
     const { error } = await context.supabase.from("dishes").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // On approve, cascade to the linked place so anonymous visitors can
+    // actually see the place row (places_select_approved hides pending places).
+    if (data.action === "approve") {
+      const { data: dish, error: de } = await context.supabase
+        .from("dishes")
+        .select("place_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (de) throw new Error(de.message);
+      if (dish?.place_id) {
+        const { error: pe } = await context.supabase
+          .from("places")
+          .update({ status: "approved" })
+          .eq("id", dish.place_id)
+          .neq("status", "approved");
+        if (pe) throw new Error(pe.message);
+      }
+    }
     return { ok: true };
   });
 
