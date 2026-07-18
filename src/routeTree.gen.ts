@@ -14,6 +14,7 @@ import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PhotosSplatRouteImport } from './routes/photos.$'
 import { Route as DishIdRouteImport } from './routes/dish.$id'
 import { Route as AuthenticatedSubmitRouteImport } from './routes/_authenticated/submit'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -41,6 +42,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotosSplatRoute = PhotosSplatRouteImport.update({
+  id: '/photos/$',
+  path: '/photos/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DishIdRoute = DishIdRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
+  '/photos/$': typeof PhotosSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
+  '/photos/$': typeof PhotosSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
+  '/photos/$': typeof PhotosSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/submit'
     | '/dish/$id'
+    | '/photos/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/submit'
     | '/dish/$id'
+    | '/photos/$'
   id:
     | '__root__'
     | '/'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/submit'
     | '/dish/$id'
+    | '/photos/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   CompareRoute: typeof CompareRoute
   RankingsRoute: typeof RankingsRoute
   DishIdRoute: typeof DishIdRoute
+  PhotosSplatRoute: typeof PhotosSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photos/$': {
+      id: '/photos/$'
+      path: '/photos/$'
+      fullPath: '/photos/$'
+      preLoaderRoute: typeof PhotosSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dish/$id': {
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareRoute: CompareRoute,
   RankingsRoute: RankingsRoute,
   DishIdRoute: DishIdRoute,
+  PhotosSplatRoute: PhotosSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
