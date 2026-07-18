@@ -1,0 +1,3 @@
+-- Add explanatory comment on has_role about SECURITY INVOKER caveats.
+COMMENT ON FUNCTION public.has_role(uuid, public.app_role) IS
+'SECURITY INVOKER. This function only works because every current caller passes their own user ID, matching the "user_roles self read" RLS policy. If a future feature needs an admin to check a different user''s role, this will silently return false rather than error, and will need either a broader admin-read policy on user_roles or a dedicated admin-only function.';
