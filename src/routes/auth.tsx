@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useI18n } from "@/lib/i18n";
+import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — JaanNee" }] }),
@@ -17,6 +18,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,6 +35,20 @@ function AuthPage() {
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     setSent(true);
+  };
+
+  const signInGoogle = async () => {
+    setGoogleLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setGoogleLoading(false);
+      toast.error(result.error.message ?? "Google sign-in failed");
+      return;
+    }
+    if (result.redirected) return;
+    navigate({ to: "/" });
   };
 
   return (
@@ -52,6 +68,24 @@ function AuthPage() {
               {loading ? "Sending…" : "Email me a link"}
             </Button>
           </form>
+        )}
+        {!sent && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              <span>or</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={googleLoading}
+              onClick={signInGoogle}
+            >
+              {googleLoading ? "Opening Google…" : "Continue with Google"}
+            </Button>
+          </>
         )}
       </div>
     </AppShell>

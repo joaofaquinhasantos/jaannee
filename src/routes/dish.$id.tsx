@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getDish, toggleTried, myTriedIds, submitReport } from "@/lib/dishes.functions";
+import { getRequestOrigin } from "@/lib/origin.functions";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -11,11 +12,68 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { statusLabel, toneClass } from "@/components/DishCard";
+import { ShareButton } from "@/components/ShareButton";
 
-export const Route = createFileRoute("/dish/$id")({ component: DishPage });
+export const Route = createFileRoute("/dish/$id")({
+  loader: async ({ params }) => {
+    const [dish, origin] = await Promise.all([
+      getDish({ data: { id: params.id } }),
+      getRequestOrigin(),
+    ]);
+    return { dish, origin };
+  },
+  head: ({ params, loaderData }) => {
+    const d: any = loaderData?.dish;
+    const origin: string = loaderData?.origin ?? "";
+    if (!d) return { meta: [{ title: "Dish — JaanNee" }] };
+    const name = d.name_en || d.name_th || "Dish";
+    const place = d.place?.name ?? "";
+    const price = d.price_thb != null ? ` · ฿${Number(d.price_thb).toFixed(0)}` : "";
+    // Mirror statusLabel wording without importing the i18n hook at head-time.
+    const count = d.comparisons_count ?? 0;
+    const status = d.needs_update
+      ? "Needs an update"
+      : count === 0
+        ? "New Entry"
+        : count < 5
+          ? "Gathering Comparisons"
+          : (d.elo ?? 1000) >= 1100
+            ? "Top Contender"
+            : "Gathering Comparisons";
+    const desc = `${place}${price} · ${status}`;
+    const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
+    const rawPhoto: string | undefined = d.photo_url;
+    const ogImage = rawPhoto
+      ? /^https?:\/\//i.test(rawPhoto)
+        ? rawPhoto
+        : origin
+          ? `${origin}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`
+          : undefined
+      : undefined;
+    const meta: Array<Record<string, string>> = [
+      { title: `${name} — JaanNee` },
+      { name: "description", content: desc },
+      { property: "og:title", content: name },
+      { property: "og:description", content: desc },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: pageUrl },
+      { name: "twitter:card", content: "summary_large_image" },
+    ];
+    if (ogImage) {
+      meta.push({ property: "og:image", content: ogImage });
+      meta.push({ name: "twitter:image", content: ogImage });
+    }
+    return {
+      meta,
+      links: origin ? [{ rel: "canonical", href: pageUrl }] : [],
+    };
+  },
+  component: DishPage,
+});
 
 function DishPage() {
   const { id } = Route.useParams();
+  const { origin } = Route.useLoaderData();
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const dish = useQuery({ queryKey: ["dish", id], queryFn: () => getDish({ data: { id } }) });
@@ -42,6 +100,7 @@ function DishPage() {
   const areaName = d.place?.area ? (lang === "th" ? d.place.area.name_th : d.place.area.name_en) : null;
   const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
   const s = statusLabel(d, t);
+  const shareUrl = origin ? `${origin}/dish/${id}` : (typeof window !== "undefined" ? `${window.location.origin}/dish/${id}` : `/dish/${id}`);
 
   return (
     <AppShell>
@@ -79,6 +138,12 @@ function DishPage() {
             <Link to="/compare" search={{ dish: id } as any}>
               <Button variant="outline">{t("compare_this")}</Button>
             </Link>
+            <ShareButton
+              url={shareUrl}
+              title={name}
+              text={`${d.place?.name ?? ""}${d.price_thb != null ? ` · ฿${Number(d.price_thb).toFixed(0)}` : ""} · ${s.text}`}
+              label={t("share") || "Share"}
+            />
             {authed && <ReportDialog dishId={id} />}
           </div>
         </div>

@@ -31,6 +31,7 @@ const dict = {
   thb: { en: "THB", th: "บาท" },
   empty_feed: { en: "No dishes yet. Be the first to add one.", th: "ยังไม่มีจาน มาเพิ่มเป็นคนแรก" },
   loading: { en: "Loading…", th: "กำลังโหลด…" },
+  share: { en: "Share", th: "แชร์" },
 };
 
 type Key = keyof typeof dict;
