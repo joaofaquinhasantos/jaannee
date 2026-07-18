@@ -60,8 +60,8 @@ function Submit() {
     const path = `${u.user.id}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
     const { error } = await supabase.storage.from("dish-photos").upload(path, f, { upsert: false });
     if (error) { toast.error(error.message); setUploading(false); return; }
-    const { data } = supabase.storage.from("dish-photos").getPublicUrl(path);
-    setPhotoUrl(data.publicUrl);
+    // Bucket is private; serve through the public /photos/* proxy route.
+    setPhotoUrl(`/photos/${path}`);
     setUploading(false);
   };
 

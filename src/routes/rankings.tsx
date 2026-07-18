@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { listAreas, listCategories, leaderboard } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
+import { ShareButton } from "@/components/ShareButton";
 
 export const Route = createFileRoute("/rankings")({
   head: () => ({ meta: [{ title: "Rankings — JaanNee" }] }),
@@ -67,6 +68,14 @@ function Rankings() {
                   {i + 1}
                 </span>
                 <DishCard dish={d} />
+                <div className="mt-2 flex justify-end">
+                  <ShareButton
+                    url={(typeof window !== "undefined" ? window.location.origin : "") + `/dish/${d.id}`}
+                    title={d.name_en ?? d.name_th ?? "Dish"}
+                    text={`${d.place?.name ?? ""}${d.price_thb != null ? ` · ฿${Number(d.price_thb).toFixed(0)}` : ""} · Currently ranked #${i + 1}`}
+                    label="Share"
+                  />
+                </div>
               </div>
             ))}
           </div>

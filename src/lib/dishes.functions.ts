@@ -91,7 +91,14 @@ export const submitDish = createServerFn({ method: "POST" })
       address: z.string().trim().max(300).optional(),
       category_id: z.string().uuid(),
       price_thb: z.number().min(0).max(100000).optional(),
-      photo_url: z.string().url().max(2000).optional(),
+      photo_url: z
+        .string()
+        .max(2000)
+        .refine(
+          (v) => v.startsWith("/photos/") || /^https?:\/\/\S+$/i.test(v),
+          { message: "photo_url must be a /photos/ path or an absolute http(s) URL" },
+        )
+        .optional(),
       note: z.string().trim().max(500).optional(),
     }).parse(i),
   )
