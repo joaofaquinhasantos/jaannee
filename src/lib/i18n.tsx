@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 export type Lang = "en" | "th";
 
-const dict = {
+export const dict = {
   brand: { en: "JaanNee", th: "จานนี้" },
   tagline: { en: "Rank the dish, not the restaurant.", th: "จัดอันดับที่จาน ไม่ใช่ที่ร้าน" },
   nav_feed: { en: "Discover", th: "ค้นพบ" },
@@ -34,7 +34,7 @@ const dict = {
   share: { en: "Share", th: "แชร์" },
 };
 
-type Key = keyof typeof dict;
+export type Key = keyof typeof dict;
 
 interface LangCtx { lang: Lang; setLang: (l: Lang) => void; t: (k: Key) => string; }
 const Ctx = createContext<LangCtx>({ lang: "en", setLang: () => {}, t: (k) => dict[k]?.en ?? k });
