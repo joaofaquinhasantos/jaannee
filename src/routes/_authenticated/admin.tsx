@@ -63,6 +63,7 @@ function PendingPlaces() {
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderatePlace({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pending-places"] }),
+    onError: (e: any) => toast.error(e.message),
   });
   return (
     <div className="mt-4 space-y-3">
@@ -87,6 +88,7 @@ function PendingList() {
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderateDish({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pending"] }),
+    onError: (e: any) => toast.error(e.message),
   });
   return (
     <div className="mt-4 space-y-3">
@@ -117,6 +119,7 @@ function Reports() {
   const mut = useMutation({
     mutationFn: (v: { id: string; status: "resolved" | "dismissed" }) => resolveReport({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reports"] }),
+    onError: (e: any) => toast.error(e.message),
   });
   return (
     <div className="mt-4 space-y-3">
@@ -138,26 +141,53 @@ function Reports() {
 function Taxonomy() {
   const [c, setC] = useState({ slug: "", name_en: "", name_th: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
-  const cMut = useMutation({ mutationFn: () => upsertCategory({ data: c }), onSuccess: () => { toast.success("Saved"); setC({ slug: "", name_en: "", name_th: "" }); } });
-  const aMut = useMutation({ mutationFn: () => upsertArea({ data: a }), onSuccess: () => { toast.success("Saved"); setA({ slug: "", name_en: "", name_th: "" }); } });
+  const cMut = useMutation({
+    mutationFn: () => upsertCategory({ data: c }),
+    onSuccess: () => { toast.success("Saved"); setC({ slug: "", name_en: "", name_th: "" }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const aMut = useMutation({
+    mutationFn: () => upsertArea({ data: a }),
+    onSuccess: () => { toast.success("Saved"); setA({ slug: "", name_en: "", name_th: "" }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const SLUG_RE = /^[a-z0-9-]+$/;
+  const validate = (v: { slug: string; name_en: string; name_th: string }) => {
+    const slug = v.slug.trim();
+    const en = v.name_en.trim();
+    const th = v.name_th.trim();
+    if (!slug || !en || !th) return "All fields are required";
+    if (!SLUG_RE.test(slug)) return "Slug: lowercase letters, digits, hyphens only";
+    return null;
+  };
+  const saveC = () => { const err = validate(c); if (err) { toast.error(err); return; } cMut.mutate(); };
+  const saveA = () => { const err = validate(a); if (err) { toast.error(err); return; } aMut.mutate(); };
   return (
     <div className="mt-4 grid gap-6 md:grid-cols-2">
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="font-display text-lg font-semibold">Add category</h3>
         <div className="mt-3 space-y-2">
-          <div><Label>Slug</Label><Input value={c.slug} onChange={(e) => setC({ ...c, slug: e.target.value })} placeholder="pad-kra-pao" /></div>
-          <div><Label>Name (EN)</Label><Input value={c.name_en} onChange={(e) => setC({ ...c, name_en: e.target.value })} /></div>
-          <div><Label>Name (TH)</Label><Input value={c.name_th} onChange={(e) => setC({ ...c, name_th: e.target.value })} /></div>
-          <Button onClick={() => cMut.mutate()} disabled={cMut.isPending}>Save</Button>
+          <div>
+            <Label>Slug *</Label>
+            <Input value={c.slug} onChange={(e) => setC({ ...c, slug: e.target.value })} placeholder="pad-kra-pao" />
+            <p className="mt-1 text-xs text-muted-foreground">Lowercase letters, digits, hyphens only.</p>
+          </div>
+          <div><Label>Name (EN) *</Label><Input value={c.name_en} onChange={(e) => setC({ ...c, name_en: e.target.value })} /></div>
+          <div><Label>Name (TH) *</Label><Input value={c.name_th} onChange={(e) => setC({ ...c, name_th: e.target.value })} /></div>
+          <Button onClick={saveC} disabled={cMut.isPending}>Save</Button>
         </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="font-display text-lg font-semibold">Add area</h3>
         <div className="mt-3 space-y-2">
-          <div><Label>Slug</Label><Input value={a.slug} onChange={(e) => setA({ ...a, slug: e.target.value })} placeholder="sathorn" /></div>
-          <div><Label>Name (EN)</Label><Input value={a.name_en} onChange={(e) => setA({ ...a, name_en: e.target.value })} /></div>
-          <div><Label>Name (TH)</Label><Input value={a.name_th} onChange={(e) => setA({ ...a, name_th: e.target.value })} /></div>
-          <Button onClick={() => aMut.mutate()} disabled={aMut.isPending}>Save</Button>
+          <div>
+            <Label>Slug *</Label>
+            <Input value={a.slug} onChange={(e) => setA({ ...a, slug: e.target.value })} placeholder="sathorn" />
+            <p className="mt-1 text-xs text-muted-foreground">Lowercase letters, digits, hyphens only.</p>
+          </div>
+          <div><Label>Name (EN) *</Label><Input value={a.name_en} onChange={(e) => setA({ ...a, name_en: e.target.value })} /></div>
+          <div><Label>Name (TH) *</Label><Input value={a.name_th} onChange={(e) => setA({ ...a, name_th: e.target.value })} /></div>
+          <Button onClick={saveA} disabled={aMut.isPending}>Save</Button>
         </div>
       </div>
     </div>
