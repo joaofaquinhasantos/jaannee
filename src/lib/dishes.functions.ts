@@ -26,17 +26,40 @@ const dishSelect = `
   place:places(id, name, area:areas(id, slug, name_en, name_th))
 `;
 
+// Same shape but with an inner join on places so we can filter dishes by
+// place.area_id server-side (outer joins can't be filtered without dropping
+// dishes whose place row would otherwise be null).
+const dishSelectInner = `
+  id, name_en, name_th, price_thb, photo_url, note, status, elo, comparisons_count,
+  needs_update, created_at,
+  category:categories(id, slug, name_en, name_th),
+  place:places!inner(id, name, area:areas(id, slug, name_en, name_th))
+`;
+
 export const listDishes = createServerFn({ method: "GET" })
   .inputValidator((i: { categorySlug?: string; areaSlug?: string }) => i ?? {})
   .handler(async ({ data }) => {
     const supabase = publicClient();
-    let q = supabase.from("dishes").select(dishSelect).eq("status", "approved").order("elo", { ascending: false });
+    // Resolve slug filters to ids so filtering runs in Postgres, not JS.
+    const [catRes, areaRes] = await Promise.all([
+      data.categorySlug
+        ? supabase.from("categories").select("id").eq("slug", data.categorySlug).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as any),
+      data.areaSlug
+        ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as any),
+    ]);
+    if (data.categorySlug && !catRes.data) return [];
+    if (data.areaSlug && !areaRes.data) return [];
+    let q = data.areaSlug
+      ? supabase.from("dishes").select(dishSelectInner)
+      : supabase.from("dishes").select(dishSelect);
+    q = q.eq("status", "approved").order("elo", { ascending: false });
+    if (catRes.data) q = q.eq("category_id", catRes.data.id);
+    if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    let filtered = rows ?? [];
-    if (data.categorySlug) filtered = filtered.filter((d: any) => d.category?.slug === data.categorySlug);
-    if (data.areaSlug) filtered = filtered.filter((d: any) => d.place?.area?.slug === data.areaSlug);
-    return filtered;
+    return rows ?? [];
   });
 
 export const getDish = createServerFn({ method: "GET" })
@@ -211,10 +234,25 @@ export const leaderboard = createServerFn({ method: "GET" })
     z.object({ categorySlug: z.string(), areaSlug: z.string().optional() }).parse(i))
   .handler(async ({ data }) => {
     const supabase = publicClient();
-    const { data: rows, error } = await supabase.from("dishes").select(dishSelect)
-      .eq("status", "approved").gte("comparisons_count", 5).order("elo", { ascending: false }).limit(50);
+    const [catRes, areaRes] = await Promise.all([
+      supabase.from("categories").select("id").eq("slug", data.categorySlug).maybeSingle(),
+      data.areaSlug
+        ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as any),
+    ]);
+    if (!catRes.data) return [];
+    if (data.areaSlug && !areaRes.data) return [];
+    let q = data.areaSlug
+      ? supabase.from("dishes").select(dishSelectInner)
+      : supabase.from("dishes").select(dishSelect);
+    q = q
+      .eq("status", "approved")
+      .eq("category_id", catRes.data.id)
+      .gte("comparisons_count", 5)
+      .order("elo", { ascending: false })
+      .limit(50);
+    if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    let filtered = (rows ?? []).filter((d: any) => d.category?.slug === data.categorySlug);
-    if (data.areaSlug) filtered = filtered.filter((d: any) => d.place?.area?.slug === data.areaSlug);
-    return filtered;
+    return rows ?? [];
   });
