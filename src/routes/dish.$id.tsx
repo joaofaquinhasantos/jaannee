@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { statusLabel, toneClass } from "@/components/DishCard";
 import { ShareButton } from "@/components/ShareButton";
+import { dishStatusLabel } from "@/lib/dish-status";
+import { dict } from "@/lib/i18n";
 
 export const Route = createFileRoute("/dish/$id")({
   loader: async ({ params }) => {
@@ -29,17 +31,8 @@ export const Route = createFileRoute("/dish/$id")({
     const name = d.name_en || d.name_th || "Dish";
     const place = d.place?.name ?? "";
     const price = d.price_thb != null ? ` · ฿${Number(d.price_thb).toFixed(0)}` : "";
-    // Mirror statusLabel wording without importing the i18n hook at head-time.
-    const count = d.comparisons_count ?? 0;
-    const status = d.needs_update
-      ? "Needs an update"
-      : count === 0
-        ? "New Entry"
-        : count < 5
-          ? "Gathering Comparisons"
-          : (d.elo ?? 1000) >= 1100
-            ? "Top Contender"
-            : "Gathering Comparisons";
+    // Canonical status wording — reuse dishStatusLabel with the EN dict.
+    const status = dishStatusLabel(d, (k) => (dict as any)[k]?.en ?? String(k)).text;
     const desc = `${place}${price} · ${status}`;
     const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
     const rawPhoto: string | undefined = d.photo_url;
