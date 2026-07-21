@@ -201,7 +201,12 @@ function parseCsvRow(line: string): string[] {
 }
 
 // Categories & Areas admin
-const cuisineSchema = z.enum(["thai", "italian", "japanese", "western", "dessert-cafe", "other"]).optional();
+const slugSchema = z
+  .string()
+  .min(1)
+  .max(60)
+  .regex(/^[a-z0-9-]+$/);
+const cuisineSchema = slugSchema.optional();
 
 export const upsertCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -246,6 +251,40 @@ export const upsertArea = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const { error } = await context.supabase.from("areas").upsert(data, { onConflict: "slug" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const upsertCuisine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { slug: string; name_en: string; name_th: string }) =>
+    z
+      .object({
+        slug: slugSchema,
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await context.supabase.from("cuisines").upsert(data, { onConflict: "slug" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteCuisine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { slug: string }) => z.object({ slug: slugSchema }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { count, error: countError } = await context.supabase
+      .from("categories")
+      .select("id", { count: "exact", head: true })
+      .eq("cuisine", data.slug);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) throw new Error(`Cannot delete cuisine while ${count} categor${count === 1 ? "y" : "ies"} use it.`);
+    const { error } = await context.supabase.from("cuisines").delete().eq("slug", data.slug);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -321,7 +360,7 @@ export const listCategoriesAdmin = createServerFn({ method: "GET" })
     await ensureAdmin(context);
     const { data, error } = await context.supabase
       .from("categories")
-      .select("id, slug, name_en, name_th, cuisine, subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
+      .select("id, slug, name_en, name_th, cuisine, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
       .order("name_en", { ascending: true });
     if (error) throw new Error(error.message);
     return data ?? [];

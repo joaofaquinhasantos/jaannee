@@ -134,8 +134,14 @@ export const getDish = createServerFn({ method: "GET" })
 export const listCategories = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await publicClient()
     .from("categories")
-    .select("*, subtypes:dish_subtypes(id, slug, name_en, name_th, display_order)")
+    .select("*, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, display_order)")
     .order("name_en");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
+
+export const listCuisines = createServerFn({ method: "GET" }).handler(async () => {
+  const { data, error } = await publicClient().from("cuisines").select("*").order("name_en");
   if (error) throw new Error(error.message);
   return data ?? [];
 });

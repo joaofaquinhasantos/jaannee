@@ -16,7 +16,8 @@ export const CUISINES = [
 
 export function cuisineLabel(value?: string | null, t?: (key: Key) => string) {
   const key = (CUISINES.find((c) => c.value === value)?.labelKey ?? "cuisine_other") as Key;
-  return t ? t(key) : key;
+  if (CUISINES.some((c) => c.value === value)) return t ? t(key) : key;
+  return value || (t ? t("cuisine_other") : "Other");
 }
 
 function matchesCategory(category: any, query: string) {
@@ -30,7 +31,7 @@ function matchesCategory(category: any, query: string) {
 export function groupedCategories(categories: any[], query = "") {
   const groups = new Map<string, any[]>();
   categories.filter((c) => matchesCategory(c, query)).forEach((category) => {
-    const key = category.cuisine || "other";
+    const key = category.cuisine_ref?.name_en || category.cuisine || "other";
     groups.set(key, [...(groups.get(key) ?? []), category]);
   });
   return [...groups.entries()].sort(([a], [b]) => cuisineLabel(a).localeCompare(cuisineLabel(b)));

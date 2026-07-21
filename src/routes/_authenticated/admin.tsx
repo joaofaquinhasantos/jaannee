@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { listCuisines } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CUISINES, cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
+import { cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
@@ -166,18 +167,21 @@ function Taxonomy() {
   const { t } = useI18n();
   const qc = useQueryClient();
   const [c, setC] = useState({ slug: "", name_en: "", name_th: "", cuisine: "" });
+  const [cu, setCu] = useState({ slug: "", name_en: "", name_th: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
   const [catFilter, setCatFilter] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
   const [sub, setSub] = useState({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 });
   const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
   const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
+  const cuisines = useQuery({ queryKey: ["cuisines"], queryFn: () => listCuisines() });
   const [editing, setEditing] = useState<
     | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string }
     | null
   >(null);
   const [deleting, setDeleting] = useState<
     | { kind: "category" | "area"; id: string; name_en: string; slug: string }
+    | { kind: "cuisine"; name_en: string; slug: string }
     | null
   >(null);
   const [editingSubtype, setEditingSubtype] = useState<any | null>(null);
@@ -216,6 +220,17 @@ function Taxonomy() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+  const cuMut = useMutation({
+    mutationFn: async () => requireOk(await upsertCuisine({ data: cu })),
+    onSuccess: () => {
+      toast.success("Saved");
+      setCu({ slug: "", name_en: "", name_th: "" });
+      qc.invalidateQueries({ queryKey: ["cuisines"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
   const editSubMut = useMutation({
     mutationFn: async () => requireOk(await upsertSubtype({ data: editingSubtype })),
     onSuccess: () => {
@@ -251,16 +266,21 @@ function Taxonomy() {
     mutationFn: async () => {
       if (!deleting) return;
       if (deleting.kind === "category") requireOk(await deleteCategory({ data: { id: deleting.id } }));
-      else requireOk(await deleteArea({ data: { id: deleting.id } }));
+      else if (deleting.kind === "area") requireOk(await deleteArea({ data: { id: deleting.id } }));
+      else requireOk(await deleteCuisine({ data: { slug: deleting.slug } }));
     },
     onSuccess: () => {
       toast.success("Deleted");
       if (deleting?.kind === "category") {
         qc.invalidateQueries({ queryKey: ["admin-categories"] });
         qc.invalidateQueries({ queryKey: ["categories"] });
-      } else {
+      } else if (deleting?.kind === "area") {
         qc.invalidateQueries({ queryKey: ["admin-areas"] });
         qc.invalidateQueries({ queryKey: ["areas"] });
+      } else {
+        qc.invalidateQueries({ queryKey: ["cuisines"] });
+        qc.invalidateQueries({ queryKey: ["categories"] });
+        qc.invalidateQueries({ queryKey: ["admin-categories"] });
       }
       setDeleting(null);
     },
@@ -276,6 +296,7 @@ function Taxonomy() {
     return null;
   };
   const saveC = () => { const err = validate(c); if (err) { toast.error(err); return; } cMut.mutate(); };
+  const saveCu = () => { const err = validate(cu); if (err) { toast.error(err); return; } cuMut.mutate(); };
   const saveA = () => { const err = validate(a); if (err) { toast.error(err); return; } aMut.mutate(); };
   const saveSub = () => {
     const err = validate(sub);
@@ -290,6 +311,28 @@ function Taxonomy() {
   };
   return (
     <div className="mt-4 grid gap-6 md:grid-cols-2">
+      <div className="rounded-lg border border-border bg-card p-4 md:col-span-2">
+        <h3 className="font-display text-3xl">Add cuisine</h3>
+        <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+          <div>
+            <Label>Slug *</Label>
+            <Input value={cu.slug} onChange={(e) => setCu({ ...cu, slug: e.target.value })} placeholder="korean" />
+          </div>
+          <div><Label>Name (EN) *</Label><Input value={cu.name_en} onChange={(e) => setCu({ ...cu, name_en: e.target.value })} /></div>
+          <div><Label>Name (TH) *</Label><Input value={cu.name_th} onChange={(e) => setCu({ ...cu, name_th: e.target.value })} /></div>
+          <Button onClick={saveCu} disabled={cuMut.isPending}>Save</Button>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(cuisines.data ?? []).map((row: any) => (
+            <div key={row.slug} className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <span className="font-medium">{row.name_en}</span>
+              <span className="text-xs text-muted-foreground">{row.slug}</span>
+              <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "cuisine", name_en: row.name_en, slug: row.slug })}>Delete</Button>
+            </div>
+          ))}
+          {(cuisines.data ?? []).length === 0 && <p className="text-xs text-muted-foreground">No cuisines yet.</p>}
+        </div>
+      </div>
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="font-display text-3xl">Add category</h3>
         <div className="mt-3 space-y-2">
@@ -306,8 +349,8 @@ function Taxonomy() {
               <SelectTrigger><SelectValue placeholder="Other" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">{t("cuisine_other")}</SelectItem>
-                {CUISINES.filter((item) => item.value !== "other").map((item) => (
-                  <SelectItem key={item.value} value={item.value}>{cuisineLabel(item.value, t)}</SelectItem>
+                {(cuisines.data ?? []).filter((item: any) => item.slug !== "other").map((item: any) => (
+                  <SelectItem key={item.slug} value={item.slug}>{item.name_en}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -420,8 +463,8 @@ function Taxonomy() {
                     <SelectTrigger><SelectValue placeholder="Other" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{t("cuisine_other")}</SelectItem>
-                      {CUISINES.filter((item) => item.value !== "other").map((item) => (
-                        <SelectItem key={item.value} value={item.value}>{cuisineLabel(item.value, t)}</SelectItem>
+                      {(cuisines.data ?? []).filter((item: any) => item.slug !== "other").map((item: any) => (
+                        <SelectItem key={item.slug} value={item.slug}>{item.name_en}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -438,7 +481,7 @@ function Taxonomy() {
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete {deleting?.kind === "category" ? "category" : "area"}</DialogTitle>
+            <DialogTitle>Delete {deleting?.kind}</DialogTitle>
           </DialogHeader>
           {deleting && (
             <div className="space-y-2 text-sm">
@@ -446,7 +489,7 @@ function Taxonomy() {
                 Delete <span className="font-semibold">{deleting.name_en}</span>?
               </p>
               <p className="text-muted-foreground">
-                This only works when nothing uses it. Categories with dishes and areas with places are blocked.
+                This only works when nothing uses it. Cuisines with categories, categories with dishes, and areas with places are blocked.
               </p>
             </div>
           )}
