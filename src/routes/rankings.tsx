@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
-import { listAreas, listCategories, leaderboard } from "@/lib/dishes.functions";
+import { listAreas, listCategories, listCategoryCounts, leaderboard } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
 import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
+import { CategoryPicker } from "@/components/CategoryPicker";
 
 export const Route = createFileRoute("/rankings")({
   head: () => ({ meta: [{ title: "Rankings - JaanNee" }] }),
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/rankings")({
 function Rankings() {
   const { t, lang } = useI18n();
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
+  const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
   const [cat, setCat] = useState<string | undefined>();
   const [subtype, setSubtype] = useState<string | undefined>();
@@ -37,6 +39,9 @@ function Rankings() {
   const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
     (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
   );
+  const topCategories = [...(categories.data ?? [])]
+    .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
+    .slice(0, 8);
 
   return (
     <AppShell>
@@ -55,7 +60,7 @@ function Rankings() {
       </section>
 
       <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
-        {(categories.data ?? []).map((c: any) => (
+        {topCategories.map((c: any) => (
           <button
             key={c.id}
             onClick={() => {
@@ -67,6 +72,19 @@ function Rankings() {
             {lang === "th" ? c.name_th : c.name_en}
           </button>
         ))}
+        <div className="min-w-48">
+          <CategoryPicker
+            categories={categories.data ?? []}
+            value={cat}
+            lang={lang}
+            placeholder={t("filter_all_categories")}
+            triggerLabel={t("filter_all_categories")}
+            onChange={(_, category) => {
+              setCat(category.slug);
+              setSubtype(undefined);
+            }}
+          />
+        </div>
       </div>
       {subtypes.length > 0 && (
         <div className="mt-2 flex gap-2 overflow-x-auto pb-2">

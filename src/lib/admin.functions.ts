@@ -201,9 +201,11 @@ function parseCsvRow(line: string): string[] {
 }
 
 // Categories & Areas admin
+const cuisineSchema = z.enum(["thai", "italian", "japanese", "western", "dessert-cafe", "other"]).optional();
+
 export const upsertCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { slug: string; name_en: string; name_th: string }) =>
+  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string }) =>
     z
       .object({
         slug: z
@@ -213,12 +215,15 @@ export const upsertCategory = createServerFn({ method: "POST" })
           .regex(/^[a-z0-9-]+$/),
         name_en: z.string().min(1).max(80),
         name_th: z.string().min(1).max(80),
+        cuisine: cuisineSchema,
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
-    const { error } = await context.supabase.from("categories").upsert(data, { onConflict: "slug" });
+    const { error } = await context.supabase
+      .from("categories")
+      .upsert({ ...data, cuisine: data.cuisine || null }, { onConflict: "slug" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -284,7 +289,7 @@ export const listCategoriesAdmin = createServerFn({ method: "GET" })
     await ensureAdmin(context);
     const { data, error } = await context.supabase
       .from("categories")
-      .select("id, slug, name_en, name_th, subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
+      .select("id, slug, name_en, name_th, cuisine, subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
       .order("name_en", { ascending: true });
     if (error) throw new Error(error.message);
     return data ?? [];

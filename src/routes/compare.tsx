@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CategoryPicker } from "@/components/CategoryPicker";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({ meta: [{ title: "Compare - JaanNee" }] }),
@@ -108,26 +109,18 @@ function Compare() {
       </section>
 
       <div className="mt-6 max-w-sm">
-        <Select
+        <CategoryPicker
+          categories={categories.data ?? []}
           value={cat}
-          onValueChange={(v) => {
-            setCat(v);
+          lang={lang}
+          placeholder={t("choose_category")}
+          onChange={(_, category) => {
+            setCat(category.slug);
             setSubtype(undefined);
             setAId(undefined);
             setBId(undefined);
           }}
-        >
-          <SelectTrigger className="bg-card">
-            <SelectValue placeholder={t("choose_category")} />
-          </SelectTrigger>
-          <SelectContent>
-            {(categories.data ?? []).map((c: any) => (
-              <SelectItem key={c.id} value={c.slug}>
-                {lang === "th" ? c.name_th : c.name_en}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
       {subtypes.length > 0 && (
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2">

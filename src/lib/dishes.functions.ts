@@ -161,6 +161,14 @@ export const listAreas = createServerFn({ method: "GET" }).handler(async () => {
   return data ?? [];
 });
 
+export const listCategoryCounts = createServerFn({ method: "GET" }).handler(async () => {
+  const { data, error } = await publicClient().from("dishes").select("category_id").eq("status", "approved");
+  if (error) throw new Error(error.message);
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) counts[row.category_id] = (counts[row.category_id] ?? 0) + 1;
+  return counts;
+});
+
 export const searchSimilar = createServerFn({ method: "GET" })
   .inputValidator((i: { placeName?: string; dishName?: string }) =>
     z
@@ -192,6 +200,24 @@ export const searchSimilar = createServerFn({ method: "GET" })
         ).data ?? [])
       : [];
     return { places, dishes };
+  });
+
+export const searchPlaces = createServerFn({ method: "GET" })
+  .inputValidator((i: { term: string }) => z.object({ term: z.string().trim().min(2).max(120) }).parse(i))
+  .handler(async ({ data }) => {
+    const supabase = publicClient();
+    const { data: matches, error } = await supabase.rpc("search_places_by_similarity", {
+      _term: data.term.trim(),
+    });
+    if (error) throw new Error(error.message);
+    const areaIds = [...new Set((matches ?? []).map((p: any) => p.area_id).filter(Boolean))];
+    const { data: areas, error: areaError } = areaIds.length
+      ? await supabase.from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
+      : { data: [], error: null };
+    if (areaError) throw new Error(areaError.message);
+    const areaById = new Map((areas ?? []).map((area: any) => [area.id, area]));
+    const rows = (matches ?? []).map((place: any) => ({ ...place, area: areaById.get(place.area_id) ?? null }));
+    return rows ?? [];
   });
 
 export const submitDish = createServerFn({ method: "POST" })
@@ -243,6 +269,14 @@ export const submitDish = createServerFn({ method: "POST" })
       if (pe) throw new Error(pe.message);
       placeId = place.id;
     }
+    const { data: dupe, error: dupeError } = await context.supabase
+      .from("dishes")
+      .select("id")
+      .eq("place_id", placeId)
+      .ilike("name_en", data.name_en)
+      .limit(1);
+    if (dupeError) throw new Error(dupeError.message);
+    if ((dupe ?? []).length > 0) throw new Error("This dish already exists at the selected place");
     const { data: dish, error } = await context.supabase
       .from("dishes")
       .insert({

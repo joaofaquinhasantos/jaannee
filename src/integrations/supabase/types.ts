@@ -40,6 +40,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          cuisine: string | null
           created_at: string
           id: string
           name_en: string
@@ -47,6 +48,7 @@ export type Database = {
           slug: string
         }
         Insert: {
+          cuisine?: string | null
           created_at?: string
           id?: string
           name_en: string
@@ -54,6 +56,7 @@ export type Database = {
           slug: string
         }
         Update: {
+          cuisine?: string | null
           created_at?: string
           id?: string
           name_en?: string
@@ -418,6 +421,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_places_by_similarity: {
+        Args: {
+          _term: string
+        }
+        Returns: {
+          id: string
+          name: string
+          area_id: string | null
+          address: string | null
+          similarity_score: number
+        }[]
       }
     }
     Enums: {

@@ -9,7 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { CUISINES, cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
 
@@ -160,14 +163,17 @@ function Reports() {
 }
 
 function Taxonomy() {
+  const { t } = useI18n();
   const qc = useQueryClient();
-  const [c, setC] = useState({ slug: "", name_en: "", name_th: "" });
+  const [c, setC] = useState({ slug: "", name_en: "", name_th: "", cuisine: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
+  const [catFilter, setCatFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
   const [sub, setSub] = useState({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 });
   const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
   const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
   const [editing, setEditing] = useState<
-    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string }
+    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string }
     | null
   >(null);
   const [editingSubtype, setEditingSubtype] = useState<any | null>(null);
@@ -179,7 +185,7 @@ function Taxonomy() {
     mutationFn: async () => requireOk(await upsertCategory({ data: c })),
     onSuccess: () => {
       toast.success("Saved");
-      setC({ slug: "", name_en: "", name_th: "" });
+      setC({ slug: "", name_en: "", name_th: "", cuisine: "" });
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
     },
@@ -220,7 +226,7 @@ function Taxonomy() {
   const editMut = useMutation({
     mutationFn: async () => {
       if (!editing) return;
-      const payload = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th };
+      const payload = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th, cuisine: editing.cuisine };
       if (editing.kind === "category") requireOk(await upsertCategory({ data: payload }));
       else requireOk(await upsertArea({ data: payload }));
     },
@@ -271,19 +277,35 @@ function Taxonomy() {
           </div>
           <div><Label>Name (EN) *</Label><Input value={c.name_en} onChange={(e) => setC({ ...c, name_en: e.target.value })} /></div>
           <div><Label>Name (TH) *</Label><Input value={c.name_th} onChange={(e) => setC({ ...c, name_th: e.target.value })} /></div>
+          <div>
+            <Label>{t("cuisine")}</Label>
+            <Select value={c.cuisine || "none"} onValueChange={(v) => setC({ ...c, cuisine: v === "none" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="Other" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("cuisine_other")}</SelectItem>
+                {CUISINES.filter((item) => item.value !== "other").map((item) => (
+                  <SelectItem key={item.value} value={item.value}>{cuisineLabel(item.value, t)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={saveC} disabled={cMut.isPending}>Save</Button>
         </div>
         <div className="mt-6">
           <h4 className="text-sm font-semibold text-muted-foreground">Existing categories</h4>
+          <Input className="mt-2" value={catFilter} onChange={(e) => setCatFilter(e.target.value)} placeholder={t("filter_categories")} />
           <div className="mt-2 divide-y divide-border rounded-lg border border-border">
-            {(cats.data ?? []).map((row: any) => (
-              <div key={row.slug} className="px-3 py-3 text-sm">
+            {groupedCategories(cats.data ?? [], catFilter).map(([cuisine, rows]) => (
+              <div key={cuisine} className="px-3 py-3 text-sm">
+                <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{cuisineLabel(cuisine, t)}</p>
+                {rows.map((row: any) => (
+              <div key={row.slug} className="border-t border-border py-3 first:border-t-0">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
                     <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
                 </div>
                 <div className="mt-3 space-y-2 border-t border-border pt-3">
                   <div className="flex items-center justify-between gap-2">
@@ -304,6 +326,8 @@ function Taxonomy() {
                   {(row.subtypes ?? []).length === 0 && <p className="text-xs text-muted-foreground">No dish types for this category.</p>}
                 </div>
               </div>
+                ))}
+              </div>
             ))}
             {(cats.data ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No categories yet.</p>}
           </div>
@@ -323,8 +347,11 @@ function Taxonomy() {
         </div>
         <div className="mt-6">
           <h4 className="text-sm font-semibold text-muted-foreground">Existing areas</h4>
+          <Input className="mt-2" value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} placeholder={t("filter_areas")} />
           <div className="mt-2 divide-y divide-border rounded-lg border border-border">
-            {(areas.data ?? []).map((row: any) => (
+            {(areas.data ?? [])
+              .filter((row: any) => [row.name_en, row.name_th, row.slug].some((v) => String(v).toLowerCase().includes(areaFilter.toLowerCase())))
+              .map((row: any) => (
               <div key={row.slug} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
@@ -357,6 +384,20 @@ function Taxonomy() {
                 <Label>Name (TH) *</Label>
                 <Input value={editing.name_th} onChange={(e) => setEditing({ ...editing, name_th: e.target.value })} />
               </div>
+              {editing.kind === "category" && (
+                <div>
+                  <Label>{t("cuisine")}</Label>
+                  <Select value={editing.cuisine || "none"} onValueChange={(v) => setEditing({ ...editing, cuisine: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Other" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t("cuisine_other")}</SelectItem>
+                      {CUISINES.filter((item) => item.value !== "other").map((item) => (
+                        <SelectItem key={item.value} value={item.value}>{cuisineLabel(item.value, t)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

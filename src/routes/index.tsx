@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
-import { listDishes, listCategories, listAreas } from "@/lib/dishes.functions";
+import { listDishes, listCategories, listAreas, listCategoryCounts } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { CategoryPicker } from "@/components/CategoryPicker";
 
 export const Route = createFileRoute("/")({ component: Index });
 
@@ -19,7 +20,11 @@ function Index() {
     queryFn: () => listDishes({ data: { categorySlug: cat, areaSlug: area } }),
   });
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
+  const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
+  const topCategories = [...(categories.data ?? [])]
+    .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
+    .slice(0, 8);
 
   return (
     <AppShell>
@@ -87,11 +92,21 @@ function Index() {
           <Pill active={!cat} onClick={() => setCat(undefined)}>
             {t("filter_all_categories")}
           </Pill>
-          {(categories.data ?? []).map((c: any) => (
+          {topCategories.map((c: any) => (
             <Pill key={c.id} active={cat === c.slug} onClick={() => setCat(c.slug)}>
               {lang === "th" ? c.name_th : c.name_en}
             </Pill>
           ))}
+          <div className="min-w-48">
+            <CategoryPicker
+              categories={categories.data ?? []}
+              value={cat}
+              lang={lang}
+              placeholder={t("filter_all_categories")}
+              triggerLabel={t("filter_all_categories")}
+              onChange={(_, category) => setCat(category.slug)}
+            />
+          </div>
         </div>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
           <Pill active={!area} onClick={() => setArea(undefined)} variant="secondary">

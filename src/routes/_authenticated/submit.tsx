@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { listCategories, listAreas, listDishSubtypes, searchSimilar, submitDish } from "@/lib/dishes.functions";
+import { listCategories, listAreas, listDishSubtypes, searchSimilar, searchPlaces, submitDish } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { CategoryPicker } from "@/components/CategoryPicker";
 
 export const Route = createFileRoute("/_authenticated/submit")({ component: Submit });
 
@@ -30,6 +31,8 @@ function Submit() {
   const [name_en, setNameEn] = useState("");
   const [name_th, setNameTh] = useState("");
   const [place_name, setPlaceName] = useState("");
+  const [selectedPlace, setSelectedPlace] = useState<any | null>(null);
+  const [addingPlace, setAddingPlace] = useState(false);
   const [area_id, setAreaId] = useState("");
   const [address, setAddress] = useState("");
   const [category_id, setCategoryId] = useState("");
@@ -46,10 +49,15 @@ function Submit() {
     enabled: !!category_id,
   });
   const activeSubtypes = subtypes.data ?? [];
+  const placeMatches = useQuery({
+    queryKey: ["place-search", place_name],
+    queryFn: () => searchPlaces({ data: { term: place_name } }),
+    enabled: place_name.trim().length >= 2 && !selectedPlace,
+  });
 
   const check = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name_en || !place_name || !category_id || !area_id) {
+    if (!name_en || !category_id || (!selectedPlace && (!place_name || !area_id))) {
       toast.error(t("submit_required"));
       return;
     }
@@ -71,9 +79,10 @@ function Submit() {
         data: {
           name_en,
           name_th: name_th || undefined,
-          place_name,
-          area_id,
-          address: address || undefined,
+          place_id: selectedPlace?.id,
+          place_name: selectedPlace ? undefined : place_name,
+          area_id: selectedPlace?.area_id || area_id,
+          address: selectedPlace ? undefined : address || undefined,
           category_id,
           subtype_id: subtype_id || undefined,
           price_thb: price_thb ? Number(price_thb) : undefined,
@@ -124,6 +133,8 @@ function Submit() {
                   setNameEn("");
                   setNameTh("");
                   setPlaceName("");
+                  setSelectedPlace(null);
+                  setAddingPlace(false);
                 setPrice("");
                 setNote("");
                 setPhotoUrl("");
@@ -204,28 +215,19 @@ function Submit() {
               <Label>Dish name (TH)</Label>
               <Input value={name_th} onChange={(e) => setNameTh(e.target.value)} maxLength={120} />
             </div>
-          </div>
           <div>
             <Label>Category *</Label>
-            <Select
+            <CategoryPicker
+              categories={categories.data ?? []}
               value={category_id}
-              onValueChange={(v) => {
+              lang={lang}
+              placeholder={t("choose_category")}
+              onChange={(v) => {
                 setCategoryId(v);
                 setSubtypeId("");
                 setSubtypeError("");
               }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("choose_category")} />
-              </SelectTrigger>
-              <SelectContent>
-                {(categories.data ?? []).map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {lang === "th" ? c.name_th : c.name_en}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           {activeSubtypes.length > 0 && (
             <div>
@@ -253,26 +255,69 @@ function Submit() {
           )}
           <div>
             <Label>Restaurant / stall name *</Label>
-            <Input value={place_name} onChange={(e) => setPlaceName(e.target.value)} required maxLength={160} />
-          </div>
-          <div>
-            <Label>Area *</Label>
-            <Select value={area_id} onValueChange={setAreaId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose area" />
-              </SelectTrigger>
-              <SelectContent>
-                {(areas.data ?? []).map((a: any) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {lang === "th" ? a.name_th : a.name_en}
-                  </SelectItem>
+            <Input
+              value={place_name}
+              onChange={(e) => {
+                setPlaceName(e.target.value);
+                setSelectedPlace(null);
+                setAddingPlace(false);
+              }}
+              required
+              maxLength={160}
+            />
+            {selectedPlace ? (
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
+                {t("selected_place")}: {selectedPlace.name} / {lang === "th" ? selectedPlace.area?.name_th : selectedPlace.area?.name_en}
+              </p>
+            ) : place_name.trim().length >= 2 ? (
+              <div className="mt-2 rounded-lg border border-border bg-background p-2">
+                {(placeMatches.data ?? []).map((p: any) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlace(p);
+                      setPlaceName(p.name);
+                      setAreaId(p.area_id);
+                      setAddingPlace(false);
+                    }}
+                    className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary"
+                  >
+                    <span className="font-semibold">{p.name}</span>
+                    <span className="ml-2 text-muted-foreground">{lang === "th" ? p.area?.name_th : p.area?.name_en}</span>
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+                {(placeMatches.data ?? []).length === 0 && (
+                  <button type="button" onClick={() => setAddingPlace(true)} className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary">
+                    {t("add_new_place")}
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
-          <div>
-            <Label>Address (optional)</Label>
-            <Input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
+          {addingPlace && !selectedPlace && (
+            <>
+              <div>
+                <Label>Area *</Label>
+                <Select value={area_id} onValueChange={setAreaId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("choose_area")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(areas.data ?? []).map((a: any) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {lang === "th" ? a.name_th : a.name_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Address (optional)</Label>
+                <Input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
+              </div>
+            </>
+          )}
           </div>
           <div>
             <Label>Price (THB)</Label>

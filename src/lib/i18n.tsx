@@ -3,6 +3,20 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 export type Lang = "en" | "th";
 
 export const dict = {
+  cuisine_thai: { en: "Thai", th: "ไทย" },
+  cuisine_italian: { en: "Italian", th: "อิตาเลียน" },
+  cuisine_japanese: { en: "Japanese", th: "ญี่ปุ่น" },
+  cuisine_western: { en: "Western", th: "ตะวันตก" },
+  cuisine_dessert_cafe: { en: "Dessert & cafe", th: "ขนมและคาเฟ่" },
+  cuisine_other: { en: "Other", th: "อื่นๆ" },
+  search_categories: { en: "Search English, Thai, or slug", th: "ค้นหาชื่ออังกฤษ ไทย หรือ slug" },
+  no_matching_categories: { en: "No matching categories.", th: "ไม่พบหมวดที่ตรงกัน" },
+  add_new_place: { en: "Add a new place", th: "เพิ่มร้านใหม่" },
+  selected_place: { en: "Selected", th: "เลือกแล้ว" },
+  choose_area: { en: "Choose area", th: "เลือกย่าน" },
+  filter_categories: { en: "Filter categories", th: "กรองหมวด" },
+  filter_areas: { en: "Filter areas", th: "กรองย่าน" },
+  cuisine: { en: "Cuisine", th: "ประเภทอาหาร" },
   brand: { en: "JaanNee", th: "จานนี้" },
   tagline: { en: "Rank the dish, not the restaurant.", th: "จัดอันดับที่จาน ไม่ใช่ที่ร้าน" },
   nav_feed: { en: "Discover", th: "ค้นพบ" },
