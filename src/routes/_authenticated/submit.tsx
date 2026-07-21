@@ -91,7 +91,7 @@ function Submit() {
           place_name: selectedPlace ? undefined : place_name,
           area_id: selectedPlace?.area_id || area_id,
           address: selectedPlace ? undefined : address || undefined,
-          category_id,
+          category_id: category_id || undefined,
           requested_category_en: requestingCategory ? requestedCategoryEn : undefined,
           requested_category_th: requestingCategory ? requestedCategoryTh || undefined : undefined,
           subtype_id: subtype_id || undefined,

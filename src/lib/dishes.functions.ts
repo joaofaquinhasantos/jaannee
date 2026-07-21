@@ -77,6 +77,12 @@ const imageUrlSchema = z
     { message: "Use an uploaded photo, a /photos/ path, or a direct image URL." },
   );
 
+const optionalUuidSchema = z
+  .string()
+  .trim()
+  .transform((v) => (v ? v : undefined))
+  .pipe(z.string().uuid().optional());
+
 export const listDishes = createServerFn({ method: "GET" })
   .inputValidator((i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string }) => i ?? {})
   .handler(async ({ data }) => {
@@ -275,14 +281,14 @@ export const submitDish = createServerFn({ method: "POST" })
         .object({
           name_en: z.string().trim().min(1).max(120),
           name_th: z.string().trim().max(120).optional(),
-          place_id: z.string().uuid().optional(),
+          place_id: optionalUuidSchema,
           place_name: z.string().trim().max(160).optional(),
-          area_id: z.string().uuid().optional(),
+          area_id: optionalUuidSchema,
           address: z.string().trim().max(300).optional(),
-          category_id: z.string().uuid().optional(),
+          category_id: optionalUuidSchema,
           requested_category_en: z.string().trim().max(80).optional(),
           requested_category_th: z.string().trim().max(80).optional(),
-          subtype_id: z.string().uuid().optional(),
+          subtype_id: optionalUuidSchema,
           price_thb: z.number().min(0).max(100000).optional(),
           photo_url: imageUrlSchema,
           note: z.string().trim().max(500).optional(),
