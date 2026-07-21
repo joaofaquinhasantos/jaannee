@@ -33,8 +33,8 @@ export const dict = {
   loading: { en: "Loading…", th: "กำลังโหลด…" },
   share: { en: "Share", th: "แชร์" },
   hero_title: {
-    en: "Find the best version of every Thai dish.",
-    th: "หาจานที่ดีที่สุดของอาหารไทยแต่ละเมนู",
+    en: "Find the best version of every dish.",
+    th: "หาจานที่ดีที่สุดของแต่ละเมนู",
   },
   hero_copy: {
     en: "Discover local dishes, compare dish against dish, and add the gems missing from the map.",
