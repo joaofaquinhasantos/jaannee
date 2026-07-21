@@ -22,9 +22,20 @@ function Admin() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-semibold">Admin</h1>
+      <section className="border-b border-border pb-7">
+        <p className="text-xs font-bold uppercase text-primary">Operations</p>
+        <h1 className="mt-2 font-display text-5xl leading-none">Admin</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Keep the board clean: approve dishes, resolve reports, and manage the taxonomy behind the public ranking.
+        </p>
+      </section>
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <AdminStat label="Pending dishes" value="Queue" />
+        <AdminStat label="Reports" value="Review" />
+        <AdminStat label="Taxonomy" value="Control" />
+      </div>
       <Tabs defaultValue="pending" className="mt-6">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start rounded-lg bg-secondary p-1">
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="places">Pending places</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -41,6 +52,15 @@ function Admin() {
   );
 }
 
+function AdminStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="font-display text-3xl leading-none text-accent">{value}</p>
+      <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
 function Bootstrap({ onGranted }: { onGranted: () => void }) {
   const mut = useMutation({
     mutationFn: () => grantAdminSelf(),
@@ -48,8 +68,8 @@ function Bootstrap({ onGranted }: { onGranted: () => void }) {
     onError: (e: any) => toast.error(e.message),
   });
   return (
-    <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-6 text-center">
-      <h1 className="font-display text-xl font-semibold">Admin access</h1>
+    <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-6 text-center">
+      <h1 className="font-display text-4xl leading-tight">Admin access</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         This account isn't an admin yet. If your email is on the server-side allowlist, you can activate admin now.
       </p>
@@ -69,7 +89,7 @@ function PendingPlaces() {
   return (
     <div className="mt-4 space-y-3">
       {(q.data ?? []).map((p: any) => (
-        <div key={p.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-3 text-sm">
+        <div key={p.id} className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm">
           <div className="min-w-0 flex-1">
             <div className="font-medium">{p.name}</div>
             <div className="text-xs text-muted-foreground">{p.area?.name_en}{p.address ? ` · ${p.address}` : ""}</div>
@@ -94,7 +114,7 @@ function PendingList() {
   return (
     <div className="mt-4 space-y-3">
       {(q.data ?? []).map((d: any) => (
-        <div key={d.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-3">
+        <div key={d.id} className="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
             {d.photo_url && <img src={d.photo_url} className="h-full w-full object-cover" alt="" />}
           </div>
@@ -125,7 +145,7 @@ function Reports() {
   return (
     <div className="mt-4 space-y-3">
       {(q.data ?? []).map((r: any) => (
-        <div key={r.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-3 text-sm">
+        <div key={r.id} className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm">
           <div className="min-w-0 flex-1">
             <div className="font-medium">{r.dish?.name_en} <span className="text-xs text-muted-foreground">({r.dish?.place?.name})</span></div>
             <div className="text-xs text-muted-foreground">{r.reason}{r.note ? ` — ${r.note}` : ""}</div>
@@ -207,8 +227,8 @@ function Taxonomy() {
   };
   return (
     <div className="mt-4 grid gap-6 md:grid-cols-2">
-      <div className="rounded-xl border border-border bg-card p-4">
-        <h3 className="font-display text-lg font-semibold">Add category</h3>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <h3 className="font-display text-3xl">Add category</h3>
         <div className="mt-3 space-y-2">
           <div>
             <Label>Slug *</Label>
@@ -235,8 +255,8 @@ function Taxonomy() {
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-border bg-card p-4">
-        <h3 className="font-display text-lg font-semibold">Add area</h3>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <h3 className="font-display text-3xl">Add area</h3>
         <div className="mt-3 space-y-2">
           <div>
             <Label>Slug *</Label>

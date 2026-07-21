@@ -43,6 +43,11 @@ function Index() {
               <Button variant="outline">{t("cta_add")}</Button>
             </Link>
           </div>
+          <div className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+            <TrustSignal text="No restaurant ads" />
+            <TrustSignal text="Dish vs dish only" />
+            <TrustSignal text="Ranked by local comparisons" />
+          </div>
         </div>
         <div className="mt-8 grid grid-cols-3 gap-3 md:mt-0">
           {["01", "02", "03"].map((n, i) => (
@@ -61,6 +66,9 @@ function Index() {
           <div>
             <p className="text-xs font-bold uppercase text-muted-foreground">Browse the board</p>
             <h2 className="mt-1 font-display text-3xl">Discover</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start here: pick a category, add a missing dish, or compare two plates.
+            </p>
           </div>
           {(cat || area) && (
             <button
@@ -120,6 +128,14 @@ function Index() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+function TrustSignal({ text }: { text: string }) {
+  return (
+    <div className="rounded-md border border-border bg-card px-3 py-2 font-semibold">
+      {text}
+    </div>
   );
 }
 

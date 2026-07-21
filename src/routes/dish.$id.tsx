@@ -27,13 +27,12 @@ export const Route = createFileRoute("/dish/$id")({
   head: ({ params, loaderData }) => {
     const d: any = loaderData?.dish;
     const origin: string = loaderData?.origin ?? "";
-    if (!d) return { meta: [{ title: "Dish — JaanNee" }] };
+    if (!d) return { meta: [{ title: "Dish - JaanNee" }] };
     const name = d.name_en || d.name_th || "Dish";
     const place = d.place?.name ?? "";
-    const price = d.price_thb != null ? ` · ฿${Number(d.price_thb).toFixed(0)}` : "";
-    // Canonical status wording — reuse dishStatusLabel with the EN dict.
+    const price = d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : "";
     const status = dishStatusLabel(d, (k) => (dict as any)[k]?.en ?? String(k)).text;
-    const desc = `${place}${price} · ${status}`;
+    const desc = `${place}${price} / ${status}`;
     const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
     const rawPhoto: string | undefined = d.photo_url;
     const ogImage = rawPhoto
@@ -44,7 +43,7 @@ export const Route = createFileRoute("/dish/$id")({
           : undefined
       : undefined;
     const meta: Array<Record<string, string>> = [
-      { title: `${name} — JaanNee` },
+      { title: `${name} - JaanNee` },
       { name: "description", content: desc },
       { property: "og:title", content: name },
       { property: "og:description", content: desc },
@@ -81,7 +80,10 @@ function DishPage() {
 
   const tryMut = useMutation({
     mutationFn: () => toggleTried({ data: { dishId: id, tried: !isTried } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tried"] }); toast.success(isTried ? "Removed from tried" : "Marked as tried"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tried"] });
+      toast.success(isTried ? "Removed from tried" : "Marked as tried");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -90,6 +92,7 @@ function DishPage() {
 
   const d: any = dish.data;
   const name = lang === "th" && d.name_th ? d.name_th : d.name_en;
+  const secondaryName = lang === "th" && d.name_th ? d.name_en : d.name_th;
   const areaName = d.place?.area ? (lang === "th" ? d.place.area.name_th : d.place.area.name_en) : null;
   const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
   const s = statusLabel(d, t);
@@ -97,27 +100,37 @@ function DishPage() {
 
   return (
     <AppShell>
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="overflow-hidden rounded-3xl border border-border bg-card">
+      <div className="grid gap-8 md:grid-cols-[1.05fr_0.95fr]">
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-[0_18px_45px_rgba(42,30,36,0.06)]">
           <div className="aspect-[4/3] w-full bg-muted">
-            {d.photo_url ? <img src={d.photo_url} alt={name} className="h-full w-full object-cover" /> :
-              <div className="flex h-full items-center justify-center text-6xl">🍜</div>}
+            {d.photo_url ? (
+              <img src={d.photo_url} alt={name} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-secondary font-display text-5xl italic text-muted-foreground">
+                JaanNee
+              </div>
+            )}
           </div>
         </div>
         <div>
-          <p className="text-sm font-medium text-primary">{lang === "th" ? d.category?.name_th : d.category?.name_en}</p>
-          <h1 className="mt-1 font-display text-4xl font-semibold tracking-tight">{name}</h1>
-          <p className="mt-2 text-lg text-muted-foreground">
-            {d.place?.name}{areaName ? ` · ${areaName}` : ""}
+          <p className="text-xs font-bold uppercase text-primary">{lang === "th" ? d.category?.name_th : d.category?.name_en}</p>
+          <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{name}</h1>
+          {secondaryName ? (
+            <p className="mt-2 font-thai text-xl font-medium text-foreground/75">{secondaryName}</p>
+          ) : null}
+          <p className="mt-4 text-lg text-muted-foreground">
+            {d.place?.name}{areaName ? ` / ${areaName}` : ""}
           </p>
-          <span className={`mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass(s.tone)}`}>{s.text}</span>
-          {d.price_thb != null && <p className="mt-1 text-foreground/80">฿{Number(d.price_thb).toFixed(0)}</p>}
-          {d.note && <p className="mt-4 rounded-xl bg-muted p-4 text-sm">{d.note}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(s.tone)}`}>{s.text}</span>
+            {d.price_thb != null && <span className="text-sm font-semibold text-foreground/80">THB {Number(d.price_thb).toFixed(0)}</span>}
+          </div>
+          {d.note && <p className="mt-5 rounded-lg border border-border bg-card p-4 text-sm leading-6">{d.note}</p>}
 
-          <div className="mt-6 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-            <div>{s.text}</div>
-            <div>{t("added_ago")} {days} {t("days_ago")}</div>
-            <div>{t("compared_by")} {d.comparisons_count} {t("diners")}</div>
+          <div className="mt-6 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center text-xs text-muted-foreground">
+            <Metric label="Status" value={s.text} />
+            <Metric label="Added" value={`${days} ${t("days_ago")}`} />
+            <Metric label="Compared" value={`${d.comparisons_count} ${t("diners")}`} />
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
@@ -126,7 +139,7 @@ function DishPage() {
                 {isTried ? t("tried_marked") : t("tried_it")}
               </Button>
             ) : (
-              <Link to="/auth"><Button>{t("sign_in")} → {t("tried_it")}</Button></Link>
+              <Link to="/auth"><Button>{t("sign_in")} to mark tried</Button></Link>
             )}
             <Link to="/compare" search={{ dish: id } as any}>
               <Button variant="outline">{t("compare_this")}</Button>
@@ -134,7 +147,7 @@ function DishPage() {
             <ShareButton
               url={shareUrl}
               title={name}
-              text={`${d.place?.name ?? ""}${d.price_thb != null ? ` · ฿${Number(d.price_thb).toFixed(0)}` : ""} · ${s.text}`}
+              text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / ${s.text}`}
               label={t("share") || "Share"}
             />
             {authed && <ReportDialog dishId={id} />}
@@ -145,6 +158,15 @@ function DishPage() {
   );
 }
 
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="font-semibold text-foreground">{value}</div>
+      <div className="mt-1 text-[11px] font-bold uppercase text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
 function ReportDialog({ dishId }: { dishId: string }) {
   const { t } = useI18n();
   const [reason, setReason] = useState("wrong_info");
@@ -152,7 +174,11 @@ function ReportDialog({ dishId }: { dishId: string }) {
   const [open, setOpen] = useState(false);
   const mut = useMutation({
     mutationFn: () => submitReport({ data: { dishId, reason, note: note || undefined } }),
-    onSuccess: () => { toast.success("Thanks — we'll review this."); setOpen(false); setNote(""); },
+    onSuccess: () => {
+      toast.success("Thanks. We'll review this.");
+      setOpen(false);
+      setNote("");
+    },
     onError: (e: any) => toast.error(e.message),
   });
   return (
