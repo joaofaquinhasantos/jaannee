@@ -22,8 +22,10 @@ function publicClient() {
 
 const dishSelect = `
   id, name_en, name_th, price_thb, photo_url, note, status, elo, comparisons_count,
+  subtype_id,
   needs_update, created_at,
   category:categories(id, slug, name_en, name_th),
+  subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
   place:places(id, name, area:areas(id, slug, name_en, name_th))
 `;
 
@@ -32,8 +34,10 @@ const dishSelect = `
 // dishes whose place row would otherwise be null).
 const dishSelectInner = `
   id, name_en, name_th, price_thb, photo_url, note, status, elo, comparisons_count,
+  subtype_id,
   needs_update, created_at,
   category:categories(id, slug, name_en, name_th),
+  subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
   place:places!inner(id, name, area:areas(id, slug, name_en, name_th))
 `;
 
@@ -64,7 +68,7 @@ const imageUrlSchema = z
   );
 
 export const listDishes = createServerFn({ method: "GET" })
-  .inputValidator((i: { categorySlug?: string; areaSlug?: string }) => i ?? {})
+  .inputValidator((i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string }) => i ?? {})
   .handler(async ({ data }) => {
     const supabase = publicClient();
     // Resolve slug filters to ids so filtering runs in Postgres, not JS.
@@ -78,15 +82,27 @@ export const listDishes = createServerFn({ method: "GET" })
     ]);
     if (data.categorySlug && !catRes.data) return [];
     if (data.areaSlug && !areaRes.data) return [];
+    const subtypeRes =
+      data.subtypeSlug && catRes.data
+        ? await supabase
+            .from("dish_subtypes")
+            .select("id")
+            .eq("category_id", catRes.data.id)
+            .eq("slug", data.subtypeSlug)
+            .eq("is_active", true)
+            .maybeSingle()
+        : { data: null, error: null };
+    if (data.subtypeSlug && !subtypeRes.data) return [];
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
     q = q.eq("status", "approved").order("elo", { ascending: false });
     if (catRes.data) q = q.eq("category_id", catRes.data.id);
+    if (subtypeRes.data) q = q.eq("subtype_id", subtypeRes.data.id);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []).filter((row: any) => !row.subtype_id || row.subtype?.is_active);
   });
 
 export const getDish = createServerFn({ method: "GET" })
@@ -103,10 +119,41 @@ export const getDish = createServerFn({ method: "GET" })
   });
 
 export const listCategories = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await publicClient().from("categories").select("*").order("name_en");
+  const { data, error } = await publicClient()
+    .from("categories")
+    .select("*, subtypes:dish_subtypes(id, slug, name_en, name_th, display_order)")
+    .order("name_en");
   if (error) throw new Error(error.message);
   return data ?? [];
 });
+
+export const listDishSubtypes = createServerFn({ method: "GET" })
+  .inputValidator((i: { categoryId?: string; categorySlug?: string }) =>
+    z.object({ categoryId: z.string().uuid().optional(), categorySlug: z.string().optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const supabase = publicClient();
+    let categoryId = data.categoryId;
+    if (!categoryId && data.categorySlug) {
+      const { data: cat, error } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", data.categorySlug)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      categoryId = cat?.id;
+    }
+    if (!categoryId) return [];
+    const { data: rows, error } = await supabase
+      .from("dish_subtypes")
+      .select("id, category_id, slug, name_en, name_th, display_order")
+      .eq("category_id", categoryId)
+      .eq("is_active", true)
+      .order("display_order")
+      .order("name_en");
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
 
 export const listAreas = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await publicClient().from("areas").select("*").order("name_en");
@@ -158,6 +205,7 @@ export const submitDish = createServerFn({ method: "POST" })
       area_id?: string;
       address?: string;
       category_id: string;
+      subtype_id?: string;
       price_thb?: number;
       photo_url?: string;
       note?: string;
@@ -171,6 +219,7 @@ export const submitDish = createServerFn({ method: "POST" })
           area_id: z.string().uuid().optional(),
           address: z.string().trim().max(300).optional(),
           category_id: z.string().uuid(),
+          subtype_id: z.string().uuid().optional(),
           price_thb: z.number().min(0).max(100000).optional(),
           photo_url: imageUrlSchema,
           note: z.string().trim().max(500).optional(),
@@ -201,6 +250,7 @@ export const submitDish = createServerFn({ method: "POST" })
         name_th: data.name_th,
         place_id: placeId,
         category_id: data.category_id,
+        subtype_id: data.subtype_id,
         price_thb: data.price_thb,
         photo_url: data.photo_url,
         note: data.note,
@@ -263,10 +313,11 @@ export const submitComparison = createServerFn({ method: "POST" })
     if (data.dishAId === data.dishBId) throw new Error("Choose two different dishes");
     if (data.winnerId !== data.dishAId && data.winnerId !== data.dishBId)
       throw new Error("Winner must be one of the two dishes");
-    // fetch both dishes to verify same category and approved
+    // submitComparison is the app write gate for comparisons. The database also
+    // has comparisons_ranking_key_guard so future writes cannot bypass this rule.
     const { data: dishes, error: de } = await context.supabase
       .from("dishes")
-      .select("id, category_id, status")
+      .select("id, category_id, subtype_id, status")
       .in("id", [data.dishAId, data.dishBId]);
     if (de) throw new Error(de.message);
     if (!dishes || dishes.length !== 2) throw new Error("Dishes not found");
@@ -274,6 +325,21 @@ export const submitComparison = createServerFn({ method: "POST" })
       throw new Error("Dishes must be in the same category");
     if (dishes.some((d) => d.status !== "approved"))
       throw new Error("Dish not available for comparison");
+    const { data: subtypes, error: se } = await context.supabase
+      .from("dish_subtypes")
+      .select("id, category_id, is_active")
+      .in("category_id", [dishes[0].category_id, dishes[1].category_id]);
+    if (se) throw new Error(se.message);
+    const activeSubtypes = (subtypes ?? []).filter((s: any) => s.is_active);
+    const hasActiveSubtypes = activeSubtypes.some((s: any) => s.category_id === dishes[0].category_id);
+    if (hasActiveSubtypes) {
+      if (!dishes[0].subtype_id || !dishes[1].subtype_id || dishes[0].subtype_id !== dishes[1].subtype_id)
+        throw new Error("Dishes must be the same dish type");
+      if (!activeSubtypes.some((s: any) => s.id === dishes[0].subtype_id))
+        throw new Error("Dish type is inactive");
+    } else if (dishes[0].subtype_id || dishes[1].subtype_id) {
+      throw new Error("Dish type is not valid for this category");
+    }
     const lo = data.dishAId < data.dishBId ? data.dishAId : data.dishBId;
     const hi = data.dishAId < data.dishBId ? data.dishBId : data.dishAId;
 
@@ -367,10 +433,11 @@ export const submitReport = createServerFn({ method: "POST" })
   });
 
 export const leaderboard = createServerFn({ method: "GET" })
-  .inputValidator((i: { categorySlug: string; areaSlug?: string; minimumComparisons?: number }) =>
+  .inputValidator((i: { categorySlug: string; subtypeSlug?: string; areaSlug?: string; minimumComparisons?: number }) =>
     z
       .object({
         categorySlug: z.string(),
+        subtypeSlug: z.string().optional(),
         areaSlug: z.string().optional(),
         minimumComparisons: z.number().min(0).max(100).optional(),
       })
@@ -386,6 +453,17 @@ export const leaderboard = createServerFn({ method: "GET" })
     ]);
     if (!catRes.data) return [];
     if (data.areaSlug && !areaRes.data) return [];
+    const { data: activeSubtypes, error: subErr } = await supabase
+      .from("dish_subtypes")
+      .select("id, slug")
+      .eq("category_id", catRes.data.id)
+      .eq("is_active", true);
+    if (subErr) throw new Error(subErr.message);
+    const hasActiveSubtypes = (activeSubtypes ?? []).length > 0;
+    const subtype = data.subtypeSlug
+      ? (activeSubtypes ?? []).find((s: any) => s.slug === data.subtypeSlug)
+      : null;
+    if (hasActiveSubtypes && !subtype) return [];
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
@@ -395,6 +473,8 @@ export const leaderboard = createServerFn({ method: "GET" })
       .gte("comparisons_count", data.minimumComparisons ?? 5)
       .order("elo", { ascending: false })
       .limit(50);
+    if (hasActiveSubtypes) q = q.eq("subtype_id", subtype.id);
+    else q = q.is("subtype_id", null);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);

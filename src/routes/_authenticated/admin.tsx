@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -163,12 +163,14 @@ function Taxonomy() {
   const qc = useQueryClient();
   const [c, setC] = useState({ slug: "", name_en: "", name_th: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
+  const [sub, setSub] = useState({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 });
   const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
   const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
   const [editing, setEditing] = useState<
     | { kind: "category" | "area"; slug: string; name_en: string; name_th: string }
     | null
   >(null);
+  const [editingSubtype, setEditingSubtype] = useState<any | null>(null);
   const cMut = useMutation({
     mutationFn: () => upsertCategory({ data: c }),
     onSuccess: () => {
@@ -186,6 +188,28 @@ function Taxonomy() {
       setA({ slug: "", name_en: "", name_th: "" });
       qc.invalidateQueries({ queryKey: ["admin-areas"] });
       qc.invalidateQueries({ queryKey: ["areas"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const subMut = useMutation({
+    mutationFn: () => upsertSubtype({ data: sub }),
+    onSuccess: () => {
+      toast.success("Saved");
+      setSub({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 });
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["dish-subtypes"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const editSubMut = useMutation({
+    mutationFn: () => upsertSubtype({ data: editingSubtype }),
+    onSuccess: () => {
+      toast.success("Updated");
+      setEditingSubtype(null);
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["dish-subtypes"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -220,6 +244,12 @@ function Taxonomy() {
   };
   const saveC = () => { const err = validate(c); if (err) { toast.error(err); return; } cMut.mutate(); };
   const saveA = () => { const err = validate(a); if (err) { toast.error(err); return; } aMut.mutate(); };
+  const saveSub = () => {
+    const err = validate(sub);
+    if (!sub.category_id) { toast.error("Choose a category"); return; }
+    if (err) { toast.error(err); return; }
+    subMut.mutate();
+  };
   const saveEdit = () => {
     if (!editing) return;
     if (!editing.name_en.trim() || !editing.name_th.trim()) { toast.error("Both names are required"); return; }
@@ -243,12 +273,32 @@ function Taxonomy() {
           <h4 className="text-sm font-semibold text-muted-foreground">Existing categories</h4>
           <div className="mt-2 divide-y divide-border rounded-lg border border-border">
             {(cats.data ?? []).map((row: any) => (
-              <div key={row.slug} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                <div className="min-w-0">
-                  <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
-                  <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
+              <div key={row.slug} className="px-3 py-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
+                    <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
+                <div className="mt-3 space-y-2 border-t border-border pt-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-bold uppercase text-muted-foreground">Dish types</p>
+                    <Button size="sm" variant="outline" onClick={() => setSub({ category_id: row.id, slug: "", name_en: "", name_th: "", display_order: 0 })}>Add type</Button>
+                  </div>
+                  {(row.subtypes ?? [])
+                    .sort((x: any, y: any) => (x.display_order ?? 0) - (y.display_order ?? 0) || x.name_en.localeCompare(y.name_en))
+                    .map((s: any) => (
+                      <div key={s.id} className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{s.name_en} <span className="text-muted-foreground">/ {s.name_th}</span></div>
+                          <div className="truncate text-xs text-muted-foreground">{s.slug} / {s.is_active ? "active" : "inactive"}</div>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => setEditingSubtype({ ...s, category_id: row.id })}>Edit</Button>
+                      </div>
+                    ))}
+                  {(row.subtypes ?? []).length === 0 && <p className="text-xs text-muted-foreground">No dish types for this category.</p>}
+                </div>
               </div>
             ))}
             {(cats.data ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No categories yet.</p>}
@@ -308,6 +358,42 @@ function Taxonomy() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             <Button onClick={saveEdit} disabled={editMut.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!sub.category_id} onOpenChange={(o) => !o && setSub({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 })}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add dish type</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Slug *</Label><Input value={sub.slug} onChange={(e) => setSub({ ...sub, slug: e.target.value })} placeholder="tiramisu" /></div>
+            <div><Label>Name (EN) *</Label><Input value={sub.name_en} onChange={(e) => setSub({ ...sub, name_en: e.target.value })} /></div>
+            <div><Label>Name (TH) *</Label><Input value={sub.name_th} onChange={(e) => setSub({ ...sub, name_th: e.target.value })} /></div>
+            <div><Label>Display order</Label><Input type="number" value={sub.display_order} onChange={(e) => setSub({ ...sub, display_order: Number(e.target.value) })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSub({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 })}>Cancel</Button>
+            <Button onClick={saveSub} disabled={subMut.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!editingSubtype} onOpenChange={(o) => !o && setEditingSubtype(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit dish type</DialogTitle></DialogHeader>
+          {editingSubtype && (
+            <div className="space-y-3">
+              <div><Label>Slug</Label><Input value={editingSubtype.slug} readOnly disabled /></div>
+              <div><Label>Name (EN) *</Label><Input value={editingSubtype.name_en} onChange={(e) => setEditingSubtype({ ...editingSubtype, name_en: e.target.value })} /></div>
+              <div><Label>Name (TH) *</Label><Input value={editingSubtype.name_th} onChange={(e) => setEditingSubtype({ ...editingSubtype, name_th: e.target.value })} /></div>
+              <div><Label>Display order</Label><Input type="number" value={editingSubtype.display_order ?? 0} onChange={(e) => setEditingSubtype({ ...editingSubtype, display_order: Number(e.target.value) })} /></div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={!!editingSubtype.is_active} onChange={(e) => setEditingSubtype({ ...editingSubtype, is_active: e.target.checked })} />
+                Active
+              </label>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSubtype(null)}>Cancel</Button>
+            <Button onClick={() => editSubMut.mutate()} disabled={editSubMut.isPending}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

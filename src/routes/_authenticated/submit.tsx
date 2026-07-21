@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { listCategories, listAreas, searchSimilar, submitDish } from "@/lib/dishes.functions";
+import { listCategories, listAreas, listDishSubtypes, searchSimilar, submitDish } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,11 +33,19 @@ function Submit() {
   const [area_id, setAreaId] = useState("");
   const [address, setAddress] = useState("");
   const [category_id, setCategoryId] = useState("");
+  const [subtype_id, setSubtypeId] = useState("");
+  const [subtypeError, setSubtypeError] = useState("");
   const [price_thb, setPrice] = useState("");
   const [note, setNote] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dup, setDup] = useState<{ places: any[]; dishes: any[] } | null>(null);
+  const subtypes = useQuery({
+    queryKey: ["dish-subtypes", category_id],
+    queryFn: () => listDishSubtypes({ data: { categoryId: category_id } }),
+    enabled: !!category_id,
+  });
+  const activeSubtypes = subtypes.data ?? [];
 
   const check = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +53,11 @@ function Submit() {
       toast.error(t("submit_required"));
       return;
     }
+    if (activeSubtypes.length > 0 && !subtype_id) {
+      setSubtypeError("Choose a dish type for this category.");
+      return;
+    }
+    setSubtypeError("");
     const res = await searchSimilar({ data: { placeName: place_name, dishName: name_en } });
     if ((res.places?.length ?? 0) + (res.dishes?.length ?? 0) > 0) {
       setDup(res);
@@ -62,6 +75,7 @@ function Submit() {
           area_id,
           address: address || undefined,
           category_id,
+          subtype_id: subtype_id || undefined,
           price_thb: price_thb ? Number(price_thb) : undefined,
           photo_url: photoUrl || undefined,
           note: note || undefined,
@@ -110,9 +124,11 @@ function Submit() {
                   setNameEn("");
                   setNameTh("");
                   setPlaceName("");
-                  setPrice("");
-                  setNote("");
-                  setPhotoUrl("");
+                setPrice("");
+                setNote("");
+                setPhotoUrl("");
+                setSubtypeId("");
+                setSubtypeError("");
                 }}
               >
                 {t("add_another")}
@@ -191,7 +207,14 @@ function Submit() {
           </div>
           <div>
             <Label>Category *</Label>
-            <Select value={category_id} onValueChange={setCategoryId}>
+            <Select
+              value={category_id}
+              onValueChange={(v) => {
+                setCategoryId(v);
+                setSubtypeId("");
+                setSubtypeError("");
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={t("choose_category")} />
               </SelectTrigger>
@@ -204,6 +227,30 @@ function Submit() {
               </SelectContent>
             </Select>
           </div>
+          {activeSubtypes.length > 0 && (
+            <div>
+              <Label>Dish type *</Label>
+              <Select
+                value={subtype_id}
+                onValueChange={(v) => {
+                  setSubtypeId(v);
+                  setSubtypeError("");
+                }}
+              >
+                <SelectTrigger aria-invalid={!!subtypeError}>
+                  <SelectValue placeholder="Choose dish type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeSubtypes.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {lang === "th" ? s.name_th : s.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {subtypeError && <p className="mt-1 text-sm font-medium text-primary">{subtypeError}</p>}
+            </div>
+          )}
           <div>
             <Label>Restaurant / stall name *</Label>
             <Input value={place_name} onChange={(e) => setPlaceName(e.target.value)} required maxLength={160} />

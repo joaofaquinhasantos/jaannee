@@ -18,6 +18,7 @@ function Rankings() {
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
   const [cat, setCat] = useState<string | undefined>();
+  const [subtype, setSubtype] = useState<string | undefined>();
   const [area, setArea] = useState<string | undefined>();
 
   useEffect(() => {
@@ -26,13 +27,16 @@ function Rankings() {
   }, [categories.data, cat]);
 
   const board = useQuery({
-    queryKey: ["leaderboard", cat, area],
+    queryKey: ["leaderboard", cat, subtype, area],
     queryFn: () =>
-      leaderboard({ data: { categorySlug: cat!, areaSlug: area, minimumComparisons: 0 } }),
+      leaderboard({ data: { categorySlug: cat!, subtypeSlug: subtype, areaSlug: area, minimumComparisons: 0 } }),
     enabled: !!cat,
   });
 
   const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
+  const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
+  );
 
   return (
     <AppShell>
@@ -54,13 +58,29 @@ function Rankings() {
         {(categories.data ?? []).map((c: any) => (
           <button
             key={c.id}
-            onClick={() => setCat(c.slug)}
+            onClick={() => {
+              setCat(c.slug);
+              setSubtype(undefined);
+            }}
             className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${cat === c.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
           >
             {lang === "th" ? c.name_th : c.name_en}
           </button>
         ))}
       </div>
+      {subtypes.length > 0 && (
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
+          {subtypes.map((s: any) => (
+            <button
+              key={s.id}
+              onClick={() => setSubtype(s.slug)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+            >
+              {lang === "th" ? s.name_th : s.name_en}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
         <button
           onClick={() => setArea(undefined)}
@@ -80,7 +100,21 @@ function Rankings() {
       </div>
 
       <div className="mt-7">
-        {(board.data ?? []).length === 0 ? (
+        {subtypes.length > 0 && !subtype ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {subtypes.map((s: any, i: number) => (
+              <button
+                key={s.id}
+                onClick={() => setSubtype(s.slug)}
+                className="rounded-lg border border-border bg-card p-5 text-left transition-colors hover:border-primary/40"
+              >
+                <span className="font-display text-5xl leading-none text-accent">{String(i + 1).padStart(2, "0")}</span>
+                <h2 className="mt-4 font-display text-3xl leading-tight">{lang === "th" ? s.name_th : s.name_en}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Rank this dish type only.</p>
+              </button>
+            ))}
+          </div>
+        ) : (board.data ?? []).length === 0 ? (
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
               <div className="border-b border-border bg-secondary p-6 md:border-b-0 md:border-r">

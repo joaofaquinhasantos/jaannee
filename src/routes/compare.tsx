@@ -33,10 +33,15 @@ function Compare() {
 
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
   const [cat, setCat] = useState<string | undefined>();
+  const [subtype, setSubtype] = useState<string | undefined>();
+  const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
+  const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
+  );
   const dishes = useQuery({
-    queryKey: ["dishes", cat],
-    queryFn: () => listDishes({ data: { categorySlug: cat } }),
-    enabled: !!cat,
+    queryKey: ["dishes", cat, subtype],
+    queryFn: () => listDishes({ data: { categorySlug: cat, subtypeSlug: subtype } }),
+    enabled: !!cat && (!subtypes.length || !!subtype),
   });
 
   const [aId, setAId] = useState<string | undefined>(search.dish);
@@ -107,6 +112,7 @@ function Compare() {
           value={cat}
           onValueChange={(v) => {
             setCat(v);
+            setSubtype(undefined);
             setAId(undefined);
             setBId(undefined);
           }}
@@ -123,8 +129,30 @@ function Compare() {
           </SelectContent>
         </Select>
       </div>
+      {subtypes.length > 0 && (
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+          {subtypes.map((s: any) => (
+            <button
+              key={s.id}
+              onClick={() => {
+                setSubtype(s.slug);
+                setAId(undefined);
+                setBId(undefined);
+              }}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+            >
+              {lang === "th" ? s.name_th : s.name_en}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {cat &&
+      {cat && subtypes.length > 0 && !subtype ? (
+        <div className="mt-6 rounded-lg border border-border bg-card p-6">
+          <h2 className="font-display text-3xl">Choose a dish type first.</h2>
+          <p className="mt-2 text-muted-foreground">Comparisons only happen inside the same actual dish.</p>
+        </div>
+      ) : cat &&
         (list.length < 2 && !dishes.isLoading ? (
           <div className="mt-6 rounded-lg border border-border bg-card p-6">
             <h2 className="font-display text-3xl">Not enough dishes yet.</h2>

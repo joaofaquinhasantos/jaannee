@@ -23,7 +23,7 @@ export const listPending = createServerFn({ method: "GET" })
       .from("dishes")
       .select(
         `id, name_en, name_th, price_thb, photo_url, note, status, created_at,
-        category:categories(name_en, slug), place:places(name, area:areas(name_en))`,
+        category:categories(name_en, slug), subtype:dish_subtypes(name_en, slug), place:places(name, area:areas(name_en))`,
       )
       .eq("status", "pending")
       .order("created_at", { ascending: false });
@@ -284,10 +284,66 @@ export const listCategoriesAdmin = createServerFn({ method: "GET" })
     await ensureAdmin(context);
     const { data, error } = await context.supabase
       .from("categories")
-      .select("id, slug, name_en, name_th")
+      .select("id, slug, name_en, name_th, subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
       .order("name_en", { ascending: true });
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+export const upsertSubtype = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: {
+    id?: string;
+    category_id: string;
+    slug?: string;
+    name_en: string;
+    name_th: string;
+    is_active?: boolean;
+    display_order?: number;
+  }) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        category_id: z.string().uuid(),
+        slug: z
+          .string()
+          .min(1)
+          .max(60)
+          .regex(/^[a-z0-9-]+$/)
+          .optional(),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+        is_active: z.boolean().optional(),
+        display_order: z.number().int().min(0).max(10000).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    if (data.id) {
+      const { error } = await context.supabase
+        .from("dish_subtypes")
+        .update({
+          name_en: data.name_en,
+          name_th: data.name_th,
+          is_active: data.is_active ?? true,
+          display_order: data.display_order ?? 0,
+        })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    if (!data.slug) throw new Error("Slug is required");
+    const { error } = await context.supabase.from("dish_subtypes").insert({
+      category_id: data.category_id,
+      slug: data.slug,
+      name_en: data.name_en,
+      name_th: data.name_th,
+      is_active: data.is_active ?? true,
+      display_order: data.display_order ?? 0,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const listAreasAdmin = createServerFn({ method: "GET" })

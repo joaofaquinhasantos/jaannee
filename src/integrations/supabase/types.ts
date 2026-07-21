@@ -124,6 +124,50 @@ export type Database = {
           },
         ]
       }
+      dish_subtypes: {
+        Row: {
+          category_id: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name_en: string
+          name_th: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name_en: string
+          name_th: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_th?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_subtypes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dish_tries: {
         Row: {
           created_at: string
@@ -165,6 +209,7 @@ export type Database = {
           place_id: string
           price_thb: number | null
           status: Database["public"]["Enums"]["dish_status"]
+          subtype_id: string | null
           submitted_by: string | null
           updated_at: string
         }
@@ -182,6 +227,7 @@ export type Database = {
           place_id: string
           price_thb?: number | null
           status?: Database["public"]["Enums"]["dish_status"]
+          subtype_id?: string | null
           submitted_by?: string | null
           updated_at?: string
         }
@@ -199,6 +245,7 @@ export type Database = {
           place_id?: string
           price_thb?: number | null
           status?: Database["public"]["Enums"]["dish_status"]
+          subtype_id?: string | null
           submitted_by?: string | null
           updated_at?: string
         }
@@ -215,6 +262,13 @@ export type Database = {
             columns: ["place_id"]
             isOneToOne: false
             referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dishes_subtype_id_fkey"
+            columns: ["subtype_id"]
+            isOneToOne: false
+            referencedRelation: "dish_subtypes"
             referencedColumns: ["id"]
           },
         ]
@@ -345,6 +399,18 @@ export type Database = {
           _winner: string
         }
         Returns: undefined
+      }
+      category_has_active_subtypes: {
+        Args: {
+          _category_id: string
+        }
+        Returns: boolean
+      }
+      dish_ranking_key: {
+        Args: {
+          _dish_id: string
+        }
+        Returns: string
       }
       has_role: {
         Args: {
