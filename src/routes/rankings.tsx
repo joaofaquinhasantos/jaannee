@@ -36,6 +36,11 @@ function Rankings() {
       leaderboard({ data: { categorySlug: cat!, subtypeSlug: subtype, areaSlug: area, minimumComparisons: 5 } }),
     enabled: !!cat,
   });
+  const unranked = useQuery({
+    queryKey: ["rankings-unranked", cat, subtype, area],
+    queryFn: () => listDishes({ data: { categorySlug: cat, subtypeSlug: subtype, areaSlug: area } }),
+    enabled: !!cat && (!subtypes.length || !!subtype),
+  });
 
   const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
   const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
@@ -53,6 +58,13 @@ function Rankings() {
     .filter((a: any) => (areaCounts.get(a.id) ?? 0) > 0)
     .sort((a: any, b: any) => (areaCounts.get(b.id) ?? 0) - (areaCounts.get(a.id) ?? 0) || a.name_en.localeCompare(b.name_en))
     .slice(0, 6);
+  const gatheringDishes = ((unranked.data ?? []) as any[])
+    .filter((dish) => (dish.comparisons_count ?? 0) < 5)
+    .sort(
+      (a, b) =>
+        (b.tried_count ?? 0) - (a.tried_count ?? 0) ||
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
 
   return (
     <AppShell>
@@ -146,7 +158,7 @@ function Rankings() {
               </button>
             ))}
           </div>
-        ) : (board.data ?? []).length === 0 ? (
+        ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
               <div className="border-b border-border bg-secondary p-6 md:border-b-0 md:border-r">
@@ -170,28 +182,45 @@ function Rankings() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(board.data ?? []).map((d: any, i: number) => (
-              <div key={d.id}>
-                <DishCard dish={d} rank={i + 1} />
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${d.comparisons_count >= 5 ? "border-accent/50 bg-accent/15 text-foreground" : "border-border bg-card text-muted-foreground"}`}
-                  >
-                    {d.comparisons_count >= 5 ? t("trusted_rank") : t("provisional")}
-                  </span>
-                  <ShareButton
-                    url={
-                      (typeof window !== "undefined" ? window.location.origin : "") +
-                      `/dish/${d.id}`
-                    }
-                    title={d.name_en ?? d.name_th ?? "Dish"}
-                    text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / Currently ranked #${i + 1}`}
-                    label={t("share")}
-                  />
+          <div className="space-y-10">
+            {(board.data ?? []).length > 0 && (
+              <section>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {(board.data ?? []).map((d: any, i: number) => (
+                    <div key={d.id}>
+                      <DishCard dish={d} rank={i + 1} />
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="rounded-full border border-accent/50 bg-accent/15 px-2.5 py-1 text-xs font-semibold text-foreground">
+                          {t("trusted_rank")}
+                        </span>
+                        <ShareButton
+                          url={(typeof window !== "undefined" ? window.location.origin : "") + `/dish/${d.id}`}
+                          title={d.name_en ?? d.name_th ?? "Dish"}
+                          text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / Currently ranked #${i + 1}`}
+                          label={t("share")}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              </section>
+            )}
+            {gatheringDishes.length > 0 && (
+              <section className="border-t border-border pt-6">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase text-muted-foreground">{t("gathering_progress")}</p>
+                    <h2 className="mt-1 font-display text-3xl leading-tight">{t("not_ranked_yet")}</h2>
+                  </div>
+                  <Link to="/compare" search={{ category: cat } as any}>
+                    <Button variant="outline">{t("cta_compare")}</Button>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {gatheringDishes.map((d: any) => <DishCard key={d.id} dish={d} />)}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>

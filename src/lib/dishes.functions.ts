@@ -41,6 +41,16 @@ const dishSelectInner = `
   place:places!inner(id, name, area:areas(id, slug, name_en, name_th))
 `;
 
+async function withTriedCounts(supabase: ReturnType<typeof publicClient>, rows: any[]) {
+  if (rows.length === 0) return rows;
+  const ids = rows.map((row) => row.id).filter(Boolean);
+  const { data, error } = await supabase.from("dish_tries").select("dish_id").in("dish_id", ids);
+  if (error) throw new Error(error.message);
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) counts[row.dish_id] = (counts[row.dish_id] ?? 0) + 1;
+  return rows.map((row) => ({ ...row, tried_count: counts[row.id] ?? 0 }));
+}
+
 const imageUrlSchema = z
   .string()
   .trim()
@@ -102,7 +112,10 @@ export const listDishes = createServerFn({ method: "GET" })
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []).filter((row: any) => !row.subtype_id || row.subtype?.is_active);
+    return withTriedCounts(
+      supabase,
+      (rows ?? []).filter((row: any) => !row.subtype_id || row.subtype?.is_active),
+    );
   });
 
 export const getDish = createServerFn({ method: "GET" })
@@ -115,7 +128,7 @@ export const getDish = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return dish;
+    return dish ? (await withTriedCounts(supabase, [dish]))[0] : dish;
   });
 
 export const listCategories = createServerFn({ method: "GET" }).handler(async () => {
@@ -512,5 +525,5 @@ export const leaderboard = createServerFn({ method: "GET" })
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return withTriedCounts(supabase, rows ?? []);
   });

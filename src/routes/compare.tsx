@@ -20,6 +20,7 @@ export const Route = createFileRoute("/compare")({
   head: () => ({ meta: [{ title: "Compare - JaanNee" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     dish: typeof s.dish === "string" ? s.dish : undefined,
+    category: typeof s.category === "string" ? s.category : undefined,
   }),
   component: Compare,
 });
@@ -33,7 +34,7 @@ function Compare() {
   }, []);
 
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
-  const [cat, setCat] = useState<string | undefined>();
+  const [cat, setCat] = useState<string | undefined>(search.category);
   const [subtype, setSubtype] = useState<string | undefined>();
   const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
   const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(

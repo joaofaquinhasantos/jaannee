@@ -13,7 +13,9 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
   const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
   const areaName = dish.place?.area ? (lang === "th" ? dish.place.area.name_th : dish.place.area.name_en) : null;
   const toneCls = toneClass(s.tone);
-  const isRanked = (dish.comparisons_count ?? 0) >= 5;
+  const comparisonCount = dish.comparisons_count ?? 0;
+  const triedCount = dish.tried_count ?? 0;
+  const isRanked = comparisonCount >= 5;
   const showRank = isRanked && rank != null;
 
   return (
@@ -40,7 +42,7 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
             </div>
           ) : (
             <span className={`absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur ${toneCls}`}>
-              {s.text}
+              {isRanked ? s.text : `${t("gathering_progress")} · ${comparisonCount}/5`}
             </span>
           )}
           {dish.price_thb != null && (
@@ -61,9 +63,16 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
           </div>
         </div>
         <div className="flex items-center justify-between gap-2 px-4 py-3.5">
-          <span className="text-[11px] font-semibold uppercase text-muted-foreground">
-            {t("compared_by")} {dish.comparisons_count}
-          </span>
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+              {comparisonCount} / 5 {t("comparisons_progress")}
+            </p>
+            {triedCount > 0 && (
+              <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                {t("tried_by")} {triedCount} {t("diners")}
+              </p>
+            )}
+          </div>
           <span className="text-[11px] font-semibold uppercase text-muted-foreground">
             {t("added_ago")} {days}d
           </span>
