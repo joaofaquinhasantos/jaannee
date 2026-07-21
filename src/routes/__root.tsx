@@ -78,9 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Discover and compare Thailand's best dishes across restaurants and stalls. Who makes the best Pad Kra Pao, Khao Soi, or Boat Noodles?" },
       { name: "author", content: "JaanNee" },
       { property: "og:title", content: "JaanNee — Rank the dish, not the restaurant" },
-      { property: "og:description", content: "Discover and compare Thailand's best dishes across restaurants and stalls." },
+      { property: "og:description", content: "Discover and compare Thailand's best dishes across restaurants and stalls. Who makes the best Pad Kra Pao, Khao Soi, or Boat Noodles?" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "JaanNee — Rank the dish, not the restaurant" },
+      { name: "twitter:description", content: "Discover and compare Thailand's best dishes across restaurants and stalls. Who makes the best Pad Kra Pao, Khao Soi, or Boat Noodles?" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9de01b20-368b-4c28-ab23-b6e4e03fe195/id-preview-e05f6665--920f882f-f90b-49d4-a348-a38f08b79f5a.lovable.app-1784603162843.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9de01b20-368b-4c28-ab23-b6e4e03fe195/id-preview-e05f6665--920f882f-f90b-49d4-a348-a38f08b79f5a.lovable.app-1784603162843.png" },
     ],
     links: [
       {
