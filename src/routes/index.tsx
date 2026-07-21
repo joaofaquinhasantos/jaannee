@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
-import { listDishes, listCategories, listAreas, listCategoryCounts } from "@/lib/dishes.functions";
+import { listDishes, listCategories, listAreas, listCategoryCounts, listActivityFeed } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/CategoryPicker";
@@ -24,6 +24,7 @@ function Index() {
   const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
   const allDishes = useQuery({ queryKey: ["dishes", "area-counts"], queryFn: () => listDishes({ data: {} }) });
+  const activity = useQuery({ queryKey: ["activity-feed"], queryFn: () => listActivityFeed({ data: {} }) });
   const topCategories = [...(categories.data ?? [])]
     .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
     .slice(0, 8);
@@ -168,6 +169,38 @@ function Index() {
           </div>
         )}
       </section>
+      {(activity.data ?? []).length > 0 && (
+        <section className="mt-8 md:mt-10">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-3xl leading-none">Taste feed</h2>
+            <span className="text-xs font-bold uppercase text-muted-foreground">People eating now</span>
+          </div>
+          <div className="space-y-2">
+            {(activity.data ?? []).slice(0, 6).map((item: any, i: number) => (
+              <Link
+                key={`${item.type}-${item.dish?.id}-${item.created_at}-${i}`}
+                to="/dish/$id"
+                params={{ id: item.dish.id }}
+                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 text-sm"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary font-display text-lg text-muted-foreground">
+                  {(item.profile?.display_name || item.profile?.username || "J").slice(0, 1)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">
+                    {item.profile?.display_name || item.profile?.username || "Someone"}{" "}
+                    <span className="font-normal text-muted-foreground">
+                      {item.type === "comment" ? "commented on" : item.type === "tried" ? "ate" : "posted"}
+                    </span>{" "}
+                    {item.dish?.name_en}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{item.dish?.place?.name}{item.body ? ` / "${item.body}"` : ""}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       <Link
         to="/submit"
         className="fixed bottom-28 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-3xl font-semibold leading-none text-primary-foreground shadow-[0_16px_35px_rgba(218,43,31,0.3)] md:hidden"

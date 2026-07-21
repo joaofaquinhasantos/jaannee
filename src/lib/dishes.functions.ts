@@ -23,7 +23,7 @@ function publicClient() {
 const dishSelect = `
   id, name_en, name_th, price_thb, photo_url, note, status, elo, comparisons_count,
   subtype_id,
-  needs_update, created_at,
+  needs_update, created_at, submitted_by,
   category:categories(id, slug, name_en, name_th),
   subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
   place:places(id, name, area:areas(id, slug, name_en, name_th))
@@ -134,7 +134,15 @@ export const getDish = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return dish ? (await withTriedCounts(supabase, [dish]))[0] : dish;
+    if (!dish) return dish;
+    const withCounts = (await withTriedCounts(supabase, [dish]))[0];
+    if (!withCounts.submitted_by) return withCounts;
+    const { data: profile } = await (supabase as any)
+      .from("profiles")
+      .select("id, display_name")
+      .eq("id", withCounts.submitted_by)
+      .maybeSingle();
+    return { ...withCounts, submitter_profile: profile ?? null };
   });
 
 export const listCategories = createServerFn({ method: "GET" }).handler(async () => {
@@ -367,6 +375,117 @@ export const toggleTried = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const listDishComments = createServerFn({ method: "GET" })
+  .inputValidator((i: { dishId: string }) => z.object({ dishId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabase = publicClient();
+    const { data: rows, error } = await (supabase as any)
+      .from("dish_comments")
+      .select("id, dish_id, user_id, body, created_at")
+      .eq("dish_id", data.dishId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) return [];
+    const userIds = [...new Set((rows ?? []).map((r: any) => r.user_id).filter(Boolean))];
+    const { data: profiles } = userIds.length
+      ? await (supabase as any).from("profiles").select("id, display_name, username, avatar_url").in("id", userIds)
+      : { data: [] };
+    const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    return (rows ?? []).map((row: any) => ({ ...row, profile: byId.get(row.user_id) ?? null }));
+  });
+
+export const addDishComment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { dishId: string; body: string }) =>
+    z.object({ dishId: z.string().uuid(), body: z.string().trim().min(1).max(500) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).from("dish_comments").insert({
+      dish_id: data.dishId,
+      user_id: context.userId,
+      body: data.body,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const followUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { userId: string; follow: boolean }) =>
+    z.object({ userId: z.string().uuid(), follow: z.boolean() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.userId === context.userId) throw new Error("You cannot follow yourself");
+    if (data.follow) {
+      const { error } = await (context.supabase as any)
+        .from("follows")
+        .upsert({ follower_id: context.userId, following_id: data.userId }, { onConflict: "follower_id,following_id" });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await (context.supabase as any)
+        .from("follows")
+        .delete()
+        .eq("follower_id", context.userId)
+        .eq("following_id", data.userId);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const myFollowingIds = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await (context.supabase as any)
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", context.userId);
+    if (error) return [];
+    return (data ?? []).map((r: any) => r.following_id);
+  });
+
+export const listActivityFeed = createServerFn({ method: "GET" })
+  .inputValidator((i: { followingOnly?: boolean }) =>
+    z.object({ followingOnly: z.boolean().optional() }).parse(i ?? {}),
+  )
+  .handler(async () => {
+    const supabase = publicClient();
+    const [commentsRes, triesRes, dishesRes] = await Promise.all([
+      (supabase as any)
+        .from("dish_comments")
+        .select(`id, user_id, body, created_at, dish:dishes(${dishSelect})`)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      (supabase as any)
+        .from("dish_tries")
+        .select(`user_id, dish_id, created_at, dish:dishes(${dishSelect})`)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      (supabase as any)
+        .from("dishes")
+        .select(dishSelect)
+        .eq("status", "approved")
+        .not("category_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+    const raw = [
+      ...((commentsRes.data ?? []) as any[]).map((r) => ({ type: "comment", user_id: r.user_id, created_at: r.created_at, dish: r.dish, body: r.body })),
+      ...((triesRes.data ?? []) as any[]).map((r) => ({ type: "tried", user_id: r.user_id, created_at: r.created_at, dish: r.dish })),
+      ...((dishesRes.data ?? []) as any[]).map((d) => ({ type: "posted", user_id: d.submitted_by, created_at: d.created_at, dish: d })),
+    ].filter((item) => item.dish?.id);
+    const userIds = [...new Set(raw.map((r) => r.user_id).filter(Boolean))];
+    const { data: profiles } = userIds.length
+      ? await (supabase as any).from("profiles").select("id, display_name, username, avatar_url").in("id", userIds)
+      : { data: [] };
+    const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    return raw
+      .map((item) => ({ ...item, profile: byId.get(item.user_id) ?? null }))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 20);
+  });
+
 export const myTriedIds = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -470,7 +589,7 @@ export const submitComparison = createServerFn({ method: "POST" })
 export const myProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [tried, compared] = await Promise.all([
+    const [tried, compared, profile, posted, followers, following] = await Promise.all([
       context.supabase
         .from("dish_tries")
         .select(`dish_id, created_at, dish:dishes(${dishSelect})`)
@@ -485,8 +604,27 @@ export const myProfile = createServerFn({ method: "GET" })
         )
         .eq("user_id", context.userId)
         .order("updated_at", { ascending: false }),
+      (context.supabase as any)
+        .from("profiles")
+        .select("id, display_name, username, avatar_url, bio")
+        .eq("id", context.userId)
+        .maybeSingle(),
+      context.supabase
+        .from("dishes")
+        .select(dishSelect)
+        .eq("submitted_by", context.userId)
+        .order("created_at", { ascending: false }),
+      (context.supabase as any).from("follows").select("follower_id").eq("following_id", context.userId),
+      (context.supabase as any).from("follows").select("following_id").eq("follower_id", context.userId),
     ]);
-    return { tried: tried.data ?? [], compared: compared.data ?? [] };
+    return {
+      profile: profile.data ?? null,
+      tried: tried.data ?? [],
+      compared: compared.data ?? [],
+      posted: posted.data ?? [],
+      followers_count: followers.data?.length ?? 0,
+      following_count: following.data?.length ?? 0,
+    };
   });
 
 export const submitReport = createServerFn({ method: "POST" })

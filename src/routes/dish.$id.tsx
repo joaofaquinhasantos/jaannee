@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDish, listDishes, toggleTried, myTriedIds, submitReport } from "@/lib/dishes.functions";
+import {
+  addDishComment,
+  followUser,
+  getDish,
+  listDishComments,
+  listDishes,
+  myFollowingIds,
+  myTriedIds,
+  submitReport,
+  toggleTried,
+} from "@/lib/dishes.functions";
 import { getRequestOrigin } from "@/lib/origin.functions";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -71,12 +81,22 @@ function DishPage() {
   const qc = useQueryClient();
   const dish = useQuery({ queryKey: ["dish", id], queryFn: () => getDish({ data: { id } }) });
   const [authed, setAuthed] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s?.user));
+    supabase.auth.getUser().then(({ data }) => {
+      setAuthed(!!data.user);
+      setUserId(data.user?.id ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setAuthed(!!s?.user);
+      setUserId(s?.user?.id ?? null);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
   const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds(), enabled: authed });
+  const comments = useQuery({ queryKey: ["dish-comments", id], queryFn: () => listDishComments({ data: { dishId: id } }) });
+  const following = useQuery({ queryKey: ["following"], queryFn: () => myFollowingIds(), enabled: authed });
   const isTried = (tried.data ?? []).includes(id);
   const pool = useQuery({
     queryKey: ["dish-ranking-pool", dKey(dish.data)],
@@ -89,6 +109,25 @@ function DishPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tried"] });
       toast.success(isTried ? "Removed from tried" : "Marked as tried");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const commentMut = useMutation({
+    mutationFn: () => addDishComment({ data: { dishId: id, body: comment } }),
+    onSuccess: () => {
+      setComment("");
+      qc.invalidateQueries({ queryKey: ["dish-comments", id] });
+      qc.invalidateQueries({ queryKey: ["activity-feed"] });
+      toast.success("Comment posted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const followMut = useMutation({
+    mutationFn: ({ targetId, follow }: { targetId: string; follow: boolean }) =>
+      followUser({ data: { userId: targetId, follow } }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["following"] });
+      toast.success(vars.follow ? "Following" : "Unfollowed");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -110,6 +149,9 @@ function DishPage() {
       (tried.data ?? []).includes(candidate.id) &&
       (d.subtype_id ? candidate.subtype_id === d.subtype_id : !candidate.subtype_id),
   );
+  const submitter = d.submitter_profile;
+  const submitterName = submitter?.display_name || "A JaanNee eater";
+  const isFollowingSubmitter = d.submitted_by ? (following.data ?? []).includes(d.submitted_by) : false;
 
   return (
     <AppShell>
@@ -174,8 +216,95 @@ function DishPage() {
             />
             {authed && <ReportDialog dishId={id} />}
           </div>
+
+          {d.submitted_by && (
+            <div className="mt-6 rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                    {submitterName.slice(0, 1)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Posted by {submitterName}</p>
+                    <p className="text-xs text-muted-foreground">Follow to see what they eat next.</p>
+                  </div>
+                </div>
+                {authed && userId !== d.submitted_by ? (
+                  <Button
+                    variant={isFollowingSubmitter ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => followMut.mutate({ targetId: d.submitted_by, follow: !isFollowingSubmitter })}
+                    disabled={followMut.isPending}
+                  >
+                    {isFollowingSubmitter ? "Following" : "Follow"}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      <section className="mt-8 rounded-lg border border-border bg-card p-4 md:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-3xl leading-none">Comments</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Tell people if it lives up to the rank.</p>
+          </div>
+          <ShareButton
+            url={shareUrl}
+            title={name}
+            text={`I found ${name} at ${d.place?.name ?? "JaanNee"}.`}
+            label="Share"
+          />
+        </div>
+        <div className="mt-4 space-y-3">
+          {authed ? (
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Leave a quick take"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                maxLength={500}
+                className="min-h-20"
+              />
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => commentMut.mutate()}
+                  disabled={commentMut.isPending || comment.trim().length === 0}
+                >
+                  Post comment
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-md bg-secondary p-3 text-sm">
+              <span>Sign in to comment, follow eaters, and save what you tried.</span>
+              <Link to="/auth"><Button size="sm">{t("sign_in")}</Button></Link>
+            </div>
+          )}
+          {(comments.data ?? []).length === 0 ? (
+            <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
+              No comments yet. Be the first useful opinion here.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {(comments.data ?? []).map((item: any) => {
+                const who = item.profile?.display_name || item.profile?.username || "Someone";
+                return (
+                  <li key={item.id} className="rounded-md border border-border p-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">{who}</span>
+                      <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6">{item.body}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </section>
     </AppShell>
   );
 }
