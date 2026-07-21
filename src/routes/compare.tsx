@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/compare")({
 
 function Compare() {
   const { t, lang } = useI18n();
+  const nav = useNavigate();
   const search = Route.useSearch();
   const [authed, setAuthed] = useState(false);
   useEffect(() => {
@@ -50,6 +51,11 @@ function Compare() {
   const [bId, setBId] = useState<string | undefined>();
 
   useEffect(() => {
+    if (!cat && categories.data && categories.data.length > 0)
+      setCat((categories.data[0] as any).slug);
+  }, [categories.data, cat]);
+
+  useEffect(() => {
     if (search.dish && !cat && dishes.data === undefined && categories.data) {
       listDishes({ data: {} }).then((all) => {
         const found = (all as any[]).find((d) => d.id === search.dish);
@@ -63,9 +69,16 @@ function Compare() {
   const b = useMemo(() => list.find((d) => d.id === bId), [list, bId]);
 
   const mut = useMutation({
-    mutationFn: (winnerId: string) =>
-      submitComparison({ data: { dishAId: a!.id, dishBId: b!.id, winnerId } }),
-    onSuccess: () => {
+    mutationFn: async (winnerId: string) => {
+      if (!authed) {
+        toast.error("Sign in to save your vote");
+        nav({ to: "/auth" });
+        return { ok: false };
+      }
+      return submitComparison({ data: { dishAId: a!.id, dishBId: b!.id, winnerId } });
+    },
+    onSuccess: (res: any) => {
+      if (res?.ok === false) return;
       toast.success(t("comparison_saved"));
       setAId(undefined);
       setBId(undefined);
@@ -73,42 +86,23 @@ function Compare() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!authed)
-    return (
-      <AppShell>
-        <section className="mx-auto max-w-4xl overflow-hidden rounded-lg border border-border bg-card">
-          <div className="grid md:grid-cols-[1fr_0.9fr]">
-            <div className="p-7 md:p-10">
-              <p className="text-xs font-bold uppercase text-primary">Two plates enter</p>
-              <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{t("nav_compare")}</h1>
-              <p className="mt-4 max-w-lg leading-7 text-muted-foreground">
-                Sign in to cast votes, save what you ate, and help turn loose opinions into real rankings.
-              </p>
-              <Link to="/auth">
-                <Button className="mt-6">{t("sign_in")}</Button>
-              </Link>
-            </div>
-            <div className="border-t border-border bg-secondary p-7 md:border-l md:border-t-0">
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                <PreviewTile label="Dish A" />
-                <span className="font-display text-4xl text-accent">vs</span>
-                <PreviewTile label="Dish B" />
-              </div>
-              <p className="mt-5 text-sm leading-6 text-muted-foreground">
-                Your votes decide which dishes earn a public rank.
-              </p>
-            </div>
-          </div>
-        </section>
-      </AppShell>
-    );
-
   return (
     <AppShell>
-      <section className="border-b border-border pb-7">
+      <section className="border-b border-border pb-4 md:pb-7">
         <p className="text-xs font-bold uppercase text-primary">Head to head</p>
-        <h1 className="mt-3 font-display text-5xl leading-none md:text-7xl">{t("nav_compare")}</h1>
-        <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">{t("compare_intro")}</p>
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <div>
+            <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_compare")}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
+              Tap the better dish. Sign in only when your vote needs saving.
+            </p>
+          </div>
+          {!authed && (
+            <Link to="/auth">
+              <Button size="sm" variant="outline">{t("sign_in")}</Button>
+            </Link>
+          )}
+        </div>
       </section>
 
       <div className="mt-6 max-w-sm">

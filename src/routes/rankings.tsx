@@ -70,21 +70,21 @@ function Rankings() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-5 md:pb-7">
+      <section className="border-b border-border pb-3 md:pb-7">
         <p className="text-xs font-bold uppercase text-primary">Live chart</p>
-        <div className="mt-3 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+        <div className="mt-2 grid gap-5 md:mt-3 md:grid-cols-[1fr_auto] md:items-end">
           <div>
             <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_rankings")}</h1>
-            <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">{t("rankings_intro")}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">{t("rankings_intro")}</p>
           </div>
-          <div className="rounded-lg border border-border bg-card p-3 md:p-4">
+          <div className="hidden rounded-lg border border-border bg-card p-3 md:block md:p-4">
             <span className="font-display text-5xl leading-none text-accent md:text-6xl">#</span>
             <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">Rank is earned</p>
           </div>
         </div>
       </section>
 
-      <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-4 flex gap-2 overflow-x-auto pb-2 md:mt-6">
         {topCategories.map((c: any) => (
           <button
             key={c.id}
@@ -145,7 +145,7 @@ function Rankings() {
         </div>
       </div>
 
-      <div className="mt-7">
+      <div className="mt-4 md:mt-7">
         {subtypes.length > 0 && !subtype ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {subtypes.map((s: any, i: number) => (
@@ -161,18 +161,21 @@ function Rankings() {
             ))}
           </div>
         ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="rounded-lg border border-border bg-card p-4 md:overflow-hidden md:p-0">
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
-              <div className="border-b border-border bg-secondary p-4 md:border-b-0 md:border-r md:p-6">
+              <div className="hidden border-b border-border bg-secondary p-4 md:block md:border-b-0 md:border-r md:p-6">
                 <span className="font-display text-6xl leading-none text-accent md:text-8xl">--</span>
                 <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">
                   {selectedCat ? (lang === "th" ? selectedCat.name_th : selectedCat.name_en) : "Selected board"}
                 </p>
               </div>
-              <div className="p-4 md:p-8">
-                <h2 className="font-display text-3xl leading-tight md:text-4xl">Help rank this board</h2>
-                <p className="mt-3 max-w-lg leading-7 text-muted-foreground">{t("empty_rankings_body")}</p>
-                <div className="mt-4 flex flex-wrap gap-3 md:mt-6">
+              <div className="md:p-8">
+                <p className="text-xs font-bold uppercase text-muted-foreground md:hidden">
+                  {selectedCat ? (lang === "th" ? selectedCat.name_th : selectedCat.name_en) : "Selected board"}
+                </p>
+                <h2 className="mt-1 font-display text-3xl leading-tight md:mt-0 md:text-4xl">Help rank this board</h2>
+                <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">{t("empty_rankings_body")}</p>
+                <div className="mt-3 flex flex-wrap gap-2 md:mt-6 md:gap-3">
                   <Link to="/submit">
                     <Button>{t("cta_add")}</Button>
                   </Link>
