@@ -7,6 +7,7 @@ import { listDishes, listCategories, listAreas, listCategoryCounts } from "@/lib
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/CategoryPicker";
+import { AreaPicker } from "@/components/AreaPicker";
 
 export const Route = createFileRoute("/")({ component: Index });
 
@@ -22,9 +23,19 @@ function Index() {
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
   const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
+  const allDishes = useQuery({ queryKey: ["dishes", "area-counts"], queryFn: () => listDishes({ data: {} }) });
   const topCategories = [...(categories.data ?? [])]
     .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
     .slice(0, 8);
+  const areaCounts = new Map<string, number>();
+  for (const dish of allDishes.data ?? []) {
+    const areaId = (dish as any).place?.area?.id;
+    if (areaId) areaCounts.set(areaId, (areaCounts.get(areaId) ?? 0) + 1);
+  }
+  const topAreas = [...(areas.data ?? [])]
+    .filter((a: any) => (areaCounts.get(a.id) ?? 0) > 0)
+    .sort((a: any, b: any) => (areaCounts.get(b.id) ?? 0) - (areaCounts.get(a.id) ?? 0) || a.name_en.localeCompare(b.name_en))
+    .slice(0, 6);
 
   return (
     <AppShell>
@@ -103,7 +114,7 @@ function Index() {
               value={cat}
               lang={lang}
               placeholder={t("filter_all_categories")}
-              triggerLabel={t("filter_all_categories")}
+              triggerLabel={cat ? t("change_category") : t("more_categories")}
               onChange={(_, category) => setCat(category.slug)}
             />
           </div>
@@ -112,11 +123,14 @@ function Index() {
           <Pill active={!area} onClick={() => setArea(undefined)} variant="secondary">
             {t("filter_all_areas")}
           </Pill>
-          {(areas.data ?? []).map((a: any) => (
+          {topAreas.map((a: any) => (
             <Pill key={a.id} active={area === a.slug} onClick={() => setArea(a.slug)} variant="secondary">
               {lang === "th" ? a.name_th : a.name_en}
             </Pill>
           ))}
+          <div className="min-w-36">
+            <AreaPicker areas={areas.data ?? []} value={area} lang={lang} onChange={(slug) => setArea(slug)} />
+          </div>
         </div>
       </section>
 

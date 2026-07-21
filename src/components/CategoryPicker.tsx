@@ -64,8 +64,8 @@ export function CategoryPicker({
         onClick={() => setOpen(true)}
         className="h-auto min-h-11 w-full justify-between rounded-md border-border bg-card px-3 py-2 text-left font-normal"
       >
-        <span className={selected ? "text-foreground" : "text-muted-foreground"}>
-          {selected ? (lang === "th" ? selected.name_th : selected.name_en) : triggerLabel || placeholder}
+        <span className={selected && !triggerLabel ? "text-foreground" : "text-muted-foreground"}>
+          {triggerLabel || (selected ? (lang === "th" ? selected.name_th : selected.name_en) : placeholder)}
         </span>
         <Search className="h-4 w-4 text-muted-foreground" />
       </Button>
