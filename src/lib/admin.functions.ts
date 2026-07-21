@@ -278,6 +278,30 @@ export const listPendingPlaces = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listCategoriesAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("categories")
+      .select("id, slug, name_en, name_th")
+      .order("name_en", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const listAreasAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("areas")
+      .select("id, slug, name_en, name_th")
+      .order("name_en", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
 export const moderatePlace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; action: "approve" | "reject" }) =>
