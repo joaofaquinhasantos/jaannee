@@ -151,12 +151,22 @@ function Taxonomy() {
   >(null);
   const cMut = useMutation({
     mutationFn: () => upsertCategory({ data: c }),
-    onSuccess: () => { toast.success("Saved"); setC({ slug: "", name_en: "", name_th: "" }); qc.invalidateQueries({ queryKey: ["admin-categories"] }); },
+    onSuccess: () => {
+      toast.success("Saved");
+      setC({ slug: "", name_en: "", name_th: "" });
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const aMut = useMutation({
     mutationFn: () => upsertArea({ data: a }),
-    onSuccess: () => { toast.success("Saved"); setA({ slug: "", name_en: "", name_th: "" }); qc.invalidateQueries({ queryKey: ["admin-areas"] }); },
+    onSuccess: () => {
+      toast.success("Saved");
+      setA({ slug: "", name_en: "", name_th: "" });
+      qc.invalidateQueries({ queryKey: ["admin-areas"] });
+      qc.invalidateQueries({ queryKey: ["areas"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const editMut = useMutation({
@@ -168,8 +178,13 @@ function Taxonomy() {
     },
     onSuccess: () => {
       toast.success("Updated");
-      if (editing?.kind === "category") qc.invalidateQueries({ queryKey: ["admin-categories"] });
-      else qc.invalidateQueries({ queryKey: ["admin-areas"] });
+      if (editing?.kind === "category") {
+        qc.invalidateQueries({ queryKey: ["admin-categories"] });
+        qc.invalidateQueries({ queryKey: ["categories"] });
+      } else {
+        qc.invalidateQueries({ queryKey: ["admin-areas"] });
+        qc.invalidateQueries({ queryKey: ["areas"] });
+      }
       setEditing(null);
     },
     onError: (e: any) => toast.error(e.message),
