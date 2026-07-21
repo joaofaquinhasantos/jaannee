@@ -171,10 +171,10 @@ function Submit() {
           <h1 className="mt-2 font-display text-4xl leading-tight">{t("duplicate_title")}</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("duplicate_body")}</p>
           <div className="mt-4 space-y-3">
-            {dup.dishes.map((d) => (
+            {(dup.dishes ?? []).filter((d) => d?.id).map((d) => (
               <DuplicateDishMatch key={d.id} dish={d} />
             ))}
-            {dup.places.map((p) => (
+            {(dup.places ?? []).filter((p) => p?.id).map((p) => (
               <div key={p.id} className="rounded-lg border border-border bg-card p-4 text-sm">
                 <p className="text-xs font-bold uppercase text-primary">Existing place</p>
                 <p className="mt-1 font-semibold">{p.name}</p>
@@ -383,11 +383,17 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
   const qc = useQueryClient();
   const [showCompare, setShowCompare] = useState(false);
   const [triedDone, setTriedDone] = useState(false);
-  const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds() });
+  const tried = useQuery({
+    queryKey: ["tried"],
+    queryFn: () => myTriedIds(),
+    enabled: showCompare,
+    retry: false,
+  });
   const pool = useQuery({
     queryKey: ["duplicate-ranking-pool", dish.category?.slug],
     queryFn: () => listDishes({ data: { categorySlug: dish.category?.slug } }),
     enabled: showCompare && !!dish.category?.slug,
+    retry: false,
   });
   const tryMut = useMutation({
     mutationFn: () => toggleTried({ data: { dishId: dish.id, tried: true } }),
@@ -399,7 +405,7 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
     },
     onError: (e: any) => toast.error(e.message),
   });
-  const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+  const name = (lang === "th" && dish.name_th ? dish.name_th : dish.name_en) || "Dish";
   const isTried = triedDone || (tried.data ?? []).includes(dish.id);
   const otherTried = ((pool.data ?? []) as any[]).find(
     (candidate) =>
