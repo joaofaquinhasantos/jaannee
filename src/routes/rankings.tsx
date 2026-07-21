@@ -36,16 +36,18 @@ function Rankings() {
       leaderboard({ data: { categorySlug: cat!, subtypeSlug: subtype, areaSlug: area, minimumComparisons: 5 } }),
     enabled: !!cat,
   });
+
+  const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
+  const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
+  );
+
   const unranked = useQuery({
     queryKey: ["rankings-unranked", cat, subtype, area],
     queryFn: () => listDishes({ data: { categorySlug: cat, subtypeSlug: subtype, areaSlug: area } }),
     enabled: !!cat && (!subtypes.length || !!subtype),
   });
 
-  const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
-  const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
-    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
-  );
   const topCategories = [...(categories.data ?? [])]
     .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
     .slice(0, 8);
