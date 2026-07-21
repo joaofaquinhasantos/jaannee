@@ -24,14 +24,17 @@ function Profile() {
 
   return (
     <AppShell>
-      <div className="flex items-start justify-between">
-        <h1 className="font-display text-3xl font-semibold">{t("nav_profile")}</h1>
+      <div className="flex items-start justify-between gap-4 border-b border-border pb-7">
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">Your taste trail</p>
+          <h1 className="mt-2 font-display text-5xl leading-none">{t("nav_profile")}</h1>
+        </div>
         <Button variant="ghost" onClick={signOut}>{t("sign_out")}</Button>
       </div>
 
       <section className="mt-8">
-        <h2 className="mb-4 font-display text-xl font-semibold">Tried</h2>
-        {tried.length === 0 ? <p className="text-muted-foreground text-sm">Nothing yet.</p> : (
+        <h2 className="mb-4 font-display text-3xl">Tried</h2>
+        {tried.length === 0 ? <EmptyNote text="No dishes marked tried yet." /> : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {tried.map((d: any) => <DishCard key={d.id} dish={d} />)}
           </div>
@@ -39,9 +42,9 @@ function Profile() {
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-4 font-display text-xl font-semibold">Comparisons</h2>
-        {compared.length === 0 ? <p className="text-muted-foreground text-sm">No comparisons yet. <Link to="/compare" className="text-primary underline">Compare two dishes</Link>.</p> : (
-          <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+        <h2 className="mb-4 font-display text-3xl">Comparisons</h2>
+        {compared.length === 0 ? <EmptyNote text="No comparisons yet." link /> : (
+          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {compared.map((c: any) => (
               <li key={c.id} className="flex items-center justify-between gap-4 p-4 text-sm">
                 <span className={c.winner_id === c.lo?.id ? "font-medium" : "text-muted-foreground"}>{c.lo?.name_en} <span className="text-xs text-muted-foreground">({c.lo?.place?.name})</span></span>
@@ -53,5 +56,13 @@ function Profile() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+function EmptyNote({ text, link }: { text: string; link?: boolean }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
+      {text} {link ? <Link to="/compare" className="font-semibold text-primary underline-offset-4 hover:underline">Compare two dishes</Link> : null}
+    </div>
   );
 }

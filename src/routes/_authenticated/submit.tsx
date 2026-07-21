@@ -87,7 +87,6 @@ function Submit() {
       setUploading(false);
       return;
     }
-    // Bucket is private; serve through the public /photos/* proxy route.
     setPhotoUrl(`/photos/${path}`);
     setUploading(false);
   };
@@ -95,25 +94,30 @@ function Submit() {
   if (step === "done")
     return (
       <AppShell>
-        <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-8 text-center">
-          <h1 className="font-display text-2xl font-semibold">{t("submit_done_title")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{t("submit_done_body")}</p>
-          <div className="mt-6 flex justify-center gap-2">
-            <Button onClick={() => nav({ to: "/" })}>{t("back_to_feed")}</Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setStep("form");
-                setNameEn("");
-                setNameTh("");
-                setPlaceName("");
-                setPrice("");
-                setNote("");
-                setPhotoUrl("");
-              }}
-            >
-              {t("add_another")}
-            </Button>
+        <div className="mx-auto max-w-lg overflow-hidden rounded-lg border border-border bg-card">
+          <div className="bg-secondary p-6 text-center">
+            <span className="font-display text-7xl leading-none text-accent">OK</span>
+          </div>
+          <div className="p-8 text-center">
+            <h1 className="font-display text-4xl leading-tight">{t("submit_done_title")}</h1>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("submit_done_body")}</p>
+            <div className="mt-6 flex justify-center gap-2">
+              <Button onClick={() => nav({ to: "/" })}>{t("back_to_feed")}</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStep("form");
+                  setNameEn("");
+                  setNameTh("");
+                  setPlaceName("");
+                  setPrice("");
+                  setNote("");
+                  setPhotoUrl("");
+                }}
+              >
+                {t("add_another")}
+              </Button>
+            </div>
           </div>
         </div>
       </AppShell>
@@ -123,16 +127,17 @@ function Submit() {
     return (
       <AppShell>
         <div className="mx-auto max-w-lg">
-          <h1 className="font-display text-2xl font-semibold">{t("duplicate_title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("duplicate_body")}</p>
+          <p className="text-xs font-bold uppercase text-primary">Possible duplicate</p>
+          <h1 className="mt-2 font-display text-4xl leading-tight">{t("duplicate_title")}</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("duplicate_body")}</p>
           <div className="mt-4 space-y-3">
             {dup.dishes.map((d) => (
-              <div key={d.id} className="rounded-xl border border-border bg-card p-3 text-sm">
-                <span className="font-medium">{d.name_en}</span> — {d.place?.name}
+              <div key={d.id} className="rounded-lg border border-border bg-card p-4 text-sm">
+                <span className="font-semibold">{d.name_en}</span> - {d.place?.name}
               </div>
             ))}
             {dup.places.map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-card p-3 text-sm">
+              <div key={p.id} className="rounded-lg border border-border bg-card p-4 text-sm">
                 {p.name}
               </div>
             ))}
@@ -149,12 +154,19 @@ function Submit() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-lg">
-        <h1 className="font-display text-3xl font-semibold">{t("nav_submit")}</h1>
-        <form onSubmit={check} className="mt-6 space-y-4">
-          <div>
+      <div className="mx-auto max-w-2xl">
+        <section className="border-b border-border pb-7">
+          <p className="text-xs font-bold uppercase text-primary">Nominate a plate</p>
+          <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{t("nav_submit")}</h1>
+          <p className="mt-3 max-w-xl leading-7 text-muted-foreground">
+            Add the exact dish, stall, and area so it can earn a place on the board.
+          </p>
+        </section>
+
+        <form onSubmit={check} className="mt-6 space-y-5 rounded-lg border border-border bg-card p-5 md:p-6">
+          <div className="rounded-lg border border-dashed border-border bg-background p-4">
             <Label>Photo</Label>
-            <div className="mt-1 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-3">
               {photoUrl && (
                 <img src={photoUrl} className="h-16 w-16 rounded-lg object-cover" alt="preview" />
               )}
@@ -163,22 +175,17 @@ function Submit() {
                 accept="image/*"
                 onChange={(e) => e.target.files && onFile(e.target.files[0])}
                 disabled={uploading}
-                className="text-sm"
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Dish name (EN) *</Label>
-              <Input
-                value={name_en}
-                onChange={(e) => setNameEn(e.target.value)}
-                required
-                maxLength={120}
-              />
+              <Input value={name_en} onChange={(e) => setNameEn(e.target.value)} required maxLength={120} />
             </div>
             <div>
-              <Label>ชื่อจาน (TH)</Label>
+              <Label>Dish name (TH)</Label>
               <Input value={name_th} onChange={(e) => setNameTh(e.target.value)} maxLength={120} />
             </div>
           </div>
@@ -199,18 +206,13 @@ function Submit() {
           </div>
           <div>
             <Label>Restaurant / stall name *</Label>
-            <Input
-              value={place_name}
-              onChange={(e) => setPlaceName(e.target.value)}
-              required
-              maxLength={160}
-            />
+            <Input value={place_name} onChange={(e) => setPlaceName(e.target.value)} required maxLength={160} />
           </div>
           <div>
             <Label>Area *</Label>
             <Select value={area_id} onValueChange={setAreaId}>
               <SelectTrigger>
-                <SelectValue placeholder={t("filter_all_areas")} />
+                <SelectValue placeholder="Choose area" />
               </SelectTrigger>
               <SelectContent>
                 {(areas.data ?? []).map((a: any) => (
@@ -227,13 +229,7 @@ function Submit() {
           </div>
           <div>
             <Label>Price (THB)</Label>
-            <Input
-              type="number"
-              value={price_thb}
-              onChange={(e) => setPrice(e.target.value)}
-              min={0}
-              max={100000}
-            />
+            <Input type="number" value={price_thb} onChange={(e) => setPrice(e.target.value)} min={0} max={100000} />
           </div>
           <div>
             <Label>Note (optional)</Label>

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/compare")({
-  head: () => ({ meta: [{ title: "Compare — JaanNee" }] }),
+  head: () => ({ meta: [{ title: "Compare - JaanNee" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     dish: typeof s.dish === "string" ? s.dish : undefined,
   }),
@@ -42,10 +42,8 @@ function Compare() {
   const [aId, setAId] = useState<string | undefined>(search.dish);
   const [bId, setBId] = useState<string | undefined>();
 
-  // If preselected dish, derive its category
   useEffect(() => {
     if (search.dish && !cat && dishes.data === undefined && categories.data) {
-      // fetch all and find category
       listDishes({ data: {} }).then((all) => {
         const found = (all as any[]).find((d) => d.id === search.dish);
         if (found) setCat(found.category.slug);
@@ -71,20 +69,38 @@ function Compare() {
   if (!authed)
     return (
       <AppShell>
-        <div className="mx-auto max-w-md text-center">
-          <h1 className="font-display text-3xl font-semibold">{t("nav_compare")}</h1>
-          <p className="mt-2 text-muted-foreground">{t("sign_in_compare")}</p>
-          <Link to="/auth">
-            <Button className="mt-4">{t("sign_in")}</Button>
-          </Link>
-        </div>
+        <section className="mx-auto max-w-4xl overflow-hidden rounded-lg border border-border bg-card">
+          <div className="grid md:grid-cols-[1fr_0.9fr]">
+            <div className="p-7 md:p-10">
+              <p className="text-xs font-bold uppercase text-primary">Two plates enter</p>
+              <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{t("nav_compare")}</h1>
+              <p className="mt-4 max-w-lg leading-7 text-muted-foreground">
+                Pick the better dish and the board learns. Every vote nudges Bangkok's food map closer to the truth.
+              </p>
+              <Link to="/auth">
+                <Button className="mt-6">{t("sign_in")}</Button>
+              </Link>
+            </div>
+            <div className="border-t border-border bg-secondary p-7 md:border-l md:border-t-0">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <PreviewTile label="Dish A" />
+                <span className="font-display text-4xl text-accent">vs</span>
+                <PreviewTile label="Dish B" />
+              </div>
+              <p className="mt-5 text-sm leading-6 text-muted-foreground">{t("sign_in_compare")}</p>
+            </div>
+          </div>
+        </section>
       </AppShell>
     );
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-semibold">{t("nav_compare")}</h1>
-      <p className="mt-2 text-muted-foreground">{t("compare_intro")}</p>
+      <section className="border-b border-border pb-7">
+        <p className="text-xs font-bold uppercase text-primary">Head to head</p>
+        <h1 className="mt-3 font-display text-5xl leading-none md:text-7xl">{t("nav_compare")}</h1>
+        <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">{t("compare_intro")}</p>
+      </section>
 
       <div className="mt-6 max-w-sm">
         <Select
@@ -95,7 +111,7 @@ function Compare() {
             setBId(undefined);
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-card">
             <SelectValue placeholder={t("choose_category")} />
           </SelectTrigger>
           <SelectContent>
@@ -110,8 +126,12 @@ function Compare() {
 
       {cat &&
         (list.length < 2 && !dishes.isLoading ? (
-          <div className="mt-6 rounded-lg border border-dashed border-border bg-card p-6 text-center text-muted-foreground">
-            {t("compare_empty")}
+          <div className="mt-6 rounded-lg border border-border bg-card p-6">
+            <h2 className="font-display text-3xl">Not enough dishes yet.</h2>
+            <p className="mt-2 text-muted-foreground">{t("compare_empty")}</p>
+            <Link to="/submit">
+              <Button className="mt-5">{t("cta_add")}</Button>
+            </Link>
           </div>
         ) : (
           <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -134,7 +154,7 @@ function Compare() {
 
       {a && b && (
         <div className="mt-8">
-          <p className="text-center text-sm text-muted-foreground">{t("which_better")}</p>
+          <p className="text-center text-sm font-semibold uppercase text-muted-foreground">{t("which_better")}</p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <WinnerCard dish={a} onPick={() => mut.mutate(a.id)} disabled={mut.isPending} />
             <WinnerCard dish={b} onPick={() => mut.mutate(b.id)} disabled={mut.isPending} />
@@ -142,6 +162,15 @@ function Compare() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function PreviewTile({ label }: { label: string }) {
+  return (
+    <div className="aspect-[4/5] rounded-lg border border-border bg-card p-3">
+      <div className="h-full rounded-md border border-dashed border-border" />
+      <p className="mt-2 text-center text-xs font-bold uppercase text-muted-foreground">{label}</p>
+    </div>
   );
 }
 
@@ -160,8 +189,8 @@ function DishPicker({
 }) {
   const { t } = useI18n();
   return (
-    <div>
-      <p className="mb-2 text-sm font-medium">{label}</p>
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{label}</p>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
           <SelectValue placeholder={t("pick_dish")} />
@@ -169,7 +198,7 @@ function DishPicker({
         <SelectContent>
           {options.map((d) => (
             <SelectItem key={d.id} value={d.id}>
-              {(lang === "th" && d.name_th) || d.name_en} — {d.place?.name}
+              {(lang === "th" && d.name_th) || d.name_en} - {d.place?.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -191,18 +220,19 @@ function WinnerCard({
     <button
       onClick={onPick}
       disabled={disabled}
-      className="group overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-lg disabled:opacity-60"
+      className="group overflow-hidden rounded-lg border border-border bg-card text-left shadow-[0_18px_45px_rgba(42,30,36,0.06)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_22px_60px_rgba(42,30,36,0.1)] disabled:opacity-60"
     >
       <div className="aspect-[4/3] bg-muted">
         {dish.photo_url ? (
           <img src={dish.photo_url} alt={dish.name_en} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center text-5xl">🍜</div>
+          <div className="flex h-full items-center justify-center bg-secondary font-display text-4xl italic text-muted-foreground">JaanNee</div>
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-display text-xl font-semibold">{dish.name_en}</h3>
-        <p className="text-sm text-muted-foreground">{dish.place?.name}</p>
+        <h3 className="font-display text-2xl leading-none">{dish.name_en}</h3>
+        {dish.name_th ? <p className="mt-1 font-thai text-sm font-medium text-muted-foreground">{dish.name_th}</p> : null}
+        <p className="mt-2 text-sm text-muted-foreground">{dish.place?.name}</p>
       </div>
     </button>
   );
