@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { listCategories, listAreas, listDishSubtypes, listDishes, myTriedIds, searchSimilar, searchPlaces, submitDish, toggleTried } from "@/lib/dishes.functions";
@@ -56,7 +56,7 @@ function Submit() {
   const placeMatches = useQuery({
     queryKey: ["place-search", place_name],
     queryFn: () => searchPlaces({ data: { term: place_name } }),
-    enabled: place_name.trim().length >= 2 && !selectedPlace,
+    enabled: step === "form" && place_name.trim().length >= 2 && !selectedPlace,
   });
 
   const check = async (e: React.FormEvent) => {
@@ -380,39 +380,40 @@ function Submit() {
 
 function DuplicateDishMatch({ dish }: { dish: any }) {
   const { t, lang } = useI18n();
-  const qc = useQueryClient();
-  const [showCompare, setShowCompare] = useState(false);
+  const nav = useNavigate();
   const [triedDone, setTriedDone] = useState(false);
-  const tried = useQuery({
-    queryKey: ["tried"],
-    queryFn: () => myTriedIds(),
-    enabled: showCompare,
-    retry: false,
-  });
-  const pool = useQuery({
-    queryKey: ["duplicate-ranking-pool", dish.category?.slug],
-    queryFn: () => listDishes({ data: { categorySlug: dish.category?.slug } }),
-    enabled: showCompare && !!dish.category?.slug,
-    retry: false,
-  });
-  const tryMut = useMutation({
-    mutationFn: () => toggleTried({ data: { dishId: dish.id, tried: true } }),
-    onSuccess: () => {
+  const [tryingDish, setTryingDish] = useState(false);
+  const [otherTried, setOtherTried] = useState<any | null>(null);
+  const handleTried = async () => {
+    setTryingDish(true);
+    try {
+      await toggleTried({ data: { dishId: dish.id, tried: true } });
       toast.success("Marked as tried");
       setTriedDone(true);
-      setShowCompare(true);
-      qc.invalidateQueries({ queryKey: ["tried"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+      if (dish.category?.slug) {
+        try {
+          const [triedIds, pool] = await Promise.all([
+            myTriedIds(),
+            listDishes({ data: { categorySlug: dish.category.slug } }),
+          ]);
+          const other = ((pool ?? []) as any[]).find(
+            (candidate) =>
+              candidate.id !== dish.id &&
+              (triedIds ?? []).includes(candidate.id) &&
+              (dish.subtype_id ? candidate.subtype_id === dish.subtype_id : !candidate.subtype_id),
+          );
+          setOtherTried(other ?? null);
+        } catch {
+          setOtherTried(null);
+        }
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setTryingDish(false);
+    }
+  };
   const name = (lang === "th" && dish.name_th ? dish.name_th : dish.name_en) || "Dish";
-  const isTried = triedDone || (tried.data ?? []).includes(dish.id);
-  const otherTried = ((pool.data ?? []) as any[]).find(
-    (candidate) =>
-      candidate.id !== dish.id &&
-      (tried.data ?? []).includes(candidate.id) &&
-      (dish.subtype_id ? candidate.subtype_id === dish.subtype_id : !candidate.subtype_id),
-  );
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 text-sm">
@@ -420,14 +421,14 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
       <p className="mt-1 font-semibold">{name}</p>
       <p className="mt-1 text-xs text-muted-foreground">{dish.place?.name}</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Link to="/dish/$id" params={{ id: dish.id }}>
-          <Button size="sm" variant="outline">View dish</Button>
-        </Link>
-        <Button size="sm" onClick={() => tryMut.mutate()} disabled={tryMut.isPending || isTried}>
-          {isTried ? "Tried ✓" : t("tried_it")}
+        <Button size="sm" variant="outline" onClick={() => nav({ to: "/dish/$id", params: { id: dish.id } })}>
+          View dish
+        </Button>
+        <Button size="sm" onClick={handleTried} disabled={tryingDish || triedDone}>
+          {triedDone ? "Tried ✓" : t("tried_it")}
         </Button>
       </div>
-      {showCompare && otherTried && <InlineTriedCompare dish={dish} other={otherTried} />}
+      {otherTried && <InlineTriedCompare dish={dish} other={otherTried} />}
     </div>
   );
 }
