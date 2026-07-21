@@ -29,7 +29,7 @@ function Rankings() {
   const board = useQuery({
     queryKey: ["leaderboard", cat, subtype, area],
     queryFn: () =>
-      leaderboard({ data: { categorySlug: cat!, subtypeSlug: subtype, areaSlug: area, minimumComparisons: 0 } }),
+      leaderboard({ data: { categorySlug: cat!, subtypeSlug: subtype, areaSlug: area, minimumComparisons: 5 } }),
     enabled: !!cat,
   });
 
