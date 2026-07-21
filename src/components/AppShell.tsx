@@ -37,23 +37,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="font-display text-2xl font-semibold tracking-tight text-primary">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
+          <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md">
+            <span className="font-display text-3xl leading-none text-foreground">
               {t("brand")}
             </span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">{t("tagline")}</span>
+            <span className="hidden max-w-44 text-xs font-medium leading-tight text-muted-foreground sm:inline">{t("tagline")}</span>
           </Link>
-          <nav className="hidden gap-1 md:flex">
+          <nav className="hidden items-center gap-1 md:flex">
             {nav.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
                   path === n.to
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground/70 hover:text-foreground"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:bg-white hover:text-foreground"
                 }`}
               >
                 {n.label}
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setLang(lang === "en" ? "th" : "en")}
-              className="rounded-full border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted"
+              className="rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
               aria-label="Toggle language"
             >
               {lang === "en" ? "TH" : "EN"}
@@ -82,15 +82,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 md:pt-10">{children}</main>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur md:hidden">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-7 md:pt-10">{children}</main>
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-around px-2 py-2">
           {nav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-center text-[11px] font-medium ${
-                path === n.to ? "text-primary" : "text-foreground/60"
+              className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-center text-[11px] font-semibold transition-colors ${
+                path === n.to ? "bg-secondary text-primary" : "text-muted-foreground"
               }`}
             >
               <n.Icon className="h-5 w-5" aria-hidden="true" />
