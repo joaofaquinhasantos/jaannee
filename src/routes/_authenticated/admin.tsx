@@ -171,8 +171,12 @@ function Taxonomy() {
     | null
   >(null);
   const [editingSubtype, setEditingSubtype] = useState<any | null>(null);
+  const requireOk = (result: any) => {
+    if (!result?.ok) throw new Error(result?.error?.message ?? result?.error ?? "Save failed");
+    return result;
+  };
   const cMut = useMutation({
-    mutationFn: () => upsertCategory({ data: c }),
+    mutationFn: async () => requireOk(await upsertCategory({ data: c })),
     onSuccess: () => {
       toast.success("Saved");
       setC({ slug: "", name_en: "", name_th: "" });
@@ -182,7 +186,7 @@ function Taxonomy() {
     onError: (e: any) => toast.error(e.message),
   });
   const aMut = useMutation({
-    mutationFn: () => upsertArea({ data: a }),
+    mutationFn: async () => requireOk(await upsertArea({ data: a })),
     onSuccess: () => {
       toast.success("Saved");
       setA({ slug: "", name_en: "", name_th: "" });
@@ -192,7 +196,7 @@ function Taxonomy() {
     onError: (e: any) => toast.error(e.message),
   });
   const subMut = useMutation({
-    mutationFn: () => upsertSubtype({ data: sub }),
+    mutationFn: async () => requireOk(await upsertSubtype({ data: sub })),
     onSuccess: () => {
       toast.success("Saved");
       setSub({ category_id: "", slug: "", name_en: "", name_th: "", display_order: 0 });
@@ -203,7 +207,7 @@ function Taxonomy() {
     onError: (e: any) => toast.error(e.message),
   });
   const editSubMut = useMutation({
-    mutationFn: () => upsertSubtype({ data: editingSubtype }),
+    mutationFn: async () => requireOk(await upsertSubtype({ data: editingSubtype })),
     onSuccess: () => {
       toast.success("Updated");
       setEditingSubtype(null);
@@ -217,8 +221,8 @@ function Taxonomy() {
     mutationFn: async () => {
       if (!editing) return;
       const payload = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th };
-      if (editing.kind === "category") await upsertCategory({ data: payload });
-      else await upsertArea({ data: payload });
+      if (editing.kind === "category") requireOk(await upsertCategory({ data: payload }));
+      else requireOk(await upsertArea({ data: payload }));
     },
     onSuccess: () => {
       toast.success("Updated");
