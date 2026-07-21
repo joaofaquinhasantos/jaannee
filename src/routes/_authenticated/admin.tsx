@@ -43,7 +43,7 @@ function Admin() {
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="places">Pending places</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="taxonomy">Categories & Areas</TabsTrigger>
+          <TabsTrigger value="taxonomy">Cuisines, Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
         </TabsList>
         <TabsContent value="pending"><PendingList /></TabsContent>
@@ -312,7 +312,12 @@ function Taxonomy() {
   return (
     <div className="mt-4 grid gap-6 md:grid-cols-2">
       <div className="rounded-lg border border-border bg-card p-4 md:col-span-2">
-        <h3 className="font-display text-3xl">Add cuisine</h3>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="font-display text-3xl">Cuisines</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Add cuisine groups here, then assign categories to them below.</p>
+          </div>
+        </div>
         <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
           <div>
             <Label>Slug *</Label>
@@ -334,7 +339,8 @@ function Taxonomy() {
         </div>
       </div>
       <div className="rounded-lg border border-border bg-card p-4">
-        <h3 className="font-display text-3xl">Add category</h3>
+        <h3 className="font-display text-3xl">Categories</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Add categories, choose their cuisine group, or delete unused ones.</p>
         <div className="mt-3 space-y-2">
           <div>
             <Label>Slug *</Label>
@@ -403,7 +409,8 @@ function Taxonomy() {
         </div>
       </div>
       <div className="rounded-lg border border-border bg-card p-4">
-        <h3 className="font-display text-3xl">Add area</h3>
+        <h3 className="font-display text-3xl">Areas</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Add areas or delete unused ones.</p>
         <div className="mt-3 space-y-2">
           <div>
             <Label>Slug *</Label>
