@@ -39,19 +39,19 @@ function Index() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-8 md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:pb-12">
+      <section className="border-b border-border pb-6 md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:pb-12">
         <div>
           <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
-          <h1 className="mt-3 max-w-3xl font-display text-5xl leading-[0.95] text-foreground md:text-7xl">
-            Bangkok's dishes, ranked one bite at a time.
+          <h1 className="mt-2 max-w-3xl font-display text-4xl leading-[0.95] text-foreground md:text-7xl">
+            What should people eat in Bangkok?
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
-            Vote dish against dish, not restaurant against restaurant. Find the plate worth crossing town for.
+          <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
+            Add plates, vote dish against dish, and find the bite worth crossing town for.
           </p>
           <p className="mt-3 font-thai text-lg font-medium text-foreground/80">
             จานไหนดี ให้คนกินช่วยตัดสิน
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
             <Link to="/compare">
               <Button>{t("cta_compare")}</Button>
             </Link>
@@ -59,17 +59,17 @@ function Index() {
               <Button variant="outline">{t("cta_add")}</Button>
             </Link>
           </div>
-          <div className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+          <div className="mt-5 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
             <TrustSignal text="No restaurant ads" />
             <TrustSignal text="Dish vs dish only" />
             <TrustSignal text="Ranked by local comparisons" />
           </div>
         </div>
-        <div className="mt-8 grid grid-cols-3 gap-3 md:mt-0">
+        <div className="mt-5 grid grid-cols-3 gap-2 md:mt-0 md:gap-3">
           {["01", "02", "03"].map((n, i) => (
-            <div key={n} className={`rounded-lg border border-border bg-card p-4 ${i === 1 ? "mt-8" : ""}`}>
-              <span className="font-display text-5xl leading-none text-accent">{n}</span>
-              <p className="mt-3 text-xs font-bold uppercase text-muted-foreground">
+            <div key={n} className={`rounded-lg border border-border bg-card p-3 md:p-4 ${i === 1 ? "md:mt-8" : ""}`}>
+              <span className="font-display text-4xl leading-none text-accent md:text-5xl">{n}</span>
+              <p className="mt-2 text-xs font-bold uppercase text-muted-foreground md:mt-3">
                 {i === 0 ? "Nominate" : i === 1 ? "Compare" : "Rank"}
               </p>
             </div>

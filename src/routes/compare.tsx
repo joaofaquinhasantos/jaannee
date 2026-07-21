@@ -82,7 +82,7 @@ function Compare() {
               <p className="text-xs font-bold uppercase text-primary">Two plates enter</p>
               <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{t("nav_compare")}</h1>
               <p className="mt-4 max-w-lg leading-7 text-muted-foreground">
-                Pick the better dish and the board learns. Every vote nudges Bangkok's food map closer to the truth.
+                Sign in to cast votes, save what you ate, and help turn loose opinions into real rankings.
               </p>
               <Link to="/auth">
                 <Button className="mt-6">{t("sign_in")}</Button>
@@ -94,7 +94,9 @@ function Compare() {
                 <span className="font-display text-4xl text-accent">vs</span>
                 <PreviewTile label="Dish B" />
               </div>
-              <p className="mt-5 text-sm leading-6 text-muted-foreground">{t("sign_in_compare")}</p>
+              <p className="mt-5 text-sm leading-6 text-muted-foreground">
+                Your votes decide which dishes earn a public rank.
+              </p>
             </div>
           </div>
         </section>

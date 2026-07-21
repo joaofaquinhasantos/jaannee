@@ -30,8 +30,9 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
               loading="lazy"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-              <span className="font-display text-4xl italic">JaanNee</span>
+            <div className="flex h-full w-full flex-col items-center justify-center bg-secondary text-muted-foreground">
+              <span className="font-display text-3xl italic opacity-70">Photo needed</span>
+              <span className="mt-2 text-xs font-semibold uppercase tracking-wide opacity-70">Help this dish look alive</span>
             </div>
           )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />

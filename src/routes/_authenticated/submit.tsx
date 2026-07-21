@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ function Submit() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dup, setDup] = useState<{ places: any[]; dishes: any[] } | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const subtypes = useQuery({
     queryKey: ["dish-subtypes", category_id],
     queryFn: () => listDishSubtypes({ data: { categoryId: category_id } }),
@@ -209,15 +211,15 @@ function Submit() {
   return (
     <AppShell>
       <div className="mx-auto max-w-2xl">
-        <section className="border-b border-border pb-7">
+        <section className="border-b border-border pb-5">
           <p className="text-xs font-bold uppercase text-primary">Nominate a plate</p>
-          <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{t("nav_submit")}</h1>
-          <p className="mt-3 max-w-xl leading-7 text-muted-foreground">
-            Add the exact dish, stall, and area so it can earn a place on the board.
+          <h1 className="mt-2 font-display text-4xl leading-none md:text-6xl">Post a dish</h1>
+          <p className="mt-2 max-w-xl leading-7 text-muted-foreground">
+            Photo, dish, place. Add the rest only if you feel like it.
           </p>
         </section>
 
-        <form onSubmit={check} className="mt-6 space-y-5 rounded-lg border border-border bg-card p-5 md:p-6">
+        <form onSubmit={check} className="mt-5 space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
           <div className="rounded-lg border border-dashed border-border bg-background p-4">
             <Label>Photo</Label>
             <div className="mt-2 flex items-center gap-3">
@@ -237,10 +239,6 @@ function Submit() {
             <div>
               <Label>Dish name (EN) *</Label>
               <Input value={name_en} onChange={(e) => setNameEn(e.target.value)} required maxLength={120} />
-            </div>
-            <div>
-              <Label>Dish name (TH)</Label>
-              <Input value={name_th} onChange={(e) => setNameTh(e.target.value)} maxLength={120} />
             </div>
           <div>
             <Label>Category *</Label>
@@ -330,47 +328,68 @@ function Submit() {
                   </button>
                 ))}
                 {(placeMatches.data ?? []).length === 0 && (
-                  <button type="button" onClick={() => setAddingPlace(true)} className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingPlace(true);
+                      setDetailsOpen(true);
+                    }}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary"
+                  >
                     {t("add_new_place")}
                   </button>
                 )}
               </div>
             ) : null}
           </div>
-          {addingPlace && !selectedPlace && (
-            <>
+          </div>
+          <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="outline" className="w-full justify-between">
+                Add details
+                <span className="text-muted-foreground">{detailsOpen ? "-" : "+"}</span>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-4">
               <div>
-                <Label>Area *</Label>
-                <Select value={area_id} onValueChange={setAreaId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("choose_area")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(areas.data ?? []).map((a: any) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {lang === "th" ? a.name_th : a.name_en}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Dish name (TH)</Label>
+                <Input value={name_th} onChange={(e) => setNameTh(e.target.value)} maxLength={120} />
+              </div>
+              {addingPlace && !selectedPlace && (
+                <>
+                  <div>
+                    <Label>Area *</Label>
+                    <Select value={area_id} onValueChange={setAreaId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("choose_area")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(areas.data ?? []).map((a: any) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {lang === "th" ? a.name_th : a.name_en}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Address (optional)</Label>
+                    <Input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
+                  </div>
+                </>
+              )}
+              <div>
+                <Label>Price (THB)</Label>
+                <Input type="number" value={price_thb} onChange={(e) => setPrice(e.target.value)} min={0} max={100000} />
               </div>
               <div>
-                <Label>Address (optional)</Label>
-                <Input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
+                <Label>Note (optional)</Label>
+                <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
               </div>
-            </>
-          )}
-          </div>
-          <div>
-            <Label>Price (THB)</Label>
-            <Input type="number" value={price_thb} onChange={(e) => setPrice(e.target.value)} min={0} max={100000} />
-          </div>
-          <div>
-            <Label>Note (optional)</Label>
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
           <Button type="submit" className="w-full">
-            {t("submit_for_review")}
+            Add to board
           </Button>
         </form>
       </div>

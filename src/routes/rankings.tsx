@@ -70,15 +70,15 @@ function Rankings() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-7">
+      <section className="border-b border-border pb-5 md:pb-7">
         <p className="text-xs font-bold uppercase text-primary">Live chart</p>
         <div className="mt-3 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
           <div>
-            <h1 className="font-display text-5xl leading-none md:text-7xl">{t("nav_rankings")}</h1>
+            <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_rankings")}</h1>
             <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">{t("rankings_intro")}</p>
           </div>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <span className="font-display text-6xl leading-none text-accent">#</span>
+          <div className="rounded-lg border border-border bg-card p-3 md:p-4">
+            <span className="font-display text-5xl leading-none text-accent md:text-6xl">#</span>
             <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">Rank is earned</p>
           </div>
         </div>
@@ -163,16 +163,16 @@ function Rankings() {
         ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
-              <div className="border-b border-border bg-secondary p-6 md:border-b-0 md:border-r">
-                <span className="font-display text-8xl leading-none text-accent">--</span>
+              <div className="border-b border-border bg-secondary p-4 md:border-b-0 md:border-r md:p-6">
+                <span className="font-display text-6xl leading-none text-accent md:text-8xl">--</span>
                 <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">
                   {selectedCat ? (lang === "th" ? selectedCat.name_th : selectedCat.name_en) : "Selected board"}
                 </p>
               </div>
-              <div className="p-6 md:p-8">
-                <h2 className="font-display text-4xl leading-tight">{t("empty_rankings_title")}</h2>
+              <div className="p-4 md:p-8">
+                <h2 className="font-display text-3xl leading-tight md:text-4xl">Help rank this board</h2>
                 <p className="mt-3 max-w-lg leading-7 text-muted-foreground">{t("empty_rankings_body")}</p>
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-4 flex flex-wrap gap-3 md:mt-6">
                   <Link to="/submit">
                     <Button>{t("cta_add")}</Button>
                   </Link>
