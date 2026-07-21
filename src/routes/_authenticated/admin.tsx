@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -176,6 +176,10 @@ function Taxonomy() {
     | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string }
     | null
   >(null);
+  const [deleting, setDeleting] = useState<
+    | { kind: "category" | "area"; id: string; name_en: string; slug: string }
+    | null
+  >(null);
   const [editingSubtype, setEditingSubtype] = useState<any | null>(null);
   const requireOk = (result: any) => {
     if (!result?.ok) throw new Error(result?.error?.message ?? result?.error ?? "Save failed");
@@ -243,6 +247,25 @@ function Taxonomy() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+  const deleteMut = useMutation({
+    mutationFn: async () => {
+      if (!deleting) return;
+      if (deleting.kind === "category") requireOk(await deleteCategory({ data: { id: deleting.id } }));
+      else requireOk(await deleteArea({ data: { id: deleting.id } }));
+    },
+    onSuccess: () => {
+      toast.success("Deleted");
+      if (deleting?.kind === "category") {
+        qc.invalidateQueries({ queryKey: ["admin-categories"] });
+        qc.invalidateQueries({ queryKey: ["categories"] });
+      } else {
+        qc.invalidateQueries({ queryKey: ["admin-areas"] });
+        qc.invalidateQueries({ queryKey: ["areas"] });
+      }
+      setDeleting(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
   const SLUG_RE = /^[a-z0-9-]+$/;
   const validate = (v: { slug: string; name_en: string; name_th: string }) => {
     const slug = v.slug.trim();
@@ -305,7 +328,10 @@ function Taxonomy() {
                     <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
                     <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
+                  <div className="flex shrink-0 gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "category", id: row.id, name_en: row.name_en, slug: row.slug })}>Delete</Button>
+                  </div>
                 </div>
                 <div className="mt-3 space-y-2 border-t border-border pt-3">
                   <div className="flex items-center justify-between gap-2">
@@ -357,7 +383,10 @@ function Taxonomy() {
                   <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
                   <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "area", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "area", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
+                  <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "area", id: row.id, name_en: row.name_en, slug: row.slug })}>Delete</Button>
+                </div>
               </div>
             ))}
             {(areas.data ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No areas yet.</p>}
@@ -403,6 +432,27 @@ function Taxonomy() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             <Button onClick={saveEdit} disabled={editMut.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {deleting?.kind === "category" ? "category" : "area"}</DialogTitle>
+          </DialogHeader>
+          {deleting && (
+            <div className="space-y-2 text-sm">
+              <p>
+                Delete <span className="font-semibold">{deleting.name_en}</span>?
+              </p>
+              <p className="text-muted-foreground">
+                This only works when nothing uses it. Categories with dishes and areas with places are blocked.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteMut.mutate()} disabled={deleteMut.isPending}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

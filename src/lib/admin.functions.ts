@@ -250,6 +250,38 @@ export const upsertArea = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string }) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { count, error: countError } = await context.supabase
+      .from("dishes")
+      .select("id", { count: "exact", head: true })
+      .eq("category_id", data.id);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) throw new Error(`Cannot delete category while ${count} dish${count === 1 ? "" : "es"} use it.`);
+    const { error } = await context.supabase.from("categories").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string }) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { count, error: countError } = await context.supabase
+      .from("places")
+      .select("id", { count: "exact", head: true })
+      .eq("area_id", data.id);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) throw new Error(`Cannot delete area while ${count} place${count === 1 ? "" : "s"} use it.`);
+    const { error } = await context.supabase.from("areas").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const grantAdminSelf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
