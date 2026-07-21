@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
 import { useI18n } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
 
@@ -223,6 +224,7 @@ function DishAdmin() {
   const [missingPhotoOnly, setMissingPhotoOnly] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingDish, setDeletingDish] = useState<any | null>(null);
   const [mergeSource, setMergeSource] = useState<any | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState("");
@@ -241,6 +243,22 @@ function DishAdmin() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+  const uploadPhoto = async (file: File) => {
+    setUploadingPhoto(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Sign in before uploading photos");
+      const path = `${userData.user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const { error } = await supabase.storage.from("dish-photos").upload(path, file, { upsert: false });
+      if (error) throw new Error(error.message);
+      setPhotoUrl(`/photos/${path}`);
+      toast.success("Photo uploaded");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
   const deleteMut = useMutation({
     mutationFn: () => deleteDishAdmin({ data: { id: deletingDish.id } }),
     onSuccess: () => {
@@ -307,11 +325,28 @@ function DishAdmin() {
                 <Label>Photo URL or /photos/ path</Label>
                 <Input value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} placeholder="/photos/dish.jpg" />
               </div>
+              <div>
+                <Label>Upload from device</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingPhoto}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadPhoto(file);
+                  }}
+                  className="file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Choose a local image, then save the uploaded photo path.</p>
+              </div>
+              {photoUrl && (
+                <img src={photoUrl} className="h-28 w-28 rounded-lg object-cover" alt="Preview" />
+              )}
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingPhoto(null)}>Cancel</Button>
-            <Button onClick={() => photoMut.mutate()} disabled={photoMut.isPending}>Save</Button>
+            <Button onClick={() => photoMut.mutate()} disabled={photoMut.isPending || uploadingPhoto}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
