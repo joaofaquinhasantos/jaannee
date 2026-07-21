@@ -77,11 +77,10 @@ const imageUrlSchema = z
     { message: "Use an uploaded photo, a /photos/ path, or a direct image URL." },
   );
 
-const optionalUuidSchema = z
-  .string()
-  .trim()
-  .transform((v) => (v ? v : undefined))
-  .pipe(z.string().uuid().optional());
+const optionalUuidSchema = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z.string().uuid().optional(),
+);
 
 export const listDishes = createServerFn({ method: "GET" })
   .inputValidator((i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string }) => i ?? {})
