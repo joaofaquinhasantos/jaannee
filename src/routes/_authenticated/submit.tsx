@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { listCategories, listAreas, listDishSubtypes, searchSimilar, searchPlaces, submitDish } from "@/lib/dishes.functions";
+import { listCategories, listAreas, listDishSubtypes, listDishes, myTriedIds, searchSimilar, searchPlaces, submitDish, toggleTried } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { CategoryPicker } from "@/components/CategoryPicker";
+import { InlineTriedCompare } from "@/components/InlineTriedCompare";
 
 export const Route = createFileRoute("/_authenticated/submit")({ component: Submit });
 
@@ -168,13 +169,27 @@ function Submit() {
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("duplicate_body")}</p>
           <div className="mt-4 space-y-3">
             {dup.dishes.map((d) => (
-              <div key={d.id} className="rounded-lg border border-border bg-card p-4 text-sm">
-                <span className="font-semibold">{d.name_en}</span> - {d.place?.name}
-              </div>
+              <DuplicateDishMatch key={d.id} dish={d} />
             ))}
             {dup.places.map((p) => (
               <div key={p.id} className="rounded-lg border border-border bg-card p-4 text-sm">
-                {p.name}
+                <p className="text-xs font-bold uppercase text-primary">Existing place</p>
+                <p className="mt-1 font-semibold">{p.name}</p>
+                <p className="mt-1 text-xs text-muted-foreground">This place exists — your dish may be new here.</p>
+                <Button
+                  className="mt-3"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedPlace(p);
+                    setPlaceName(p.name);
+                    setAreaId(p.area_id);
+                    setAddingPlace(false);
+                    setStep("form");
+                  }}
+                >
+                  Add my dish at this place
+                </Button>
               </div>
             ))}
           </div>
@@ -357,5 +372,50 @@ function Submit() {
         </form>
       </div>
     </AppShell>
+  );
+}
+
+function DuplicateDishMatch({ dish }: { dish: any }) {
+  const { t, lang } = useI18n();
+  const qc = useQueryClient();
+  const [showCompare, setShowCompare] = useState(false);
+  const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds() });
+  const pool = useQuery({
+    queryKey: ["duplicate-ranking-pool", dish.category?.slug],
+    queryFn: () => listDishes({ data: { categorySlug: dish.category?.slug } }),
+    enabled: showCompare && !!dish.category?.slug,
+  });
+  const tryMut = useMutation({
+    mutationFn: () => toggleTried({ data: { dishId: dish.id, tried: true } }),
+    onSuccess: () => {
+      toast.success("Marked as tried");
+      setShowCompare(true);
+      qc.invalidateQueries({ queryKey: ["tried"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+  const otherTried = ((pool.data ?? []) as any[]).find(
+    (candidate) =>
+      candidate.id !== dish.id &&
+      (tried.data ?? []).includes(candidate.id) &&
+      (dish.subtype_id ? candidate.subtype_id === dish.subtype_id : !candidate.subtype_id),
+  );
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 text-sm">
+      <p className="text-xs font-bold uppercase text-primary">Existing dish</p>
+      <p className="mt-1 font-semibold">{name}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{dish.place?.name}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Link to="/dish/$id" params={{ id: dish.id }}>
+          <Button size="sm" variant="outline">View dish</Button>
+        </Link>
+        <Button size="sm" onClick={() => tryMut.mutate()} disabled={tryMut.isPending}>
+          {t("tried_it")}
+        </Button>
+      </div>
+      {showCompare && otherTried && <InlineTriedCompare dish={dish} other={otherTried} />}
+    </div>
   );
 }

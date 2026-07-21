@@ -106,7 +106,7 @@ export const listDishes = createServerFn({ method: "GET" })
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
-    q = q.eq("status", "approved").order("elo", { ascending: false });
+    q = q.eq("status", "approved").not("category_id", "is", null).order("elo", { ascending: false });
     if (catRes.data) q = q.eq("category_id", catRes.data.id);
     if (subtypeRes.data) q = q.eq("subtype_id", subtypeRes.data.id);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
@@ -125,6 +125,7 @@ export const getDish = createServerFn({ method: "GET" })
     const { data: dish, error } = await supabase
       .from("dishes")
       .select(dishSelect)
+      .not("category_id", "is", null)
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -189,7 +190,11 @@ export const listAreas = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const listCategoryCounts = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await publicClient().from("dishes").select("category_id").eq("status", "approved");
+  const { data, error } = await publicClient()
+    .from("dishes")
+    .select("category_id")
+    .eq("status", "approved")
+    .not("category_id", "is", null);
   if (error) throw new Error(error.message);
   const counts: Record<string, number> = {};
   for (const row of data ?? []) counts[row.category_id] = (counts[row.category_id] ?? 0) + 1;
@@ -211,7 +216,7 @@ export const searchSimilar = createServerFn({ method: "GET" })
       ? ((
           await supabase
             .from("places")
-            .select("id, name, area:areas(name_en, name_th)")
+            .select("id, name, area_id, area:areas(id, slug, name_en, name_th)")
             .ilike("name", `%${data.placeName}%`)
             .limit(5)
         ).data ?? [])
@@ -220,8 +225,9 @@ export const searchSimilar = createServerFn({ method: "GET" })
       ? ((
           await supabase
             .from("dishes")
-            .select("id, name_en, name_th, place:places(name)")
+            .select(dishSelect)
             .eq("status", "approved")
+            .not("category_id", "is", null)
             .ilike("name_en", `%${data.dishName}%`)
             .limit(5)
         ).data ?? [])
@@ -537,6 +543,7 @@ export const leaderboard = createServerFn({ method: "GET" })
       : supabase.from("dishes").select(dishSelect);
     q = q
       .eq("status", "approved")
+      .not("category_id", "is", null)
       .eq("category_id", catRes.data.id)
       .gte("comparisons_count", data.minimumComparisons ?? 5)
       .order("elo", { ascending: false })
