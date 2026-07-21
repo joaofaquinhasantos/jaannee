@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 md:py-3.5">
           <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md">
             <span className="font-display text-3xl leading-none text-foreground">
               {t("brand")}
@@ -82,7 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-7 md:pt-10">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-4 md:pt-10">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-around px-2 py-2">
           {nav.map((n) => (

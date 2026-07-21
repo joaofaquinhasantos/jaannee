@@ -85,6 +85,12 @@ function Submit() {
 
   const doSubmit = async () => {
     try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) {
+        toast.error("Sign in to post this dish");
+        nav({ to: "/auth" });
+        return;
+      }
       await submitDish({
         data: {
           name_en,
@@ -210,21 +216,21 @@ function Submit() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-2xl">
-        <section className="border-b border-border pb-5">
-          <p className="text-xs font-bold uppercase text-primary">Nominate a plate</p>
-          <h1 className="mt-2 font-display text-4xl leading-none md:text-6xl">Post a dish</h1>
-          <p className="mt-2 max-w-xl leading-7 text-muted-foreground">
-            Photo, dish, place. Add the rest only if you feel like it.
-          </p>
+      <div className="mx-auto max-w-xl">
+        <section className="pb-2">
+          <p className="text-xs font-bold uppercase text-primary">Add to JaanNee</p>
+          <h1 className="mt-1 font-display text-4xl leading-none md:text-6xl">Post a dish</h1>
         </section>
 
-        <form onSubmit={check} className="mt-5 space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
-          <div className="rounded-lg border border-dashed border-border bg-background p-4">
-            <Label>Photo</Label>
-            <div className="mt-2 flex items-center gap-3">
+        <form onSubmit={check} className="mt-3 space-y-4 rounded-lg border border-border bg-card p-3 md:p-6">
+          <div className="rounded-lg border border-dashed border-border bg-background p-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label>Photo</Label>
+              <span className="text-xs font-medium text-muted-foreground">Optional, but it helps</span>
+            </div>
+            <div className="mt-2 grid gap-3">
               {photoUrl && (
-                <img src={photoUrl} className="h-16 w-16 rounded-lg object-cover" alt="preview" />
+                <img src={photoUrl} className="aspect-[4/3] w-full rounded-lg object-cover" alt="preview" />
               )}
               <input
                 type="file"
@@ -235,11 +241,62 @@ function Submit() {
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3">
             <div>
-              <Label>Dish name (EN) *</Label>
-              <Input value={name_en} onChange={(e) => setNameEn(e.target.value)} required maxLength={120} />
+              <Label>What dish?</Label>
+              <Input value={name_en} onChange={(e) => setNameEn(e.target.value)} placeholder="Tiramisu, boat noodles, burger..." required maxLength={120} className="h-12 text-base" />
             </div>
+          <div>
+            <Label>Where did you eat it?</Label>
+            <Input
+              value={place_name}
+              onChange={(e) => {
+                setPlaceName(e.target.value);
+                setSelectedPlace(null);
+                setAddingPlace(false);
+              }}
+              required
+              maxLength={160}
+              placeholder="Restaurant or stall"
+              className="h-12 text-base"
+            />
+            {selectedPlace ? (
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
+                {t("selected_place")}: {selectedPlace.name} / {lang === "th" ? selectedPlace.area?.name_th : selectedPlace.area?.name_en}
+              </p>
+            ) : place_name.trim().length >= 2 ? (
+              <div className="mt-2 rounded-lg border border-border bg-background p-2">
+                {(placeMatches.data ?? []).map((p: any) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlace(p);
+                      setPlaceName(p.name);
+                      setAreaId(p.area_id);
+                      setAddingPlace(false);
+                    }}
+                    className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary"
+                  >
+                    <span className="font-semibold">{p.name}</span>
+                    <span className="ml-2 text-muted-foreground">{lang === "th" ? p.area?.name_th : p.area?.name_en}</span>
+                  </button>
+                ))}
+                {(placeMatches.data ?? []).length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingPlace(true);
+                      setDetailsOpen(true);
+                    }}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary"
+                  >
+                    {t("add_new_place")}
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </div>
           <div>
             <Label>Category *</Label>
             {requestingCategory ? (
@@ -293,55 +350,6 @@ function Submit() {
               {subtypeError && <p className="mt-1 text-sm font-medium text-primary">{subtypeError}</p>}
             </div>
           )}
-          <div>
-            <Label>Restaurant / stall name *</Label>
-            <Input
-              value={place_name}
-              onChange={(e) => {
-                setPlaceName(e.target.value);
-                setSelectedPlace(null);
-                setAddingPlace(false);
-              }}
-              required
-              maxLength={160}
-            />
-            {selectedPlace ? (
-              <p className="mt-2 text-sm font-medium text-muted-foreground">
-                {t("selected_place")}: {selectedPlace.name} / {lang === "th" ? selectedPlace.area?.name_th : selectedPlace.area?.name_en}
-              </p>
-            ) : place_name.trim().length >= 2 ? (
-              <div className="mt-2 rounded-lg border border-border bg-background p-2">
-                {(placeMatches.data ?? []).map((p: any) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPlace(p);
-                      setPlaceName(p.name);
-                      setAreaId(p.area_id);
-                      setAddingPlace(false);
-                    }}
-                    className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary"
-                  >
-                    <span className="font-semibold">{p.name}</span>
-                    <span className="ml-2 text-muted-foreground">{lang === "th" ? p.area?.name_th : p.area?.name_en}</span>
-                  </button>
-                ))}
-                {(placeMatches.data ?? []).length === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAddingPlace(true);
-                      setDetailsOpen(true);
-                    }}
-                    className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary"
-                  >
-                    {t("add_new_place")}
-                  </button>
-                )}
-              </div>
-            ) : null}
-          </div>
           </div>
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <CollapsibleTrigger asChild>

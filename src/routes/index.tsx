@@ -39,7 +39,7 @@ function Index() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-6 md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:pb-12">
+      <section className="hidden border-b border-border pb-6 md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:pb-12">
         <div>
           <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
           <h1 className="mt-2 max-w-3xl font-display text-4xl leading-[0.95] text-foreground md:text-7xl">
@@ -77,12 +77,24 @@ function Index() {
         </div>
       </section>
 
-      <section className="mt-7">
+      <section className="md:hidden">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
+            <h1 className="mt-1 font-display text-3xl leading-none">What should we eat?</h1>
+          </div>
+          <Link to="/submit">
+            <Button size="sm">Post</Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="mt-4 md:mt-7">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Browse the board</p>
-            <h2 className="mt-1 font-display text-3xl">Discover</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="hidden text-xs font-bold uppercase text-muted-foreground md:block">Browse the board</p>
+            <h2 className="hidden font-display text-3xl md:mt-1 md:block">Discover</h2>
+            <p className="hidden text-sm text-muted-foreground md:mt-1 md:block">
               Start here: pick a category, add a missing dish, or compare two plates.
             </p>
           </div>
@@ -99,7 +111,7 @@ function Index() {
           )}
         </div>
 
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-2 md:mt-5">
           <Pill active={!cat} onClick={() => setCat(undefined)}>
             {t("filter_all_categories")}
           </Pill>
@@ -156,6 +168,13 @@ function Index() {
           </div>
         )}
       </section>
+      <Link
+        to="/submit"
+        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-3xl font-semibold leading-none text-primary-foreground shadow-[0_16px_35px_rgba(218,43,31,0.3)] md:hidden"
+        aria-label="Add a dish"
+      >
+        +
+      </Link>
     </AppShell>
   );
 }
