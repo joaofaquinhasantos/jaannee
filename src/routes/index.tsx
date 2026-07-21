@@ -5,7 +5,6 @@ import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
 import { listDishes, listCategories, listAreas } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({ component: Index });
 
@@ -23,36 +22,7 @@ function Index() {
 
   return (
     <AppShell>
-      <section className="mb-8 border-b border-border pb-8">
-        <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-end">
-          <div>
-            <p className="text-sm font-medium text-primary">{t("tagline")}</p>
-            <h1 className="mt-2 max-w-3xl font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-              {t("hero_title")}
-            </h1>
-            <p className="mt-3 max-w-2xl text-muted-foreground">{t("hero_copy")}</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/compare">
-                <Button>{t("cta_compare")}</Button>
-              </Link>
-              <Link to="/submit">
-                <Button variant="outline">{t("cta_add")}</Button>
-              </Link>
-            </div>
-          </div>
-          <div className="grid gap-2 text-sm">
-            <p className="font-medium">{t("how_title")}</p>
-            {[t("how_discover"), t("how_compare"), t("how_submit")].map((item, index) => (
-              <div key={item} className="flex gap-3 rounded-lg border border-border bg-card p-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  {index + 1}
-                </span>
-                <span className="text-muted-foreground">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <h1 className="sr-only">{t("brand")}</h1>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Pill active={!cat} onClick={() => setCat(undefined)}>
