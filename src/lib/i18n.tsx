@@ -61,7 +61,7 @@ export const dict = {
     th: "เพิ่มจานหรือล้างตัวกรองเพื่อเริ่มสร้างอันดับ",
   },
   rankings_intro: {
-    en: "Live rankings use every comparison. Low-sample dishes are marked provisional until they reach 5 votes.",
+    en: "Rank positions appear only after a dish earns 5 comparisons inside its dish type.",
     th: "อันดับสดใช้ผลเปรียบเทียบทั้งหมด จานที่คะแนนยังน้อยจะติดป้ายชั่วคราวจนกว่าจะครบ 5 โหวต",
   },
   provisional: { en: "Provisional", th: "ชั่วคราว" },
