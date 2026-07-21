@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, listDishesAdmin, moderateDish, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
 import { listCuisines } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,12 +41,14 @@ function Admin() {
       <Tabs defaultValue="pending" className="mt-6">
         <TabsList className="h-auto flex-wrap justify-start rounded-lg bg-secondary p-1">
           <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="dishes">Dishes</TabsTrigger>
           <TabsTrigger value="places">Pending places</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="taxonomy">Cuisines, Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
         </TabsList>
         <TabsContent value="pending"><PendingList /></TabsContent>
+        <TabsContent value="dishes"><DishAdmin /></TabsContent>
         <TabsContent value="places"><PendingPlaces /></TabsContent>
         <TabsContent value="reports"><Reports /></TabsContent>
         <TabsContent value="taxonomy"><Taxonomy /></TabsContent>
@@ -134,6 +136,144 @@ function PendingList() {
         </div>
       ))}
       {(q.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Queue is empty.</p>}
+    </div>
+  );
+}
+
+function DishAdmin() {
+  const qc = useQueryClient();
+  const [query, setQuery] = useState("");
+  const [missingPhotoOnly, setMissingPhotoOnly] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [deletingDish, setDeletingDish] = useState<any | null>(null);
+  const [mergeSource, setMergeSource] = useState<any | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState("");
+  const dishes = useQuery({
+    queryKey: ["admin-dishes", query, missingPhotoOnly],
+    queryFn: () => listDishesAdmin({ data: { query, missingPhotoOnly } }),
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-dishes"] });
+  const photoMut = useMutation({
+    mutationFn: () => updateDishAdmin({ data: { id: editingPhoto.id, photo_url: photoUrl || undefined } }),
+    onSuccess: () => {
+      toast.success("Photo updated");
+      setEditingPhoto(null);
+      setPhotoUrl("");
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteMut = useMutation({
+    mutationFn: () => deleteDishAdmin({ data: { id: deletingDish.id } }),
+    onSuccess: () => {
+      toast.success("Dish deleted");
+      setDeletingDish(null);
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["pending"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const mergeMut = useMutation({
+    mutationFn: () => mergeDishAdmin({ data: { keepId: mergeTargetId, removeId: mergeSource.id } }),
+    onSuccess: () => {
+      toast.success("Dish merged");
+      setMergeSource(null);
+      setMergeTargetId("");
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <h3 className="font-display text-3xl">Dishes</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Add photos later, delete bad entries, or merge duplicates into the dish you want to keep.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Input className="max-w-sm" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search dish, place, category" />
+          <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
+            <input type="checkbox" checked={missingPhotoOnly} onChange={(e) => setMissingPhotoOnly(e.target.checked)} />
+            Missing photo only
+          </label>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {(dishes.data ?? []).map((d: any) => (
+          <div key={d.id} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+              {d.photo_url ? <img src={d.photo_url} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No photo</div>}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">{d.name_en}</div>
+              <div className="text-xs text-muted-foreground">
+                {d.place?.name} / {d.place?.area?.name_en} / {d.category?.name_en} / {d.status} / {d.comparisons_count ?? 0} comparisons
+              </div>
+              <div className="mt-1 truncate text-xs text-muted-foreground">{d.id}</div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => { setEditingPhoto(d); setPhotoUrl(d.photo_url ?? ""); }}>Photo</Button>
+              <Button size="sm" variant="outline" onClick={() => { setMergeSource(d); setMergeTargetId(""); }}>Merge</Button>
+              <Button size="sm" variant="outline" onClick={() => setDeletingDish(d)}>Delete</Button>
+            </div>
+          </div>
+        ))}
+        {dishes.isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+        {!dishes.isLoading && (dishes.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No dishes found.</p>}
+      </div>
+      <Dialog open={!!editingPhoto} onOpenChange={(o) => !o && setEditingPhoto(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Update photo</DialogTitle></DialogHeader>
+          {editingPhoto && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{editingPhoto.name_en}</p>
+              <div>
+                <Label>Photo URL or /photos/ path</Label>
+                <Input value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} placeholder="/photos/dish.jpg" />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingPhoto(null)}>Cancel</Button>
+            <Button onClick={() => photoMut.mutate()} disabled={photoMut.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!deletingDish} onOpenChange={(o) => !o && setDeletingDish(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Delete dish</DialogTitle></DialogHeader>
+          {deletingDish && <p className="text-sm">Delete <span className="font-semibold">{deletingDish.name_en}</span>? Tries, comparisons, and reports for this dish are removed by the database cascade.</p>}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingDish(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteMut.mutate()} disabled={deleteMut.isPending}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!mergeSource} onOpenChange={(o) => !o && setMergeSource(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Merge duplicate dish</DialogTitle></DialogHeader>
+          {mergeSource && (
+            <div className="space-y-3">
+              <p className="text-sm">Remove <span className="font-semibold">{mergeSource.name_en}</span> and keep another dish.</p>
+              <div>
+                <Label>Keep dish</Label>
+                <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
+                  <SelectTrigger><SelectValue placeholder="Choose dish to keep" /></SelectTrigger>
+                  <SelectContent>
+                    {(dishes.data ?? []).filter((d: any) => d.id !== mergeSource.id).map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name_en} / {d.place?.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">Tried marks and reports move to the kept dish. Comparisons involving the removed duplicate are deleted so Elo is not silently rewritten.</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMergeSource(null)}>Cancel</Button>
+            <Button onClick={() => mergeMut.mutate()} disabled={mergeMut.isPending || !mergeTargetId}>Merge</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
