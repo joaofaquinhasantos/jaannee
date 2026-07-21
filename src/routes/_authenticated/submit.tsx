@@ -70,11 +70,15 @@ function Submit() {
       return;
     }
     setSubtypeError("");
-    const res = await searchSimilar({ data: { placeName: place_name, dishName: name_en } });
-    if ((res.places?.length ?? 0) + (res.dishes?.length ?? 0) > 0) {
-      setDup(res);
-      setStep("dup");
-    } else await doSubmit();
+    try {
+      const res = await searchSimilar({ data: { placeName: place_name, dishName: name_en } });
+      if ((res.places?.length ?? 0) + (res.dishes?.length ?? 0) > 0) {
+        setDup(res);
+        setStep("dup");
+      } else await doSubmit();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const doSubmit = async () => {
@@ -104,20 +108,19 @@ function Submit() {
 
   const onFile = async (f: File) => {
     setUploading(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) {
+    try {
+      const { data: u, error: userError } = await supabase.auth.getUser();
+      if (userError) throw new Error(userError.message);
+      if (!u.user) throw new Error("Sign in before uploading photos");
+      const path = `${u.user.id}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const { error } = await supabase.storage.from("dish-photos").upload(path, f, { upsert: false });
+      if (error) throw new Error(error.message);
+      setPhotoUrl(`/photos/${path}`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
       setUploading(false);
-      return;
     }
-    const path = `${u.user.id}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const { error } = await supabase.storage.from("dish-photos").upload(path, f, { upsert: false });
-    if (error) {
-      toast.error(error.message);
-      setUploading(false);
-      return;
-    }
-    setPhotoUrl(`/photos/${path}`);
-    setUploading(false);
   };
 
   if (step === "done")
@@ -379,6 +382,7 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [showCompare, setShowCompare] = useState(false);
+  const [triedDone, setTriedDone] = useState(false);
   const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds() });
   const pool = useQuery({
     queryKey: ["duplicate-ranking-pool", dish.category?.slug],
@@ -389,12 +393,14 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
     mutationFn: () => toggleTried({ data: { dishId: dish.id, tried: true } }),
     onSuccess: () => {
       toast.success("Marked as tried");
+      setTriedDone(true);
       setShowCompare(true);
       qc.invalidateQueries({ queryKey: ["tried"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
   const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+  const isTried = triedDone || (tried.data ?? []).includes(dish.id);
   const otherTried = ((pool.data ?? []) as any[]).find(
     (candidate) =>
       candidate.id !== dish.id &&
@@ -411,8 +417,8 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
         <Link to="/dish/$id" params={{ id: dish.id }}>
           <Button size="sm" variant="outline">View dish</Button>
         </Link>
-        <Button size="sm" onClick={() => tryMut.mutate()} disabled={tryMut.isPending}>
-          {t("tried_it")}
+        <Button size="sm" onClick={() => tryMut.mutate()} disabled={tryMut.isPending || isTried}>
+          {isTried ? "Tried ✓" : t("tried_it")}
         </Button>
       </div>
       {showCompare && otherTried && <InlineTriedCompare dish={dish} other={otherTried} />}
