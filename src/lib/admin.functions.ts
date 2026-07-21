@@ -22,7 +22,7 @@ export const listPending = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("dishes")
       .select(
-        `id, name_en, name_th, price_thb, photo_url, note, status, created_at,
+        `id, name_en, name_th, price_thb, photo_url, note, status, created_at, category_id, subtype_id, requested_category_en, requested_category_th,
         category:categories(name_en, slug), subtype:dish_subtypes(name_en, slug), place:places(name, area:areas(name_en))`,
       )
       .eq("status", "pending")
@@ -65,6 +65,15 @@ export const moderateDish = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    if (data.action === "approve") {
+      const { data: dish, error: checkError } = await context.supabase
+        .from("dishes")
+        .select("category_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (checkError) throw new Error(checkError.message);
+      if (!dish?.category_id) throw new Error("Assign a category before approving this dish");
+    }
     const patch =
       data.action === "approve"
         ? { status: "approved" as const }
@@ -93,6 +102,65 @@ export const moderateDish = createServerFn({ method: "POST" })
         if (pe) throw new Error(pe.message);
       }
     }
+    return { ok: true };
+  });
+
+export const assignDishCategoryAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { dishId: string; categoryId: string }) =>
+    z.object({ dishId: z.string().uuid(), categoryId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await context.supabase
+      .from("dishes")
+      .update({
+        category_id: data.categoryId,
+        subtype_id: null,
+        requested_category_en: null,
+        requested_category_th: null,
+      })
+      .eq("id", data.dishId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const createCategoryForDishAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { dishId: string; slug: string; name_en: string; name_th: string; cuisine?: string }) =>
+    z
+      .object({
+        dishId: z.string().uuid(),
+        slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+        cuisine: z.string().max(60).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { data: category, error: categoryError } = await context.supabase
+      .from("categories")
+      .insert({
+        slug: data.slug,
+        name_en: data.name_en,
+        name_th: data.name_th,
+        cuisine: data.cuisine || null,
+      })
+      .select("id")
+      .single();
+    if (categoryError) throw new Error(categoryError.message);
+    const { error } = await context.supabase
+      .from("dishes")
+      .update({
+        category_id: category.id,
+        subtype_id: null,
+        requested_category_en: null,
+        requested_category_th: null,
+      })
+      .eq("id", data.dishId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

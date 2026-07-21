@@ -249,7 +249,9 @@ export const submitDish = createServerFn({ method: "POST" })
       place_name?: string;
       area_id?: string;
       address?: string;
-      category_id: string;
+      category_id?: string;
+      requested_category_en?: string;
+      requested_category_th?: string;
       subtype_id?: string;
       price_thb?: number;
       photo_url?: string;
@@ -263,7 +265,9 @@ export const submitDish = createServerFn({ method: "POST" })
           place_name: z.string().trim().max(160).optional(),
           area_id: z.string().uuid().optional(),
           address: z.string().trim().max(300).optional(),
-          category_id: z.string().uuid(),
+          category_id: z.string().uuid().optional(),
+          requested_category_en: z.string().trim().max(80).optional(),
+          requested_category_th: z.string().trim().max(80).optional(),
           subtype_id: z.string().uuid().optional(),
           price_thb: z.number().min(0).max(100000).optional(),
           photo_url: imageUrlSchema,
@@ -272,6 +276,7 @@ export const submitDish = createServerFn({ method: "POST" })
         .parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (!data.category_id && !data.requested_category_en) throw new Error("Category required");
     let placeId = data.place_id;
     if (!placeId) {
       if (!data.place_name) throw new Error("Place required");
@@ -302,7 +307,9 @@ export const submitDish = createServerFn({ method: "POST" })
         name_en: data.name_en,
         name_th: data.name_th,
         place_id: placeId,
-        category_id: data.category_id,
+        category_id: data.category_id ?? null,
+        requested_category_en: data.category_id ? null : data.requested_category_en,
+        requested_category_th: data.category_id ? null : data.requested_category_th,
         subtype_id: data.subtype_id,
         price_thb: data.price_thb,
         photo_url: data.photo_url,

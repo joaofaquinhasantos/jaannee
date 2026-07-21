@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, listDishesAdmin, moderateDish, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
 import { listCuisines } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,9 +112,32 @@ function PendingPlaces() {
 function PendingList() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["pending"], queryFn: () => listPending() });
+  const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
+  const cuisines = useQuery({ queryKey: ["cuisines"], queryFn: () => listCuisines() });
+  const [assigning, setAssigning] = useState<Record<string, string>>({});
+  const [creating, setCreating] = useState<any | null>(null);
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderateDish({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pending"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+  const assignMut = useMutation({
+    mutationFn: (v: { dishId: string; categoryId: string }) => assignDishCategoryAdmin({ data: v }),
+    onSuccess: () => {
+      toast.success("Category assigned");
+      qc.invalidateQueries({ queryKey: ["pending"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const createMut = useMutation({
+    mutationFn: () => createCategoryForDishAdmin({ data: creating }),
+    onSuccess: () => {
+      toast.success("Category created and assigned");
+      setCreating(null);
+      qc.invalidateQueries({ queryKey: ["pending"] });
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   return (
@@ -128,6 +151,34 @@ function PendingList() {
             <div className="font-medium">{d.name_en}</div>
             <div className="text-xs text-muted-foreground">{d.place?.name} · {d.place?.area?.name_en} · {d.category?.name_en} {d.price_thb && `· ฿${d.price_thb}`}</div>
             {d.note && <div className="mt-1 text-xs italic text-muted-foreground">{d.note}</div>}
+            {!d.category_id && (
+              <div className="mt-3 rounded-md border border-dashed border-border bg-background p-3">
+                <p className="text-xs font-bold uppercase text-primary">Requested new category</p>
+                <p className="mt-1 text-sm font-medium">{d.requested_category_en}{d.requested_category_th ? ` / ${d.requested_category_th}` : ""}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Select value={assigning[d.id] ?? ""} onValueChange={(v) => setAssigning({ ...assigning, [d.id]: v })}>
+                    <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
+                    <SelectContent>
+                      {(cats.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" variant="outline" disabled={!assigning[d.id] || assignMut.isPending} onClick={() => assignMut.mutate({ dishId: d.id, categoryId: assigning[d.id] })}>Assign</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCreating({
+                      dishId: d.id,
+                      slug: (d.requested_category_en ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+                      name_en: d.requested_category_en ?? "",
+                      name_th: d.requested_category_th || d.requested_category_en || "",
+                      cuisine: "",
+                    })}
+                  >
+                    Create category
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={() => mut.mutate({ id: d.id, action: "approve" })}>Approve</Button>
@@ -136,6 +187,32 @@ function PendingList() {
         </div>
       ))}
       {(q.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Queue is empty.</p>}
+      <Dialog open={!!creating} onOpenChange={(o) => !o && setCreating(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Create category for pending dish</DialogTitle></DialogHeader>
+          {creating && (
+            <div className="space-y-3">
+              <div><Label>Slug *</Label><Input value={creating.slug} onChange={(e) => setCreating({ ...creating, slug: e.target.value })} /></div>
+              <div><Label>Name (EN) *</Label><Input value={creating.name_en} onChange={(e) => setCreating({ ...creating, name_en: e.target.value })} /></div>
+              <div><Label>Name (TH) *</Label><Input value={creating.name_th} onChange={(e) => setCreating({ ...creating, name_th: e.target.value })} /></div>
+              <div>
+                <Label>Cuisine</Label>
+                <Select value={creating.cuisine || "none"} onValueChange={(v) => setCreating({ ...creating, cuisine: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Other" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Other</SelectItem>
+                    {(cuisines.data ?? []).filter((c: any) => c.slug !== "other").map((c: any) => <SelectItem key={c.slug} value={c.slug}>{c.name_en}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreating(null)}>Cancel</Button>
+            <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>Create and assign</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

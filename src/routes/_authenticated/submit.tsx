@@ -36,6 +36,9 @@ function Submit() {
   const [area_id, setAreaId] = useState("");
   const [address, setAddress] = useState("");
   const [category_id, setCategoryId] = useState("");
+  const [requestingCategory, setRequestingCategory] = useState(false);
+  const [requestedCategoryEn, setRequestedCategoryEn] = useState("");
+  const [requestedCategoryTh, setRequestedCategoryTh] = useState("");
   const [subtype_id, setSubtypeId] = useState("");
   const [subtypeError, setSubtypeError] = useState("");
   const [price_thb, setPrice] = useState("");
@@ -57,11 +60,11 @@ function Submit() {
 
   const check = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name_en || !category_id || (!selectedPlace && (!place_name || !area_id))) {
+    if (!name_en || (!category_id && !requestedCategoryEn) || (!selectedPlace && (!place_name || !area_id))) {
       toast.error(t("submit_required"));
       return;
     }
-    if (activeSubtypes.length > 0 && !subtype_id) {
+    if (!requestingCategory && activeSubtypes.length > 0 && !subtype_id) {
       setSubtypeError("Choose a dish type for this category.");
       return;
     }
@@ -84,6 +87,8 @@ function Submit() {
           area_id: selectedPlace?.area_id || area_id,
           address: selectedPlace ? undefined : address || undefined,
           category_id,
+          requested_category_en: requestingCategory ? requestedCategoryEn : undefined,
+          requested_category_th: requestingCategory ? requestedCategoryTh || undefined : undefined,
           subtype_id: subtype_id || undefined,
           price_thb: price_thb ? Number(price_thb) : undefined,
           photo_url: photoUrl || undefined,
@@ -140,6 +145,10 @@ function Submit() {
                 setPhotoUrl("");
                 setSubtypeId("");
                 setSubtypeError("");
+                setCategoryId("");
+                setRequestingCategory(false);
+                setRequestedCategoryEn("");
+                setRequestedCategoryTh("");
                 }}
               >
                 {t("add_another")}
@@ -217,19 +226,34 @@ function Submit() {
             </div>
           <div>
             <Label>Category *</Label>
-            <CategoryPicker
-              categories={categories.data ?? []}
-              value={category_id}
-              lang={lang}
-              placeholder={t("choose_category")}
-              onChange={(v) => {
-                setCategoryId(v);
-                setSubtypeId("");
-                setSubtypeError("");
-              }}
-            />
+            {requestingCategory ? (
+              <div className="space-y-2">
+                <Input value={requestedCategoryEn} onChange={(e) => setRequestedCategoryEn(e.target.value)} placeholder="New category name (EN)" maxLength={80} />
+                <Input value={requestedCategoryTh} onChange={(e) => setRequestedCategoryTh(e.target.value)} placeholder="New category name (TH optional)" maxLength={80} />
+                <Button type="button" variant="outline" onClick={() => { setRequestingCategory(false); setRequestedCategoryEn(""); setRequestedCategoryTh(""); }}>
+                  Choose existing category
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <CategoryPicker
+                  categories={categories.data ?? []}
+                  value={category_id}
+                  lang={lang}
+                  placeholder={t("choose_category")}
+                  onChange={(v) => {
+                    setCategoryId(v);
+                    setSubtypeId("");
+                    setSubtypeError("");
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={() => { setRequestingCategory(true); setCategoryId(""); setSubtypeId(""); setSubtypeError(""); }}>
+                  Category not listed
+                </Button>
+              </div>
+            )}
           </div>
-          {activeSubtypes.length > 0 && (
+          {!requestingCategory && activeSubtypes.length > 0 && (
             <div>
               <Label>Dish type *</Label>
               <Select
