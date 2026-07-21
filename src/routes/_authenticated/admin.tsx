@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, grantAdminSelf, listPendingPlaces, moderatePlace } from "@/lib/admin.functions";
+import { amIAdmin, listPending, moderateDish, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
@@ -139,16 +140,38 @@ function Reports() {
 }
 
 function Taxonomy() {
+  const qc = useQueryClient();
   const [c, setC] = useState({ slug: "", name_en: "", name_th: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
+  const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
+  const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
+  const [editing, setEditing] = useState<
+    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string }
+    | null
+  >(null);
   const cMut = useMutation({
     mutationFn: () => upsertCategory({ data: c }),
-    onSuccess: () => { toast.success("Saved"); setC({ slug: "", name_en: "", name_th: "" }); },
+    onSuccess: () => { toast.success("Saved"); setC({ slug: "", name_en: "", name_th: "" }); qc.invalidateQueries({ queryKey: ["admin-categories"] }); },
     onError: (e: any) => toast.error(e.message),
   });
   const aMut = useMutation({
     mutationFn: () => upsertArea({ data: a }),
-    onSuccess: () => { toast.success("Saved"); setA({ slug: "", name_en: "", name_th: "" }); },
+    onSuccess: () => { toast.success("Saved"); setA({ slug: "", name_en: "", name_th: "" }); qc.invalidateQueries({ queryKey: ["admin-areas"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const editMut = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const payload = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th };
+      if (editing.kind === "category") await upsertCategory({ data: payload });
+      else await upsertArea({ data: payload });
+    },
+    onSuccess: () => {
+      toast.success("Updated");
+      if (editing?.kind === "category") qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      else qc.invalidateQueries({ queryKey: ["admin-areas"] });
+      setEditing(null);
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const SLUG_RE = /^[a-z0-9-]+$/;
@@ -162,6 +185,11 @@ function Taxonomy() {
   };
   const saveC = () => { const err = validate(c); if (err) { toast.error(err); return; } cMut.mutate(); };
   const saveA = () => { const err = validate(a); if (err) { toast.error(err); return; } aMut.mutate(); };
+  const saveEdit = () => {
+    if (!editing) return;
+    if (!editing.name_en.trim() || !editing.name_th.trim()) { toast.error("Both names are required"); return; }
+    editMut.mutate();
+  };
   return (
     <div className="mt-4 grid gap-6 md:grid-cols-2">
       <div className="rounded-xl border border-border bg-card p-4">
@@ -176,6 +204,21 @@ function Taxonomy() {
           <div><Label>Name (TH) *</Label><Input value={c.name_th} onChange={(e) => setC({ ...c, name_th: e.target.value })} /></div>
           <Button onClick={saveC} disabled={cMut.isPending}>Save</Button>
         </div>
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold text-muted-foreground">Existing categories</h4>
+          <div className="mt-2 divide-y divide-border rounded-lg border border-border">
+            {(cats.data ?? []).map((row: any) => (
+              <div key={row.slug} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
+                  <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
+              </div>
+            ))}
+            {(cats.data ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No categories yet.</p>}
+          </div>
+        </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="font-display text-lg font-semibold">Add area</h3>
@@ -189,7 +232,50 @@ function Taxonomy() {
           <div><Label>Name (TH) *</Label><Input value={a.name_th} onChange={(e) => setA({ ...a, name_th: e.target.value })} /></div>
           <Button onClick={saveA} disabled={aMut.isPending}>Save</Button>
         </div>
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold text-muted-foreground">Existing areas</h4>
+          <div className="mt-2 divide-y divide-border rounded-lg border border-border">
+            {(areas.data ?? []).map((row: any) => (
+              <div key={row.slug} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
+                  <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "area", slug: row.slug, name_en: row.name_en, name_th: row.name_th })}>Edit</Button>
+              </div>
+            ))}
+            {(areas.data ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No areas yet.</p>}
+          </div>
+        </div>
       </div>
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {editing?.kind === "category" ? "category" : "area"}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <Label>Slug</Label>
+                <Input value={editing.slug} readOnly disabled />
+                <p className="mt-1 text-xs text-muted-foreground">Slug is read-only.</p>
+              </div>
+              <div>
+                <Label>Name (EN) *</Label>
+                <Input value={editing.name_en} onChange={(e) => setEditing({ ...editing, name_en: e.target.value })} />
+              </div>
+              <div>
+                <Label>Name (TH) *</Label>
+                <Input value={editing.name_th} onChange={(e) => setEditing({ ...editing, name_th: e.target.value })} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button onClick={saveEdit} disabled={editMut.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
