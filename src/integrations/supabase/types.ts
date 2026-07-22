@@ -479,6 +479,13 @@ export type Database = {
         Returns: boolean
       }
       dish_ranking_key: { Args: { _dish_id: string }; Returns: string }
+      get_follow_counts: {
+        Args: { _user_id: string }
+        Returns: {
+          followers_count: number
+          following_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

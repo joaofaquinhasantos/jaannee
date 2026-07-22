@@ -713,7 +713,7 @@ export const publicProfile = createServerFn({ method: "GET" })
       .ilike("username", data.username)
       .maybeSingle();
     if (error || !profile?.username) return null;
-    const [tried, compared, followers, following] = await Promise.all([
+    const [tried, compared, counts] = await Promise.all([
       profile.tried_public
         ? (supabase as any)
             .from("dish_tries")
@@ -723,15 +723,14 @@ export const publicProfile = createServerFn({ method: "GET" })
             .limit(24)
         : Promise.resolve({ data: [] }),
       (supabase as any).from("comparisons").select("id").eq("user_id", profile.id),
-      (supabase as any).from("follows").select("follower_id").eq("following_id", profile.id),
-      (supabase as any).from("follows").select("following_id").eq("follower_id", profile.id),
+      (supabase as any).rpc("get_follow_counts", { _user_id: profile.id }).maybeSingle(),
     ]);
     return {
       profile,
       tried: tried.data ?? [],
       comparisons_count: compared.data?.length ?? 0,
-      followers_count: followers.data?.length ?? 0,
-      following_count: following.data?.length ?? 0,
+      followers_count: Number((counts as any)?.data?.followers_count ?? 0),
+      following_count: Number((counts as any)?.data?.following_count ?? 0),
     };
   });
 
