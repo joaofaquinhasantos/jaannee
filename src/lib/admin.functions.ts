@@ -895,20 +895,24 @@ export const listPlacesAdmin = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
-    const { data: rows, error } = await (context.supabase as any)
+    let query = (context.supabase as any)
       .from("places")
       .select("id, name, address, status, lat, lng, area:areas(id, name_en, name_th)")
-      .in("status", ["approved", "pending"])
+      .in("status", ["approved", "pending"]);
+
+    const term = data.query?.trim();
+    if (term) {
+      const escaped = term.replace(/[%_]/g, (match) => `\\${match}`);
+      query = query.or(`name.ilike.%${escaped}%,address.ilike.%${escaped}%`);
+    }
+
+    const { data: rows, error } = await query
+      .order("lat", { ascending: true, nullsFirst: true })
+      .order("lng", { ascending: true, nullsFirst: true })
       .order("name", { ascending: true })
-      .limit(250);
+      .limit(1000);
     if (error) throw new Error(error.message);
-    const term = data.query?.trim().toLowerCase();
-    if (!term) return rows ?? [];
-    return (rows ?? []).filter((place: any) =>
-      [place.name, place.address, place.area?.name_en, place.area?.name_th]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
-    );
+    return rows ?? [];
   });
 
 export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
