@@ -610,6 +610,51 @@ export const listAreasAdmin = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listPlacesAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { query?: string }) =>
+    z.object({ query: z.string().max(120).optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { data: rows, error } = await (context.supabase as any)
+      .from("places")
+      .select("id, name, address, status, lat, lng, area:areas(id, name_en, name_th)")
+      .in("status", ["approved", "pending"])
+      .order("name", { ascending: true })
+      .limit(250);
+    if (error) throw new Error(error.message);
+    const term = data.query?.trim().toLowerCase();
+    if (!term) return rows ?? [];
+    return (rows ?? []).filter((place: any) =>
+      [place.name, place.address, place.area?.name_en, place.area?.name_th]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term)),
+    );
+  });
+
+export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; lat?: number | null; lng?: number | null }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        lat: z.number().min(-90).max(90).nullable().optional(),
+        lng: z.number().min(-180).max(180).nullable().optional(),
+      })
+      .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), "Set both latitude and longitude, or clear both.")
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await (context.supabase as any)
+      .from("places")
+      .update({ lat: data.lat ?? null, lng: data.lng ?? null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const moderatePlace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; action: "approve" | "reject" }) =>

@@ -229,7 +229,7 @@ export const searchSimilar = createServerFn({ method: "GET" })
       ? ((
           await supabase
             .from("places")
-            .select("id, name, area_id, area:areas(id, slug, name_en, name_th)")
+            .select("id, name, area_id, address, area:areas(id, slug, name_en, name_th)")
             .ilike("name", `%${data.placeName}%`)
             .limit(5)
         ).data ?? [])
@@ -265,6 +265,38 @@ export const searchPlaces = createServerFn({ method: "GET" })
     const rows = (matches ?? []).map((place: any) => ({ ...place, area: areaById.get(place.area_id) ?? null }));
     return rows ?? [];
   });
+
+export const listNearbyPlaces = createServerFn({ method: "GET" })
+  .inputValidator((i: { lat: number; lng: number }) =>
+    z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    const supabase = publicClient();
+    const { data: rows, error } = await (supabase as any)
+      .from("places")
+      .select("id, name, area_id, address, lat, lng, area:areas(id, slug, name_en, name_th)")
+      .eq("status", "approved")
+      .not("lat", "is", null)
+      .not("lng", "is", null)
+      .limit(1000);
+    if (error) return [];
+    return (rows ?? [])
+      .map((place: any) => ({ ...place, distance_m: distanceMeters(data.lat, data.lng, Number(place.lat), Number(place.lng)) }))
+      .filter((place: any) => place.distance_m <= 1000)
+      .sort((a: any, b: any) => a.distance_m - b.distance_m)
+      .slice(0, 6);
+  });
+
+function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const r = 6371000;
+  const toRad = (n: number) => (n * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
+  const h = s1 * s1 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * s2 * s2;
+  return 2 * r * Math.asin(Math.min(1, Math.sqrt(h)));
+}
 
 export const submitDish = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

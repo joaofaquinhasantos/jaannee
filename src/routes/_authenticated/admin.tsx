@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin, listPlacesAdmin, updatePlaceCoordinatesAdmin } from "@/lib/admin.functions";
 import { listCuisines } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ function Admin() {
         <TabsList className="h-auto flex-wrap justify-start rounded-lg bg-secondary p-1">
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="dishes">Dishes</TabsTrigger>
-          <TabsTrigger value="places">Pending places</TabsTrigger>
+          <TabsTrigger value="places">Places</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="taxonomy">Cuisines, Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
@@ -88,13 +88,55 @@ function Bootstrap({ onGranted }: { onGranted: () => void }) {
 function PendingPlaces() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["pending-places"], queryFn: () => listPendingPlaces() });
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<any | null>(null);
+  const [coordText, setCoordText] = useState("");
+  const places = useQuery({ queryKey: ["admin-places", query], queryFn: () => listPlacesAdmin({ data: { query } }) });
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderatePlace({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pending-places"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pending-places"] });
+      qc.invalidateQueries({ queryKey: ["admin-places"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
+  const coordMut = useMutation({
+    mutationFn: (v: { id: string; lat?: number | null; lng?: number | null }) => updatePlaceCoordinatesAdmin({ data: v }),
+    onSuccess: () => {
+      toast.success("Coordinates saved");
+      setEditing(null);
+      setCoordText("");
+      qc.invalidateQueries({ queryKey: ["admin-places"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const saveCoords = () => {
+    if (!editing) return;
+    const parts = coordText.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length !== 2) {
+      toast.error("Paste coordinates as lat,lng");
+      return;
+    }
+    coordMut.mutate({ id: editing.id, lat: Number(parts[0]), lng: Number(parts[1]) });
+  };
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Location is not available in this browser");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCoordText(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+      () => toast.error("Could not read your location"),
+      { enableHighAccuracy: true, timeout: 7000 },
+    );
+  };
   return (
-    <div className="mt-4 space-y-3">
+    <div className="mt-4 space-y-6">
+      <section className="space-y-3">
+        <div>
+          <h3 className="font-display text-3xl">Pending places</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Approve new places created from the submit flow.</p>
+        </div>
       {(q.data ?? []).map((p: any) => (
         <div key={p.id} className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm">
           <div className="min-w-0 flex-1">
@@ -106,6 +148,58 @@ function PendingPlaces() {
         </div>
       ))}
       {(q.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No pending places.</p>}
+      </section>
+
+      <section className="space-y-3">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h3 className="font-display text-3xl">Place coordinates</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Backfill lat,lng so nearby place picking works from the photo-first flow.</p>
+          <Input className="mt-3 max-w-md" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search place, address, area" />
+        </div>
+        {(places.data ?? []).map((p: any) => (
+          <div key={p.id} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 text-sm sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">{p.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {p.area?.name_en}{p.address ? ` / ${p.address}` : ""} / {p.status}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {p.lat != null && p.lng != null ? `${p.lat}, ${p.lng}` : "No coordinates"}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setEditing(p);
+                setCoordText(p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : "");
+              }}
+            >
+              Coordinates
+            </Button>
+          </div>
+        ))}
+      </section>
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Set place coordinates</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{editing.name}</p>
+              <div>
+                <Label>lat,lng</Label>
+                <Input value={coordText} onChange={(e) => setCoordText(e.target.value)} placeholder="13.756331,100.501762" />
+              </div>
+              <Button type="button" variant="outline" onClick={useCurrentLocation}>Use my current location</Button>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => editing && coordMut.mutate({ id: editing.id, lat: null, lng: null })} disabled={coordMut.isPending}>Clear</Button>
+            <Button onClick={saveCoords} disabled={coordMut.isPending}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
