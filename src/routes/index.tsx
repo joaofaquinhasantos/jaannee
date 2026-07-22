@@ -3,11 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
-import { listDishes, listCategories, listAreas, listCategoryCounts, listActivityFeed } from "@/lib/dishes.functions";
+import { listDishes, listCategories, listAreas, listCategoryCounts, listActivityFeed, listFollowingActivityFeed } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/CategoryPicker";
 import { AreaPicker } from "@/components/AreaPicker";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({ component: Index });
 
@@ -15,6 +17,14 @@ function Index() {
   const { t, lang } = useI18n();
   const [cat, setCat] = useState<string | undefined>();
   const [area, setArea] = useState<string | undefined>();
+  const [authed, setAuthed] = useState(false);
+  const [followingOnly, setFollowingOnly] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s?.user));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const dishes = useQuery({
     queryKey: ["dishes", cat, area],
@@ -24,7 +34,11 @@ function Index() {
   const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
   const allDishes = useQuery({ queryKey: ["dishes", "area-counts"], queryFn: () => listDishes({ data: {} }) });
-  const activity = useQuery({ queryKey: ["activity-feed"], queryFn: () => listActivityFeed({ data: {} }) });
+  const activity = useQuery({
+    queryKey: ["activity-feed", followingOnly],
+    queryFn: () => followingOnly ? listFollowingActivityFeed() : listActivityFeed({ data: {} }),
+    enabled: !followingOnly || authed,
+  });
   const topCategories = [...(categories.data ?? [])]
     .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
     .slice(0, 8);
@@ -171,9 +185,28 @@ function Index() {
       </section>
       {(activity.data ?? []).length > 0 && (
         <section className="mt-8 md:mt-10">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="font-display text-3xl leading-none">Taste feed</h2>
-            <span className="text-xs font-bold uppercase text-muted-foreground">People eating now</span>
+            {authed ? (
+              <div className="flex rounded-full border border-border bg-card p-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setFollowingOnly(false)}
+                  className={`rounded-full px-3 py-1 ${!followingOnly ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFollowingOnly(true)}
+                  className={`rounded-full px-3 py-1 ${followingOnly ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                >
+                  Following
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs font-bold uppercase text-muted-foreground">People eating now</span>
+            )}
           </div>
           <div className="space-y-2">
             {(activity.data ?? []).slice(0, 6).map((item: any, i: number) => (
@@ -190,7 +223,7 @@ function Index() {
                   <p className="truncate font-medium">
                     {item.profile?.display_name || item.profile?.username || "Someone"}{" "}
                     <span className="font-normal text-muted-foreground">
-                      {item.type === "comment" ? "commented on" : item.type === "tried" ? "ate" : "posted"}
+                      {item.type === "tried" ? "ate" : "posted"}
                     </span>{" "}
                     {item.dish?.name_en}
                   </p>

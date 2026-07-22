@@ -1,24 +1,61 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
-import { myProfile } from "@/lib/dishes.functions";
+import { myProfile, updateMyProfile } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
 import { useNavigate } from "@tanstack/react-router";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/profile")({ component: Profile });
 
 function Profile() {
   const { t } = useI18n();
   const nav = useNavigate();
+  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["profile"], queryFn: () => myProfile() });
   const tried = (q.data?.tried ?? []).map((r: any) => r.dish).filter(Boolean);
   const compared = q.data?.compared ?? [];
   const posted = q.data?.posted ?? [];
   const profile = q.data?.profile;
   const displayName = profile?.display_name || profile?.username || "Your profile";
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [bio, setBio] = useState("");
+  const [triedPublic, setTriedPublic] = useState(true);
+
+  useEffect(() => {
+    if (!profile) return;
+    setUsername(profile.username ?? "");
+    setName(profile.display_name ?? "");
+    setAvatarUrl(profile.avatar_url ?? "");
+    setBio(profile.bio ?? "");
+    setTriedPublic(profile.tried_public !== false);
+  }, [profile]);
+
+  const saveProfile = useMutation({
+    mutationFn: () =>
+      updateMyProfile({
+        data: {
+          username,
+          displayName: name,
+          avatarUrl,
+          bio,
+          triedPublic,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Profile saved");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -42,6 +79,46 @@ function Profile() {
         <Stat label="Votes" value={compared.length} />
         <Stat label="Followers" value={q.data?.followers_count ?? 0} />
       </div>
+
+      <section className="mt-6 rounded-lg border border-border bg-card p-4 md:p-5">
+        {!profile?.username ? (
+          <div className="mb-4 rounded-md bg-secondary p-3 text-sm">
+            Claim a username to make your public profile visible. Until then, your profile stays private.
+          </div>
+        ) : null}
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="space-y-1 text-sm font-semibold">
+            <span>Username</span>
+            <Input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} placeholder="joao_eats" />
+          </label>
+          <label className="space-y-1 text-sm font-semibold">
+            <span>Name</span>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Joao" />
+          </label>
+          <label className="space-y-1 text-sm font-semibold md:col-span-2">
+            <span>Avatar URL</span>
+            <Input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
+          </label>
+          <label className="space-y-1 text-sm font-semibold md:col-span-2">
+            <span>Bio</span>
+            <Textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} placeholder="What kind of eater are you?" />
+          </label>
+          <label className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm font-semibold md:col-span-2">
+            <span>Show dishes I tried on my public profile</span>
+            <input type="checkbox" checked={triedPublic} onChange={(e) => setTriedPublic(e.target.checked)} className="h-5 w-5 accent-primary" />
+          </label>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending || username.trim().length < 3}>
+            Save profile
+          </Button>
+          {profile?.username ? (
+            <Link to="/u/$username" params={{ username: profile.username }}>
+              <Button variant="outline">View public profile</Button>
+            </Link>
+          ) : null}
+        </div>
+      </section>
 
       <section className="mt-8">
         <h2 className="mb-4 font-display text-3xl">Posted</h2>
