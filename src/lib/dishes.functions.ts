@@ -481,7 +481,7 @@ export const listActivityFeed = createServerFn({ method: "GET" })
     const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     return raw
       .map((item) => ({ ...item, profile: byId.get(item.user_id) ?? null }))
-      .filter((item) => item.type !== "tried" || item.profile?.tried_public !== false)
+      .filter((item) => item.type !== "tried" || (item.profile as any)?.tried_public !== false)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 20);
   });
@@ -523,7 +523,7 @@ export const listFollowingActivityFeed = createServerFn({ method: "GET" })
     const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     return raw
       .map((item) => ({ ...item, profile: byId.get(item.user_id) ?? null }))
-      .filter((item) => item.type !== "tried" || item.profile?.tried_public !== false)
+      .filter((item) => item.type !== "tried" || (item.profile as any)?.tried_public !== false)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 20);
   });
@@ -568,7 +568,7 @@ export const submitComparison = createServerFn({ method: "POST" })
     const { data: subtypes, error: se } = await context.supabase
       .from("dish_subtypes")
       .select("id, category_id, is_active")
-      .in("category_id", [dishes[0].category_id, dishes[1].category_id]);
+      .in("category_id", [dishes[0].category_id!, dishes[1].category_id!]);
     if (se) throw new Error(se.message);
     const activeSubtypes = (subtypes ?? []).filter((s: any) => s.is_active);
     const hasActiveSubtypes = activeSubtypes.some((s: any) => s.category_id === dishes[0].category_id);
@@ -609,7 +609,7 @@ export const submitComparison = createServerFn({ method: "POST" })
     } else {
       const { error } = await context.supabase.from("comparisons").insert({
         user_id: context.userId,
-        category_id: dishes[0].category_id,
+        category_id: dishes[0].category_id!,
         dish_lo_id: lo,
         dish_hi_id: hi,
         winner_id: data.winnerId,
@@ -799,7 +799,7 @@ export const leaderboard = createServerFn({ method: "GET" })
       .gte("comparisons_count", data.minimumComparisons ?? 5)
       .order("elo", { ascending: false })
       .limit(50);
-    if (hasActiveSubtypes) q = q.eq("subtype_id", subtype.id);
+    if (hasActiveSubtypes) q = q.eq("subtype_id", subtype!.id);
     else q = q.is("subtype_id", null);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
