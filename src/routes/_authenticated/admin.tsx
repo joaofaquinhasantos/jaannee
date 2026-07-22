@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, importPlacesCsv, exportDishesCsv, exportPlacesCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin, listPlacesAdmin, updatePlaceCoordinatesAdmin } from "@/lib/admin.functions";
+import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, importPlacesCsv, exportDishesCsv, exportPlacesCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin, listPlacesAdmin, updatePlaceAdmin } from "@/lib/admin.functions";
 import { listCuisines, mapsDirectionsUrl } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,9 +100,10 @@ function Bootstrap({ onGranted }: { onGranted: () => void }) {
 function PendingPlaces() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["pending-places"], queryFn: () => listPendingPlaces() });
+  const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<any | null>(null);
-  const [coordText, setCoordText] = useState("");
+  const [placeForm, setPlaceForm] = useState({ name: "", areaId: "", address: "", status: "pending", coordText: "" });
   const places = useQuery({ queryKey: ["admin-places", query], queryFn: () => listPlacesAdmin({ data: { query } }) });
   const exportMut = useMutation({
     mutationFn: () => exportPlacesCsv(),
@@ -117,24 +118,54 @@ function PendingPlaces() {
     },
     onError: (e: any) => toast.error(e.message),
   });
-  const coordMut = useMutation({
-    mutationFn: (v: { id: string; lat?: number | null; lng?: number | null }) => updatePlaceCoordinatesAdmin({ data: v }),
+  const placeMut = useMutation({
+    mutationFn: (v: { id: string; name: string; areaId: string; address?: string; status: "approved" | "pending" | "rejected"; lat?: number | null; lng?: number | null }) =>
+      updatePlaceAdmin({ data: v }),
     onSuccess: () => {
-      toast.success("Coordinates saved");
+      toast.success("Place saved");
       setEditing(null);
-      setCoordText("");
+      qc.invalidateQueries({ queryKey: ["pending-places"] });
       qc.invalidateQueries({ queryKey: ["admin-places"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
-  const saveCoords = () => {
+  const parseCoordText = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return { lat: null, lng: null };
+    const parts = trimmed.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length !== 2) throw new Error("Paste coordinates as lat,lng");
+    const lat = Number(parts[0]);
+    const lng = Number(parts[1]);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new Error("Latitude must be between -90 and 90");
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) throw new Error("Longitude must be between -180 and 180");
+    return { lat, lng };
+  };
+  const openPlaceEditor = (p: any) => {
+    setEditing(p);
+    setPlaceForm({
+      name: p.name ?? "",
+      areaId: p.area?.id ?? "",
+      address: p.address ?? "",
+      status: p.status ?? "pending",
+      coordText: p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : "",
+    });
+  };
+  const savePlace = () => {
     if (!editing) return;
-    const parts = coordText.split(",").map((p) => p.trim()).filter(Boolean);
-    if (parts.length !== 2) {
-      toast.error("Paste coordinates as lat,lng");
+    try {
+      const coords = parseCoordText(placeForm.coordText);
+      placeMut.mutate({
+        id: editing.id,
+        name: placeForm.name,
+        areaId: placeForm.areaId,
+        address: placeForm.address || undefined,
+        status: placeForm.status as "approved" | "pending" | "rejected",
+        ...coords,
+      });
+    } catch (e: any) {
+      toast.error(e.message);
       return;
     }
-    coordMut.mutate({ id: editing.id, lat: Number(parts[0]), lng: Number(parts[1]) });
   };
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -142,7 +173,7 @@ function PendingPlaces() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => setCoordText(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+      (pos) => setPlaceForm((v) => ({ ...v, coordText: `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}` })),
       () => toast.error("Could not read your location"),
       { enableHighAccuracy: true, timeout: 7000 },
     );
@@ -198,12 +229,9 @@ function PendingPlaces() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  setEditing(p);
-                  setCoordText(p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : "");
-                }}
+                onClick={() => openPlaceEditor(p)}
               >
-                Coordinates
+                Edit
               </Button>
             </div>
           </div>
@@ -211,21 +239,50 @@ function PendingPlaces() {
       </section>
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Set place coordinates</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit place</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-3">
-              <p className="text-sm font-medium">{editing.name}</p>
+              <div>
+                <Label>Name</Label>
+                <Input value={placeForm.name} onChange={(e) => setPlaceForm({ ...placeForm, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Area</Label>
+                <Select value={placeForm.areaId} onValueChange={(v) => setPlaceForm({ ...placeForm, areaId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Choose area" /></SelectTrigger>
+                  <SelectContent>
+                    {(areas.data ?? []).map((area: any) => (
+                      <SelectItem key={area.id} value={area.id}>{area.name_en}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Address</Label>
+                <Input value={placeForm.address} onChange={(e) => setPlaceForm({ ...placeForm, address: e.target.value })} />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={placeForm.status} onValueChange={(v) => setPlaceForm({ ...placeForm, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>lat,lng</Label>
-                <Input value={coordText} onChange={(e) => setCoordText(e.target.value)} placeholder="13.756331,100.501762" />
+                <Input value={placeForm.coordText} onChange={(e) => setPlaceForm({ ...placeForm, coordText: e.target.value })} placeholder="13.756331,100.501762" />
               </div>
               <Button type="button" variant="outline" onClick={useCurrentLocation}>Use my current location</Button>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button variant="outline" onClick={() => editing && coordMut.mutate({ id: editing.id, lat: null, lng: null })} disabled={coordMut.isPending}>Clear</Button>
-            <Button onClick={saveCoords} disabled={coordMut.isPending}>Save</Button>
+            <Button variant="outline" onClick={() => setPlaceForm({ ...placeForm, coordText: "" })} disabled={placeMut.isPending}>Clear coords</Button>
+            <Button onClick={savePlace} disabled={placeMut.isPending || !placeForm.name.trim() || !placeForm.areaId}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

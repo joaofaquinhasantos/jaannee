@@ -933,6 +933,39 @@ export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updatePlaceAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; name: string; areaId: string; address?: string; status: "approved" | "pending" | "rejected"; lat?: number | null; lng?: number | null }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().trim().min(1).max(160),
+        areaId: z.string().uuid(),
+        address: z.string().trim().max(300).optional(),
+        status: z.enum(["approved", "pending", "rejected"]),
+        lat: z.number().min(-90).max(90).nullable().optional(),
+        lng: z.number().min(-180).max(180).nullable().optional(),
+      })
+      .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), "Set both latitude and longitude, or clear both.")
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await (context.supabase as any)
+      .from("places")
+      .update({
+        name: data.name,
+        area_id: data.areaId,
+        address: data.address || null,
+        status: data.status,
+        lat: data.lat ?? null,
+        lng: data.lng ?? null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const moderatePlace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; action: "approve" | "reject" }) =>
