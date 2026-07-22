@@ -933,6 +933,13 @@ function Import() {
   const [csv, setCsv] = useState("category_slug,subtype_slug,area_slug,place_name,address,lat,lng,dish_name_en,dish_name_th,price_thb,photo_url,note\n");
   const [placesCsv, setPlacesCsv] = useState("name,area_slug,address,lat,lng\n");
   const [autoApprove, setAutoApprove] = useState(true);
+  const readCsvFile = (file: File | undefined, onText: (text: string) => void) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onText(String(reader.result ?? "").replace(/^\uFEFF/, ""));
+    reader.onerror = () => toast.error("Could not read CSV file");
+    reader.readAsText(file);
+  };
   const mut = useMutation({
     mutationFn: () => bulkImportCsv({ data: { csv, autoApprove } }),
     onSuccess: (r: any) => toast.success(`Dishes: ${r.created} created, ${r.skipped ?? 0} skipped, ${r.failed ?? r.errors?.length ?? 0} failed`),
@@ -958,6 +965,15 @@ function Import() {
             Extra export columns are ignored.
           </p>
         </div>
+        <div>
+          <Label>Choose CSV file</Label>
+          <Input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => readCsvFile(e.target.files?.[0], setCsv)}
+            className="file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
+          />
+        </div>
         <Textarea rows={12} value={csv} onChange={(e) => setCsv(e.target.value)} className="font-mono text-xs" />
         <Button onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? "Importing..." : "Import dishes"}</Button>
         <ImportResult result={mut.data} />
@@ -969,6 +985,15 @@ function Import() {
           <p className="mt-1 text-sm text-muted-foreground">
             Columns: <code className="rounded bg-muted px-1">name, area_slug, address, lat, lng</code>. Extra export columns are ignored.
           </p>
+        </div>
+        <div>
+          <Label>Choose CSV file</Label>
+          <Input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => readCsvFile(e.target.files?.[0], setPlacesCsv)}
+            className="file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
+          />
         </div>
         <Textarea rows={10} value={placesCsv} onChange={(e) => setPlacesCsv(e.target.value)} className="font-mono text-xs" />
         <Button onClick={() => placesMut.mutate()} disabled={placesMut.isPending}>{placesMut.isPending ? "Importing..." : "Import places"}</Button>
