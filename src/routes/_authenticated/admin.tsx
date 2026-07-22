@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin, listPlacesAdmin, updatePlaceCoordinatesAdmin } from "@/lib/admin.functions";
-import { listCuisines } from "@/lib/dishes.functions";
+import { amIAdmin, listPending, listDishesAdmin, moderateDish, assignDishCategoryAdmin, createCategoryForDishAdmin, updateDishAdmin, deleteDishAdmin, mergeDishAdmin, listReports, resolveReport, bulkImportCsv, importPlacesCsv, exportDishesCsv, exportPlacesCsv, upsertCategory, upsertArea, upsertSubtype, upsertCuisine, deleteCuisine, deleteCategory, deleteArea, grantAdminSelf, listPendingPlaces, moderatePlace, listCategoriesAdmin, listAreasAdmin, listPlacesAdmin, updatePlaceCoordinatesAdmin } from "@/lib/admin.functions";
+import { listCuisines, mapsDirectionsUrl } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,18 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
+
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 function Admin() {
   const qc = useQueryClient();
@@ -92,6 +104,11 @@ function PendingPlaces() {
   const [editing, setEditing] = useState<any | null>(null);
   const [coordText, setCoordText] = useState("");
   const places = useQuery({ queryKey: ["admin-places", query], queryFn: () => listPlacesAdmin({ data: { query } }) });
+  const exportMut = useMutation({
+    mutationFn: () => exportPlacesCsv(),
+    onSuccess: (csv) => downloadCsv("jaannee-places.csv", csv as string),
+    onError: (e: any) => toast.error(e.message),
+  });
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderatePlace({ data: v }),
     onSuccess: () => {
@@ -152,8 +169,15 @@ function PendingPlaces() {
 
       <section className="space-y-3">
         <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="font-display text-3xl">Place coordinates</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Backfill lat,lng so nearby place picking works from the photo-first flow.</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="font-display text-3xl">Place coordinates</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Backfill lat,lng so nearby place picking works from the photo-first flow.</p>
+            </div>
+            <Button variant="outline" onClick={() => exportMut.mutate()} disabled={exportMut.isPending}>
+              {exportMut.isPending ? "Exporting..." : "Export places"}
+            </Button>
+          </div>
           <Input className="mt-3 max-w-md" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search place, address, area" />
         </div>
         {(places.data ?? []).map((p: any) => (
@@ -167,16 +191,21 @@ function PendingPlaces() {
                 {p.lat != null && p.lng != null ? `${p.lat}, ${p.lng}` : "No coordinates"}
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setEditing(p);
-                setCoordText(p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : "");
-              }}
-            >
-              Coordinates
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <a href={mapsDirectionsUrl(p)} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="outline" type="button">Open in Maps</Button>
+              </a>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditing(p);
+                  setCoordText(p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : "");
+                }}
+              >
+                Coordinates
+              </Button>
+            </div>
           </div>
         ))}
       </section>
@@ -326,6 +355,11 @@ function DishAdmin() {
     queryKey: ["admin-dishes", query, missingPhotoOnly],
     queryFn: () => listDishesAdmin({ data: { query, missingPhotoOnly } }),
   });
+  const exportMut = useMutation({
+    mutationFn: () => exportDishesCsv(),
+    onSuccess: (csv) => downloadCsv("jaannee-dishes.csv", csv as string),
+    onError: (e: any) => toast.error(e.message),
+  });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-dishes"] });
   const photoMut = useMutation({
     mutationFn: () => updateDishAdmin({ data: { id: editingPhoto.id, photo_url: photoUrl || undefined } }),
@@ -384,6 +418,9 @@ function DishAdmin() {
             <input type="checkbox" checked={missingPhotoOnly} onChange={(e) => setMissingPhotoOnly(e.target.checked)} />
             Missing photo only
           </label>
+          <Button variant="outline" onClick={() => exportMut.mutate()} disabled={exportMut.isPending}>
+            {exportMut.isPending ? "Exporting..." : "Export dishes"}
+          </Button>
         </div>
       </div>
       <div className="space-y-3">
@@ -893,28 +930,62 @@ function Taxonomy() {
 }
 
 function Import() {
-  const [csv, setCsv] = useState("category_slug,area_slug,place_name,address,dish_name_en,dish_name_th,price_thb,photo_url,note\n");
+  const [csv, setCsv] = useState("category_slug,subtype_slug,area_slug,place_name,address,lat,lng,dish_name_en,dish_name_th,price_thb,photo_url,note\n");
+  const [placesCsv, setPlacesCsv] = useState("name,area_slug,address,lat,lng\n");
   const [autoApprove, setAutoApprove] = useState(true);
   const mut = useMutation({
     mutationFn: () => bulkImportCsv({ data: { csv, autoApprove } }),
-    onSuccess: (r: any) => { toast.success(`Imported ${r.created} dishes`); if (r.errors?.length) console.warn(r.errors); },
+    onSuccess: (r: any) => toast.success(`Dishes: ${r.created} created, ${r.skipped ?? 0} skipped, ${r.failed ?? r.errors?.length ?? 0} failed`),
+    onError: (e: any) => toast.error(e.message),
+  });
+  const placesMut = useMutation({
+    mutationFn: () => importPlacesCsv({ data: { csv: placesCsv, autoApprove } }),
+    onSuccess: (r: any) => toast.success(`Places: ${r.created} created, ${r.skipped ?? 0} skipped, ${r.failed ?? r.errors?.length ?? 0} failed`),
     onError: (e: any) => toast.error(e.message),
   });
   return (
-    <div className="mt-4 space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Columns: <code className="rounded bg-muted px-1">category_slug, area_slug, place_name, address, dish_name_en, dish_name_th, price_thb, photo_url, note</code>.
-        Categories and areas must exist first.
-      </p>
-      <Textarea rows={12} value={csv} onChange={(e) => setCsv(e.target.value)} className="font-mono text-xs" />
+    <div className="mt-4 space-y-6">
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={autoApprove} onChange={(e) => setAutoApprove(e.target.checked)} />
-        Auto-approve imported dishes
+        Auto-approve imported rows
       </label>
-      <Button onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? "Importing…" : "Import"}</Button>
-      {mut.data && (mut.data as any).errors?.length > 0 && (
-        <pre className="whitespace-pre-wrap rounded bg-muted p-3 text-xs">{(mut.data as any).errors.join("\n")}</pre>
-      )}
+
+      <section className="space-y-3 rounded-lg border border-border bg-card p-4">
+        <div>
+          <h3 className="font-display text-3xl">Import dishes</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Columns: <code className="rounded bg-muted px-1">category_slug, subtype_slug, area_slug, place_name, address, lat, lng, dish_name_en, dish_name_th, price_thb, photo_url, note</code>.
+            Extra export columns are ignored.
+          </p>
+        </div>
+        <Textarea rows={12} value={csv} onChange={(e) => setCsv(e.target.value)} className="font-mono text-xs" />
+        <Button onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? "Importing..." : "Import dishes"}</Button>
+        <ImportResult result={mut.data} />
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-border bg-card p-4">
+        <div>
+          <h3 className="font-display text-3xl">Import places</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Columns: <code className="rounded bg-muted px-1">name, area_slug, address, lat, lng</code>. Extra export columns are ignored.
+          </p>
+        </div>
+        <Textarea rows={10} value={placesCsv} onChange={(e) => setPlacesCsv(e.target.value)} className="font-mono text-xs" />
+        <Button onClick={() => placesMut.mutate()} disabled={placesMut.isPending}>{placesMut.isPending ? "Importing..." : "Import places"}</Button>
+        <ImportResult result={placesMut.data} />
+      </section>
     </div>
   );
+}
+
+function ImportResult({ result }: { result: any }) {
+  if (!result) return null;
+  const lines = [
+    `Created: ${result.created ?? 0}`,
+    `Skipped: ${result.skipped ?? 0}`,
+    `Failed: ${result.failed ?? result.errors?.length ?? 0}`,
+    ...((result.skips ?? []) as any[]).map((s) => `Row ${s.row}: ${s.reason}`),
+    ...((result.errors ?? []) as any[]).map((e) => `Row ${e.row}: ${e.reason}`),
+  ];
+  return <pre className="whitespace-pre-wrap rounded bg-muted p-3 text-xs">{lines.join("\n")}</pre>;
 }

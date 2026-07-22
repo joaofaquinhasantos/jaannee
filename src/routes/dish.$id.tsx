@@ -4,6 +4,7 @@ import {
   followUser,
   getDish,
   listDishes,
+  mapsDirectionsUrl,
   myFollowingIds,
   myTriedIds,
   submitReport,
@@ -200,6 +201,11 @@ function DishPage() {
               text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / ${s.text}`}
               label={t("share") || "Share"}
             />
+            {d.place && (
+              <a href={mapsDirectionsUrl(d.place)} target="_blank" rel="noreferrer">
+                <Button variant="outline" type="button">Directions</Button>
+              </a>
+            )}
             {authed && <ReportDialog dishId={id} />}
           </div>
 

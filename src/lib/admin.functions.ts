@@ -270,7 +270,11 @@ export const resolveReport = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// CSV: category_slug,area_slug,place_name,address,dish_name_en,dish_name_th,price_thb,photo_url,note
+const PLACE_MATCH_THRESHOLD = 0.55;
+
+type ImportIssue = { row: number; reason: string };
+
+// CSV: category_slug,subtype_slug,area_slug,place_name,address,lat,lng,dish_name_en,dish_name_th,price_thb,photo_url,note
 export const bulkImportCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { csv: string; autoApprove?: boolean }) =>
@@ -278,40 +282,67 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
-    const lines = data.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length < 2) throw new Error("CSV needs a header row and at least one data row");
-    const header = parseCsvRow(lines[0]).map((h) => h.trim().toLowerCase());
+    const rows = parseCsvRows(data.csv);
+    if (rows.length < 2) throw new Error("CSV needs a header row and at least one data row");
+    const header = rows[0].map((h, i) => cleanHeader(h, i));
     const idx = (k: string) => header.indexOf(k);
     const need = ["category_slug", "area_slug", "place_name", "dish_name_en"];
     for (const k of need) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
 
-    const [{ data: cats }, { data: areas }] = await Promise.all([
-      context.supabase.from("categories").select("id, slug"),
+    const [{ data: cats }, { data: areas }, { data: subtypes }] = await Promise.all([
+      context.supabase.from("categories").select("id, slug, subtypes:dish_subtypes(id, slug, is_active)"),
       context.supabase.from("areas").select("id, slug"),
+      context.supabase.from("dish_subtypes").select("id, slug, category_id, is_active"),
     ]);
-    const catMap = new Map((cats ?? []).map((c: any) => [c.slug, c.id]));
+    const catMap = new Map((cats ?? []).map((c: any) => [c.slug, c]));
     const areaMap = new Map((areas ?? []).map((a: any) => [a.slug, a.id]));
+    const subtypesByCategory = new Map<string, any[]>();
+    for (const subtype of subtypes ?? []) {
+      if (!subtype.is_active) continue;
+      const list = subtypesByCategory.get(subtype.category_id) ?? [];
+      list.push(subtype);
+      subtypesByCategory.set(subtype.category_id, list);
+    }
 
     let created = 0;
-    const errors: string[] = [];
-    for (let li = 1; li < lines.length; li++) {
-      const row = parseCsvRow(lines[li]);
+    let skipped = 0;
+    let failed = 0;
+    const errors: ImportIssue[] = [];
+    const skips: ImportIssue[] = [];
+    for (let li = 1; li < rows.length; li++) {
+      const row = rows[li];
       const get = (k: string) => (idx(k) >= 0 ? (row[idx(k)]?.trim() ?? "") : "");
       try {
-        const catId = catMap.get(get("category_slug"));
+        const cat = catMap.get(get("category_slug"));
         const areaId = areaMap.get(get("area_slug"));
-        if (!catId) throw new Error(`Unknown category_slug: ${get("category_slug")}`);
+        if (!cat) throw new Error(`Unknown category_slug: ${get("category_slug")}`);
         if (!areaId) throw new Error(`Unknown area_slug: ${get("area_slug")}`);
         const placeName = get("place_name");
-        // find or create place
-        let placeId: string | null = null;
-        const { data: existingPlace } = await context.supabase
-          .from("places")
-          .select("id")
-          .eq("area_id", areaId)
-          .ilike("name", placeName)
-          .maybeSingle();
-        if (existingPlace) placeId = existingPlace.id;
+        if (!placeName) throw new Error("place_name is required");
+        const dishName = get("dish_name_en");
+        if (!dishName) throw new Error("dish_name_en is required");
+
+        const activeSubtypes = subtypesByCategory.get(cat.id) ?? [];
+        const subtypeSlug = get("subtype_slug");
+        const subtype = subtypeSlug ? activeSubtypes.find((s: any) => s.slug === subtypeSlug) : null;
+        if (activeSubtypes.length > 0 && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
+        if (subtypeSlug && !subtype) throw new Error(`Unknown subtype_slug for ${get("category_slug")}: ${subtypeSlug}`);
+
+        const coords = parseOptionalCoords(get("lat"), get("lng"));
+        const existingPlace = await findSimilarPlaceInArea(context.supabase, areaId, placeName);
+        let place: any = null;
+        if (existingPlace) {
+          place = existingPlace;
+          if (coords && existingPlace.lat == null && existingPlace.lng == null) {
+            const { error: coordError } = await (context.supabase as any)
+              .from("places")
+              .update({ lat: coords.lat, lng: coords.lng })
+              .eq("id", existingPlace.id)
+              .is("lat", null)
+              .is("lng", null);
+            if (coordError) throw new Error(coordError.message);
+          }
+        }
         else {
           const { data: np, error: npe } = await context.supabase
             .from("places")
@@ -319,22 +350,43 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
               name: placeName,
               area_id: areaId,
               address: get("address") || null,
+              lat: coords?.lat ?? null,
+              lng: coords?.lng ?? null,
               created_by: context.userId,
               status: data.autoApprove ? "approved" : "pending",
             })
-            .select("id")
+            .select("id, name, status, lat, lng")
             .single();
           if (npe) throw new Error(npe.message);
-          placeId = np.id;
+          place = np;
+        }
+        if (data.autoApprove && place.status !== "approved") {
+          const { error: approveError } = await context.supabase.from("places").update({ status: "approved" }).eq("id", place.id);
+          if (approveError) throw new Error(approveError.message);
+        }
+        const { data: existingDish, error: dishCheckError } = await context.supabase
+          .from("dishes")
+          .select("id, name_en")
+          .eq("place_id", place.id)
+          .ilike("name_en", dishName)
+          .limit(1)
+          .maybeSingle();
+        if (dishCheckError) throw new Error(dishCheckError.message);
+        if (existingDish) {
+          skipped++;
+          skips.push({ row: li + 1, reason: `Skipped existing dish: ${existingDish.name_en}` });
+          continue;
         }
         const priceStr = get("price_thb");
-        const price = priceStr ? Number(priceStr) : null;
+        const price = priceStr ? Number(priceStr) : undefined;
+        if (priceStr && !Number.isFinite(price)) throw new Error(`Invalid price_thb: ${priceStr}`);
         const { error: die } = await context.supabase.from("dishes").insert({
-          name_en: get("dish_name_en"),
+          name_en: dishName,
           name_th: get("dish_name_th") || null,
-          place_id: placeId,
-          category_id: catId,
-          price_thb: price,
+          place_id: place.id,
+          category_id: cat.id,
+          subtype_id: subtype?.id ?? null,
+          price_thb: price ?? null,
           photo_url: get("photo_url") || null,
           note: get("note") || null,
           status: data.autoApprove ? "approved" : "pending",
@@ -343,11 +395,172 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         if (die) throw new Error(die.message);
         created++;
       } catch (e: any) {
-        errors.push(`Row ${li + 1}: ${e.message}`);
+        failed++;
+        errors.push({ row: li + 1, reason: e.message });
       }
     }
-    return { created, errors };
+    return { created, skipped, failed, errors, skips };
   });
+
+export const importPlacesCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { csv: string; autoApprove?: boolean }) =>
+    z.object({ csv: z.string().min(1).max(500000), autoApprove: z.boolean().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const rows = parseCsvRows(data.csv);
+    if (rows.length < 2) throw new Error("CSV needs a header row and at least one data row");
+    const header = rows[0].map((h, i) => cleanHeader(h, i));
+    const idx = (k: string) => header.indexOf(k);
+    for (const k of ["name", "area_slug"]) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
+    const { data: areas, error: areasError } = await context.supabase.from("areas").select("id, slug");
+    if (areasError) throw new Error(areasError.message);
+    const areaMap = new Map((areas ?? []).map((a: any) => [a.slug, a.id]));
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors: ImportIssue[] = [];
+    const skips: ImportIssue[] = [];
+    for (let li = 1; li < rows.length; li++) {
+      const row = rows[li];
+      const get = (k: string) => (idx(k) >= 0 ? (row[idx(k)]?.trim() ?? "") : "");
+      try {
+        const name = get("name");
+        if (!name) throw new Error("name is required");
+        const areaId = areaMap.get(get("area_slug"));
+        if (!areaId) throw new Error(`Unknown area_slug: ${get("area_slug")}`);
+        const coords = parseOptionalCoords(get("lat"), get("lng"));
+        const existingPlace = await findSimilarPlaceInArea(context.supabase, areaId, name);
+        if (existingPlace) {
+          skipped++;
+          skips.push({ row: li + 1, reason: `Skipped similar place: ${existingPlace.name}` });
+          continue;
+        }
+        const { error } = await (context.supabase as any).from("places").insert({
+          name,
+          area_id: areaId,
+          address: get("address") || null,
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
+          created_by: context.userId,
+          status: data.autoApprove ? "approved" : "pending",
+        });
+        if (error) throw new Error(error.message);
+        created++;
+      } catch (e: any) {
+        failed++;
+        errors.push({ row: li + 1, reason: e.message });
+      }
+    }
+    return { created, skipped, failed, errors, skips };
+  });
+
+export const exportPlacesCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await (context.supabase as any)
+      .from("places")
+      .select("id, name, address, lat, lng, status, created_at, area:areas(slug)")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return toCsv(
+      ["id", "name", "area_slug", "address", "lat", "lng", "status", "created_at"],
+      (data ?? []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        area_slug: p.area?.slug,
+        address: p.address,
+        lat: p.lat,
+        lng: p.lng,
+        status: p.status,
+        created_at: p.created_at,
+      })),
+    );
+  });
+
+export const exportDishesCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("dishes")
+      .select(
+        `id, name_en, name_th, price_thb, photo_url, note, status, comparisons_count, elo, created_at,
+        category:categories(slug), subtype:dish_subtypes(slug), place:places(id, name, area:areas(slug))`,
+      )
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return toCsv(
+      [
+        "id",
+        "category_slug",
+        "subtype_slug",
+        "area_slug",
+        "place_name",
+        "place_id",
+        "dish_name_en",
+        "dish_name_th",
+        "price_thb",
+        "photo_url",
+        "note",
+        "status",
+        "comparisons_count",
+        "elo",
+        "created_at",
+      ],
+      (data ?? []).map((d: any) => ({
+        id: d.id,
+        category_slug: d.category?.slug,
+        subtype_slug: d.subtype?.slug,
+        area_slug: d.place?.area?.slug,
+        place_name: d.place?.name,
+        place_id: d.place?.id,
+        dish_name_en: d.name_en,
+        dish_name_th: d.name_th,
+        price_thb: d.price_thb,
+        photo_url: d.photo_url,
+        note: d.note,
+        status: d.status,
+        comparisons_count: d.comparisons_count,
+        elo: d.elo,
+        created_at: d.created_at,
+      })),
+    );
+  });
+
+function parseCsvRows(csv: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < csv.length; i++) {
+    const c = csv[i];
+    if (inQ) {
+      if (c === '"') {
+        if (csv[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQ = false;
+        }
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") {
+      row.push(cur);
+      cur = "";
+    } else if (c === "\n") {
+      row.push(cur.replace(/\r$/, ""));
+      if (row.some((v) => v.trim().length > 0)) rows.push(row);
+      row = [];
+      cur = "";
+    } else cur += c;
+  }
+  row.push(cur.replace(/\r$/, ""));
+  if (row.some((v) => v.trim().length > 0)) rows.push(row);
+  return rows;
+}
 
 function parseCsvRow(line: string): string[] {
   const out: string[] = [];
@@ -374,6 +587,71 @@ function parseCsvRow(line: string): string[] {
   }
   out.push(cur);
   return out;
+}
+
+function cleanHeader(value: string, index: number) {
+  return (index === 0 ? value.replace(/^\uFEFF/, "") : value).trim().toLowerCase();
+}
+
+function parseOptionalCoords(latText: string, lngText: string) {
+  if (!latText && !lngText) return null;
+  if (!latText || !lngText) throw new Error("Set both lat and lng, or leave both blank");
+  const lat = Number(latText);
+  const lng = Number(lngText);
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new Error(`Invalid lat: ${latText}`);
+  if (!Number.isFinite(lng) || lng < -180 || lng > 180) throw new Error(`Invalid lng: ${lngText}`);
+  return { lat, lng };
+}
+
+async function findSimilarPlaceInArea(supabase: any, areaId: string, name: string) {
+  const { data, error } = await supabase
+    .from("places")
+    .select("id, name, status, lat, lng")
+    .eq("area_id", areaId)
+    .in("status", ["approved", "pending"]);
+  if (error) throw new Error(error.message);
+  const needle = normalizeMatch(name);
+  let best: any = null;
+  let bestScore = 0;
+  for (const place of data ?? []) {
+    const score = similarityScore(needle, normalizeMatch(place.name));
+    if (score > bestScore) {
+      best = place;
+      bestScore = score;
+    }
+  }
+  return bestScore >= PLACE_MATCH_THRESHOLD ? best : null;
+}
+
+function normalizeMatch(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function similarityScore(a: string, b: string) {
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return 0.9;
+  const bigrams = (value: string) => {
+    const clean = ` ${value} `;
+    const out = new Set<string>();
+    for (let i = 0; i < clean.length - 1; i++) out.add(clean.slice(i, i + 2));
+    return out;
+  };
+  const aa = bigrams(a);
+  const bb = bigrams(b);
+  let overlap = 0;
+  for (const item of aa) if (bb.has(item)) overlap++;
+  return (2 * overlap) / (aa.size + bb.size);
+}
+
+function toCsv(headers: string[], rows: Array<Record<string, unknown>>) {
+  return `\uFEFF${headers.join(",")}\n${rows.map((row) => headers.map((h) => csvCell(row[h])).join(",")).join("\n")}`;
+}
+
+function csvCell(value: unknown) {
+  if (value == null) return "";
+  const text = String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 // Categories & Areas admin
