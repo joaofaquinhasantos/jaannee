@@ -40,30 +40,38 @@ export type Database = {
       }
       categories: {
         Row: {
-          cuisine: string | null
           created_at: string
+          cuisine: string | null
           id: string
           name_en: string
           name_th: string
           slug: string
         }
         Insert: {
-          cuisine?: string | null
           created_at?: string
+          cuisine?: string | null
           id?: string
           name_en: string
           name_th: string
           slug: string
         }
         Update: {
-          cuisine?: string | null
           created_at?: string
+          cuisine?: string | null
           id?: string
           name_en?: string
           name_th?: string
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_cuisine_fkey"
+            columns: ["cuisine"]
+            isOneToOne: false
+            referencedRelation: "cuisines"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       comparisons: {
         Row: {
@@ -126,6 +134,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cuisines: {
+        Row: {
+          created_at: string
+          name_en: string
+          name_th: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          name_en: string
+          name_th: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          name_en?: string
+          name_th?: string
+          slug?: string
+        }
+        Relationships: []
       }
       dish_subtypes: {
         Row: {
@@ -199,7 +228,7 @@ export type Database = {
       }
       dishes: {
         Row: {
-          category_id: string
+          category_id: string | null
           comparisons_count: number
           created_at: string
           elo: number
@@ -211,13 +240,15 @@ export type Database = {
           photo_url: string | null
           place_id: string
           price_thb: number | null
+          requested_category_en: string | null
+          requested_category_th: string | null
           status: Database["public"]["Enums"]["dish_status"]
-          subtype_id: string | null
           submitted_by: string | null
+          subtype_id: string | null
           updated_at: string
         }
         Insert: {
-          category_id: string
+          category_id?: string | null
           comparisons_count?: number
           created_at?: string
           elo?: number
@@ -229,13 +260,15 @@ export type Database = {
           photo_url?: string | null
           place_id: string
           price_thb?: number | null
+          requested_category_en?: string | null
+          requested_category_th?: string | null
           status?: Database["public"]["Enums"]["dish_status"]
-          subtype_id?: string | null
           submitted_by?: string | null
+          subtype_id?: string | null
           updated_at?: string
         }
         Update: {
-          category_id?: string
+          category_id?: string | null
           comparisons_count?: number
           created_at?: string
           elo?: number
@@ -247,9 +280,11 @@ export type Database = {
           photo_url?: string | null
           place_id?: string
           price_thb?: number | null
+          requested_category_en?: string | null
+          requested_category_th?: string | null
           status?: Database["public"]["Enums"]["dish_status"]
-          subtype_id?: string | null
           submitted_by?: string | null
+          subtype_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -276,6 +311,24 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+        }
+        Relationships: []
+      }
       places: {
         Row: {
           address: string | null
@@ -283,6 +336,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          lat: number | null
+          lng: number | null
           name: string
           status: string
         }
@@ -292,6 +347,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           name: string
           status?: string
         }
@@ -301,6 +358,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           name?: string
           status?: string
         }
@@ -316,19 +375,31 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          tried_public: boolean
+          username: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          tried_public?: boolean
+          username?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          tried_public?: boolean
+          username?: string | null
         }
         Relationships: []
       }
@@ -404,17 +475,10 @@ export type Database = {
         Returns: undefined
       }
       category_has_active_subtypes: {
-        Args: {
-          _category_id: string
-        }
+        Args: { _category_id: string }
         Returns: boolean
       }
-      dish_ranking_key: {
-        Args: {
-          _dish_id: string
-        }
-        Returns: string
-      }
+      dish_ranking_key: { Args: { _dish_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -423,17 +487,17 @@ export type Database = {
         Returns: boolean
       }
       search_places_by_similarity: {
-        Args: {
-          _term: string
-        }
+        Args: { _term: string }
         Returns: {
+          address: string
+          area_id: string
           id: string
           name: string
-          area_id: string | null
-          address: string | null
           similarity_score: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
