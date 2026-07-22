@@ -9,6 +9,9 @@ import { useI18n } from "@/lib/i18n";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
   head: () => ({ meta: [{ title: "Sign in - JaanNee" }] }),
   component: AuthPage,
 });
@@ -20,17 +23,19 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const redirectTo = redirect?.startsWith("/") ? redirect : "/";
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { if (data.user) navigate({ to: "/" }); });
-  }, [navigate]);
+    supabase.auth.getUser().then(({ data }) => { if (data.user) navigate({ to: redirectTo }); });
+  }, [navigate, redirectTo]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${window.location.origin}${redirectTo}` },
     });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
@@ -40,7 +45,7 @@ function AuthPage() {
   const signInGoogle = async () => {
     setGoogleLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${redirectTo}`,
     });
     if (result.error) {
       setGoogleLoading(false);
@@ -48,7 +53,7 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/" });
+    navigate({ to: redirectTo });
   };
 
   return (

@@ -27,6 +27,8 @@ function Submit() {
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
 
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [step, setStep] = useState<"form" | "dup" | "done">("form");
   const [name_en, setNameEn] = useState("");
   const [name_th, setNameTh] = useState("");
@@ -67,6 +69,18 @@ function Submit() {
     queryFn: () => searchPlaces({ data: { term: place_name } }),
     enabled: step === "form" && place_name.trim().length >= 2 && !selectedPlace,
   });
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setAuthed(!!data.user);
+      setAuthChecked(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthed(!!session?.user);
+      setAuthChecked(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!photoUrl || geoState !== "idle" || typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -236,6 +250,35 @@ function Submit() {
       </AppShell>
     );
 
+  if (!authChecked) {
+    return (
+      <AppShell>
+        <div className="mx-auto flex min-h-[60dvh] max-w-xl items-center justify-center">
+          <p className="text-sm text-muted-foreground">{t("loading")}</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!authed) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-xl">
+          <div className="flex min-h-[70dvh] w-full flex-col items-center justify-center rounded-lg border border-border bg-card px-6 text-center">
+            <Camera className="h-12 w-12 text-primary" />
+            <h1 className="mt-5 font-display text-5xl leading-none">Sign in to post a dish</h1>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
+              Dishes are added by signed-in diners so the board stays useful and rankable.
+            </p>
+            <Button className="mt-6" onClick={() => nav({ to: "/auth", search: { redirect: "/submit" } as any })}>
+              Sign in
+            </Button>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!photoUrl) {
     return (
       <AppShell>
@@ -248,6 +291,7 @@ function Submit() {
           >
             <Camera className="h-12 w-12 text-primary" />
             <span className="mt-5 font-display text-5xl leading-none">Add a photo</span>
+            <span className="mt-2 text-sm font-semibold text-foreground/75">Photo first, details after</span>
             <span className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
               Start with the dish. Camera or gallery, then four taps to submit.
             </span>
