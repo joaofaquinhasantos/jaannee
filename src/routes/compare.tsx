@@ -117,18 +117,20 @@ function Compare() {
       </section>
 
       <div className="mt-6 max-w-sm">
-        <CategoryPicker
-          categories={categories.data ?? []}
-          value={cat}
-          lang={lang}
-          placeholder={t("choose_category")}
-          onChange={(_, category) => {
-            setCat(category.slug);
-            setSubtype(undefined);
-            setAId(undefined);
-            setBId(undefined);
-          }}
-        />
+        {(categories.data ?? []).length > 0 && (
+          <CategoryPicker
+            categories={categories.data ?? []}
+            value={cat}
+            lang={lang}
+            placeholder={t("choose_category")}
+            onChange={(_, category) => {
+              setCat(category.slug);
+              setSubtype(undefined);
+              setAId(undefined);
+              setBId(undefined);
+            }}
+          />
+        )}
       </div>
       {subtypes.length > 0 && (
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
@@ -148,7 +150,17 @@ function Compare() {
         </div>
       )}
 
-      {cat && subtypes.length > 0 && !subtype ? (
+      {categories.isSuccess && (categories.data ?? []).length === 0 ? (
+        <div className="mt-6 rounded-lg border border-border bg-card p-6">
+          <h2 className="font-display text-3xl">No dishes to compare yet.</h2>
+          <p className="mt-2 max-w-lg text-muted-foreground">
+            Comparisons open up once diners start posting plates. Add the first dish to seed a category.
+          </p>
+          <Link to="/submit">
+            <Button className="mt-5">{t("cta_add")}</Button>
+          </Link>
+        </div>
+      ) : cat && subtypes.length > 0 && !subtype ? (
         <div className="mt-6 rounded-lg border border-border bg-card p-6">
           <h2 className="font-display text-3xl">Choose a dish type first.</h2>
           <p className="mt-2 text-muted-foreground">Comparisons only happen inside the same actual dish.</p>

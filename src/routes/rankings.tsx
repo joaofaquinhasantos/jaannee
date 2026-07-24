@@ -170,7 +170,13 @@ function Rankings() {
       </div>
 
       <div className="mt-4 md:mt-7">
-        {subtypes.length > 0 && !subtype ? (
+        {categories.isSuccess && (categories.data ?? []).length === 0 ? (
+          <EmptyBoard
+            eyebrow="No boards yet"
+            title="The board is empty."
+            body="Rankings appear once dishes are added and comparisons start rolling in. Post the first plate to open a board."
+          />
+        ) : subtypes.length > 0 && !subtype ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {subtypes.map((s: any, i: number) => (
               <button
@@ -254,5 +260,30 @@ function Rankings() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+function EmptyBoard({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="grid md:grid-cols-[0.9fr_1.1fr]">
+        <div className="border-b border-border bg-secondary p-6 md:border-b-0 md:border-r">
+          <span className="font-display text-7xl leading-none text-accent">00</span>
+          <p className="mt-3 text-xs font-bold uppercase text-muted-foreground">{eyebrow}</p>
+        </div>
+        <div className="p-6 md:p-8">
+          <h2 className="font-display text-4xl leading-tight">{title}</h2>
+          <p className="mt-3 max-w-lg leading-7 text-muted-foreground">{body}</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/submit">
+              <Button>Add the first dish</Button>
+            </Link>
+            <Link to="/">
+              <Button variant="outline">Back to discover</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

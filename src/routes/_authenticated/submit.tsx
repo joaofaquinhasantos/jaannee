@@ -276,17 +276,26 @@ function Submit() {
   if (!authed) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-xl">
-          <div className="flex min-h-[70dvh] w-full flex-col items-center justify-center rounded-lg border border-border bg-card px-6 text-center">
-            <Camera className="h-12 w-12 text-primary" />
-            <h1 className="mt-5 font-display text-5xl leading-none">Sign in to post a dish</h1>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-              Dishes are added by signed-in diners so the board stays useful and rankable.
+        <div className="mx-auto max-w-xl space-y-5">
+          <section className="rounded-lg border border-border bg-card p-6 md:p-8">
+            <p className="text-xs font-bold uppercase text-primary">Add a dish</p>
+            <h1 className="mt-2 font-display text-4xl leading-tight md:text-5xl">Sign in to post a plate.</h1>
+            <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+              Dishes are added by signed-in diners so the board stays useful and rankable. Magic link or Google — no password.
             </p>
-            <Button className="mt-6" onClick={() => nav({ to: "/auth", search: { redirect: "/submit" } as any })}>
-              Sign in
-            </Button>
-          </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button onClick={() => nav({ to: "/auth", search: { redirect: "/submit" } as any })}>Sign in to continue</Button>
+              <Button variant="outline" onClick={() => nav({ to: "/" })}>Back to discover</Button>
+            </div>
+          </section>
+          <section className="rounded-lg border border-dashed border-border bg-secondary/50 p-6">
+            <p className="text-xs font-bold uppercase text-muted-foreground">Here's what you'll do</p>
+            <ol className="mt-3 space-y-2 text-sm leading-6 text-foreground/80">
+              <li><span className="font-semibold text-primary">1.</span> Snap a photo of the dish.</li>
+              <li><span className="font-semibold text-primary">2.</span> Search or pin the stall or restaurant.</li>
+              <li><span className="font-semibold text-primary">3.</span> Tag the category and price. Done.</li>
+            </ol>
+          </section>
         </div>
       </AppShell>
     );
