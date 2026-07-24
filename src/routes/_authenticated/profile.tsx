@@ -12,7 +12,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/profile")({ component: Profile });
+export const Route = createFileRoute("/_authenticated/profile")({
+  head: () => ({
+    meta: [
+      { title: "Your JaanNee profile" },
+      { name: "description", content: "Manage your JaanNee profile: display name, username, avatar, bio, and the dishes you have tried, posted, and compared." },
+      { name: "robots", content: "noindex, follow" },
+      { property: "og:title", content: "Your JaanNee profile" },
+      { property: "og:description", content: "Manage your JaanNee profile and see your tried, posted, and compared dishes." },
+      { property: "og:url", content: "https://jaannee.lovable.app/profile" },
+    ],
+    links: [{ rel: "canonical", href: "https://jaannee.lovable.app/profile" }],
+  }),
+  component: Profile,
+});
 
 function Profile() {
   const { t } = useI18n();

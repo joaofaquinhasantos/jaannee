@@ -85,6 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Discover and compare Thailand's best dishes across restaurants and stalls. Who makes the best Pad Kra Pao, Khao Soi, or Boat Noodles?" },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9de01b20-368b-4c28-ab23-b6e4e03fe195/id-preview-e05f6665--920f882f-f90b-49d4-a348-a38f08b79f5a.lovable.app-1784603162843.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9de01b20-368b-4c28-ab23-b6e4e03fe195/id-preview-e05f6665--920f882f-f90b-49d4-a348-a38f08b79f5a.lovable.app-1784603162843.png" },
+      { property: "og:site_name", content: "JaanNee" },
     ],
     links: [
       {
@@ -95,6 +96,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://jaannee.lovable.app/#organization",
+              name: "JaanNee",
+              url: "https://jaannee.lovable.app",
+              logo: "https://jaannee.lovable.app/favicon.ico",
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://jaannee.lovable.app/#website",
+              name: "JaanNee",
+              url: "https://jaannee.lovable.app",
+              publisher: { "@id": "https://jaannee.lovable.app/#organization" },
+              description:
+                "Discover and compare Thailand's best dishes across restaurants and stalls.",
+            },
+          ],
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,

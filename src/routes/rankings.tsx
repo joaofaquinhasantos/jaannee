@@ -11,7 +11,31 @@ import { CategoryPicker } from "@/components/CategoryPicker";
 import { AreaPicker } from "@/components/AreaPicker";
 
 export const Route = createFileRoute("/rankings")({
-  head: () => ({ meta: [{ title: "Rankings - JaanNee" }] }),
+  head: () => ({
+    meta: [
+      { title: "Dish rankings — JaanNee" },
+      { name: "description", content: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons from local diners across Bangkok categories and areas." },
+      { property: "og:title", content: "Dish rankings — JaanNee" },
+      { property: "og:description", content: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons from local diners." },
+      { property: "og:url", content: "https://jaannee.lovable.app/rankings" },
+      { name: "twitter:title", content: "Dish rankings — JaanNee" },
+      { name: "twitter:description", content: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons from local diners." },
+    ],
+    links: [{ rel: "canonical", href: "https://jaannee.lovable.app/rankings" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Dish rankings",
+          description: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons.",
+          url: "https://jaannee.lovable.app/rankings",
+          isPartOf: { "@id": "https://jaannee.lovable.app/#website" },
+        }),
+      },
+    ],
+  }),
   component: Rankings,
 });
 

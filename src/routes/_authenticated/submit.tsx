@@ -16,7 +16,20 @@ import { useI18n } from "@/lib/i18n";
 import { CategoryPicker } from "@/components/CategoryPicker";
 import { InlineTriedCompare } from "@/components/InlineTriedCompare";
 
-export const Route = createFileRoute("/_authenticated/submit")({ component: Submit });
+export const Route = createFileRoute("/_authenticated/submit")({
+  head: () => ({
+    meta: [
+      { title: "Add a dish — JaanNee" },
+      { name: "description", content: "Nominate a new dish to JaanNee: name it, tag its place and category, add a price and photo, and let comparisons rank it." },
+      { name: "robots", content: "noindex, follow" },
+      { property: "og:title", content: "Add a dish — JaanNee" },
+      { property: "og:description", content: "Nominate a new dish to JaanNee and let comparisons rank it." },
+      { property: "og:url", content: "https://jaannee.lovable.app/submit" },
+    ],
+    links: [{ rel: "canonical", href: "https://jaannee.lovable.app/submit" }],
+  }),
+  component: Submit,
+});
 
 const PRICE_CHIPS = ["60", "80", "100", "120", "150"];
 
