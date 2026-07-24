@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /profile
+Disallow: /submit
+Disallow: /auth
+Disallow: /api/
+Disallow: /photos/
+Disallow: /mcp
+Disallow: /.mcp/
+Disallow: /.well-known/
+
+Sitemap: https://jaannee.lovable.app/sitemap.xml
