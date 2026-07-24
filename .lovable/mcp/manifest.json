@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "jaannee-mcp",
+      "version": "0.1.0",
+      "title": "JaanNee"
+    },
+    "tools": [
+      {
+        "name": "list_categories",
+        "title": "List categories",
+        "description": "List all dish categories on JaanNee (e.g. Pad Thai, Tom Yum). Returns slug plus English and Thai names for each category.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_areas",
+        "title": "List areas",
+        "description": "List all areas (neighborhoods) that JaanNee dishes are tagged with. Returns slug plus English and Thai names.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_dishes",
+        "title": "List dishes",
+        "description": "List approved dishes on JaanNee, optionally filtered by category slug and/or area slug. Returns up to 50 dishes ordered by Elo ranking (highest first).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "categorySlug": {
+              "description": "Category slug from list_categories (e.g. 'pad-thai'). Omit to search all categories.",
+              "type": "string"
+            },
+            "areaSlug": {
+              "description": "Area slug from list_areas (e.g. 'sathorn'). Omit to search all areas.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_dish",
+        "title": "Get dish",
+        "description": "Get full details for one approved dish on JaanNee by its UUID.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Dish UUID (from list_dishes or leaderboard)."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "leaderboard",
+        "title": "Dish leaderboard",
+        "description": "Return the ranked JaanNee leaderboard for a category (and optional area). Only dishes with at least 5 pairwise comparisons are eligible; results are ordered by Elo (highest first).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "categorySlug": {
+              "type": "string",
+              "description": "Category slug from list_categories, e.g. 'pad-thai'."
+            },
+            "areaSlug": {
+              "description": "Area slug from list_areas. Omit for all areas.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "categorySlug"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
