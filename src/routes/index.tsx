@@ -95,12 +95,15 @@ function Index() {
           </div>
         </div>
         <div className="mt-5 grid grid-cols-3 gap-2 md:mt-0 md:gap-3">
-          {["01", "02", "03"].map((n, i) => (
-            <div key={n} className={`rounded-lg border border-border bg-card p-3 md:p-4 ${i === 1 ? "md:mt-8" : ""}`}>
-              <span className="font-display text-4xl leading-none text-accent md:text-5xl">{n}</span>
-              <p className="mt-2 text-xs font-bold uppercase text-muted-foreground md:mt-3">
-                {i === 0 ? "Nominate" : i === 1 ? "Compare" : "Rank"}
-              </p>
+          {[
+            { n: "01", label: "Nominate", body: "Snap a plate, tag the stall, add a price. New dishes start pending." },
+            { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in votes count." },
+            { n: "03", label: "Rank", body: "After five comparisons a dish earns a rank on its board. No stars, no reviews." },
+          ].map((step, i) => (
+            <div key={step.n} className={`flex flex-col rounded-lg border border-border bg-card p-3 md:p-4 ${i === 1 ? "md:mt-8" : ""}`}>
+              <span className="font-display text-4xl leading-none text-accent md:text-5xl">{step.n}</span>
+              <p className="mt-2 text-xs font-bold uppercase text-muted-foreground md:mt-3">{step.label}</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground md:text-sm md:leading-6">{step.body}</p>
             </div>
           ))}
         </div>
