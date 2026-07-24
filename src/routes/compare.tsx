@@ -17,7 +17,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { CategoryPicker } from "@/components/CategoryPicker";
 
 export const Route = createFileRoute("/compare")({
-  head: () => ({ meta: [{ title: "Compare - JaanNee" }] }),
+  head: () => ({
+    meta: [
+      { title: "Compare two dishes — JaanNee" },
+      { name: "description", content: "Pick two Thai dishes in the same category and choose the winner. Every vote shapes the JaanNee leaderboard for that plate." },
+      { property: "og:title", content: "Compare two dishes — JaanNee" },
+      { property: "og:description", content: "Pick two Thai dishes in the same category and vote the winner. Every vote shapes the leaderboard." },
+      { property: "og:url", content: "https://jaannee.lovable.app/compare" },
+      { name: "twitter:title", content: "Compare two dishes — JaanNee" },
+      { name: "twitter:description", content: "Pick two Thai dishes in the same category and vote the winner. Every vote shapes the leaderboard." },
+    ],
+    links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({
     dish: typeof s.dish === "string" ? s.dish : undefined,
     category: typeof s.category === "string" ? s.category : undefined,

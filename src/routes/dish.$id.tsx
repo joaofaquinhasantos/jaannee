@@ -42,7 +42,8 @@ export const Route = createFileRoute("/dish/$id")({
     const place = d.place?.name ?? "";
     const price = d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : "";
     const status = dishStatusLabel(d, (k) => (dict as any)[k]?.en ?? String(k)).text;
-    const desc = `${place}${price} / ${status}`;
+    const baseDesc = `${place}${price} / ${status}`.trim();
+    const desc = `${name} at ${place || "a Bangkok spot"}${price} — ${status}. See how this dish ranks on JaanNee, Thailand's dish-by-dish leaderboard.`;
     const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
     const rawPhoto: string | undefined = d.photo_url;
     const ogImage = rawPhoto
@@ -60,14 +61,38 @@ export const Route = createFileRoute("/dish/$id")({
       { property: "og:type", content: "article" },
       { property: "og:url", content: pageUrl },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: name },
+      { name: "twitter:description", content: desc },
     ];
     if (ogImage) {
       meta.push({ property: "og:image", content: ogImage });
       meta.push({ name: "twitter:image", content: ogImage });
     }
+    const productLd: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name,
+      description: baseDesc || desc,
+      url: pageUrl,
+      category: d.category?.name_en,
+    };
+    if (ogImage) productLd.image = ogImage;
+    if (place) productLd.brand = { "@type": "Brand", name: place };
+    if (d.price_thb != null) {
+      productLd.offers = {
+        "@type": "Offer",
+        price: Number(d.price_thb).toFixed(0),
+        priceCurrency: "THB",
+        availability: "https://schema.org/InStock",
+        url: pageUrl,
+      };
+    }
     return {
       meta,
       links: origin ? [{ rel: "canonical", href: pageUrl }] : [],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(productLd) },
+      ],
     };
   },
   component: DishPage,
@@ -169,7 +194,8 @@ function DishPage() {
           </div>
           {d.note && <p className="mt-5 rounded-lg border border-border bg-card p-4 text-sm leading-6">{d.note}</p>}
 
-          <div className="mt-6 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center text-xs text-muted-foreground">
+          <h2 className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">Dish metrics</h2>
+          <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center text-xs text-muted-foreground">
             <Metric label="Status" value={s.text} />
             <Metric label="Added" value={`${days} ${t("days_ago")}`} />
             <Metric label="Compared" value={`${d.comparisons_count} ${t("diners")}`} />
@@ -211,6 +237,7 @@ function DishPage() {
 
           {d.submitted_by && (
             <div className="mt-6 rounded-lg border border-border bg-card p-4">
+              <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Submitted by</h2>
               <div className="flex items-center justify-between gap-3">
                 <Link
                   to={submitter?.username ? "/u/$username" : "."}

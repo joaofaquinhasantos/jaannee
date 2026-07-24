@@ -9,7 +9,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$username")({
-  head: ({ params }) => ({ meta: [{ title: `@${params.username} - JaanNee` }] }),
+  head: ({ params }) => {
+    const url = `https://jaannee.lovable.app/u/${params.username}`;
+    const title = `@${params.username} on JaanNee`;
+    const desc = `See the dishes @${params.username} has tried, posted, and compared on JaanNee — Thailand's dish-by-dish ranking board.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "profile" },
+        { property: "og:url", content: url },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            url,
+            mainEntity: {
+              "@type": "Person",
+              name: params.username,
+              alternateName: `@${params.username}`,
+              url,
+            },
+          }),
+        },
+      ],
+    };
+  },
   component: PublicProfilePage,
 });
 

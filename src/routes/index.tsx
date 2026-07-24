@@ -11,7 +11,21 @@ import { AreaPicker } from "@/components/AreaPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 
-export const Route = createFileRoute("/")({ component: Index });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "JaanNee — Rank Thailand's best dishes, plate by plate" },
+      { name: "description", content: "Add plates, vote dish against dish, and find the best Pad Kra Pao, Khao Soi, Boat Noodles and more across Bangkok restaurants and stalls." },
+      { property: "og:title", content: "JaanNee — Rank Thailand's best dishes, plate by plate" },
+      { property: "og:description", content: "Add plates, vote dish against dish, and find the best Pad Kra Pao, Khao Soi, Boat Noodles and more across Bangkok restaurants and stalls." },
+      { property: "og:url", content: "https://jaannee.lovable.app/" },
+      { name: "twitter:title", content: "JaanNee — Rank Thailand's best dishes, plate by plate" },
+      { name: "twitter:description", content: "Add plates, vote dish against dish, and find the best Pad Kra Pao, Khao Soi, Boat Noodles and more across Bangkok restaurants and stalls." },
+    ],
+    links: [{ rel: "canonical", href: "https://jaannee.lovable.app/" }],
+  }),
+  component: Index,
+});
 
 function Index() {
   const { t, lang } = useI18n();
@@ -96,7 +110,7 @@ function Index() {
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
-            <h1 className="mt-1 font-display text-3xl leading-none">What should we eat?</h1>
+            <p className="mt-1 font-display text-3xl leading-none">What should we eat?</p>
           </div>
           <Link to="/submit">
             <Button size="sm">Post</Button>
