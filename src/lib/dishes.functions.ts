@@ -713,6 +713,7 @@ export const publicProfile = createServerFn({ method: "GET" })
       .ilike("username", data.username)
       .maybeSingle();
     if (error || !profile?.username) return null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [tried, compared, counts] = await Promise.all([
       profile.tried_public
         ? (supabase as any)
@@ -723,7 +724,7 @@ export const publicProfile = createServerFn({ method: "GET" })
             .limit(24)
         : Promise.resolve({ data: [] }),
       (supabase as any).from("comparisons").select("id").eq("user_id", profile.id),
-      (supabase as any).rpc("get_follow_counts", { _user_id: profile.id }).maybeSingle(),
+      (supabaseAdmin as any).rpc("get_follow_counts", { _user_id: profile.id }).maybeSingle(),
     ]);
     return {
       profile,
