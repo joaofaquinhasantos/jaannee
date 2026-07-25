@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
 
@@ -806,46 +807,90 @@ function Taxonomy() {
         <div className="mt-6">
           <h4 className="text-sm font-semibold text-muted-foreground">Existing categories</h4>
           <Input className="mt-2" value={catFilter} onChange={(e) => setCatFilter(e.target.value)} placeholder={t("filter_categories")} />
-          <div className="mt-2 divide-y divide-border rounded-lg border border-border">
-            {groupedCategories(cats.data ?? [], catFilter).map(([cuisine, rows]) => (
-              <div key={cuisine} className="px-3 py-3 text-sm">
-                <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{cuisineLabel(cuisine, t)}</p>
-                {rows.map((row: any) => (
-              <div key={row.slug} className="border-t border-border py-3 first:border-t-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
-                    <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "category", id: row.id, name_en: row.name_en, slug: row.slug })}>Delete</Button>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-2 border-t border-border pt-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold uppercase text-muted-foreground">Dish types</p>
-                    <Button size="sm" variant="outline" onClick={() => setSub({ category_id: row.id, slug: "", name_en: "", name_th: "", display_order: 0 })}>Add type</Button>
-                  </div>
-                  {(row.subtypes ?? [])
-                    .sort((x: any, y: any) => (x.display_order ?? 0) - (y.display_order ?? 0) || x.name_en.localeCompare(y.name_en))
-                    .map((s: any) => (
-                      <div key={s.id} className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2">
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{s.name_en} <span className="text-muted-foreground">/ {s.name_th}</span></div>
-                          <div className="truncate text-xs text-muted-foreground">{s.slug} / {s.is_active ? "active" : "inactive"}</div>
+          {(() => {
+            const q = catFilter.trim().toLowerCase();
+            const hasFilter = q.length > 0;
+            const baseGroups = groupedCategories(cats.data ?? [], "");
+            const groups = hasFilter
+              ? baseGroups
+                  .map(([cuisine, rows]) => {
+                    const cuisineHit = cuisineLabel(cuisine, t).toLowerCase().includes(q);
+                    const filteredRows = cuisineHit
+                      ? rows
+                      : rows.filter((r: any) =>
+                          [r.name_en, r.name_th, r.slug]
+                            .filter(Boolean)
+                            .some((v: string) => String(v).toLowerCase().includes(q)),
+                        );
+                    return [cuisine, filteredRows] as [string, any[]];
+                  })
+                  .filter(([, rows]) => rows.length > 0)
+              : baseGroups;
+            return (
+              <div className="mt-2 space-y-2">
+                {groups.map(([cuisine, rows]) => (
+                  <details
+                    key={cuisine}
+                    open={hasFilter || undefined}
+                    className="group rounded-lg border border-border bg-background"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">
+                      <span className="flex items-center gap-2">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                        <span className="font-semibold">{cuisineLabel(cuisine, t)}</span>
+                        <span className="text-xs text-muted-foreground">— {rows.length} {rows.length === 1 ? "category" : "categories"}</span>
+                      </span>
+                    </summary>
+                    <div className="divide-y divide-border border-t border-border">
+                      {rows.map((row: any) => (
+                        <div key={row.slug} className="px-3 py-3 text-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
+                              <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
+                              <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "category", id: row.id, name_en: row.name_en, slug: row.slug })}>Delete</Button>
+                            </div>
+                          </div>
+                          <details className="group/types mt-2">
+                            <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-secondary [&::-webkit-details-marker]:hidden">
+                              <ChevronRight className="h-3 w-3 transition-transform group-open/types:rotate-90" />
+                              Manage types{(row.subtypes ?? []).length ? ` (${(row.subtypes ?? []).length})` : ""}
+                            </summary>
+                            <div className="mt-2 space-y-2 border-t border-border pt-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs font-bold uppercase text-muted-foreground">Dish types</p>
+                                <Button size="sm" variant="outline" onClick={() => setSub({ category_id: row.id, slug: "", name_en: "", name_th: "", display_order: 0 })}>Add type</Button>
+                              </div>
+                              {(row.subtypes ?? [])
+                                .sort((x: any, y: any) => (x.display_order ?? 0) - (y.display_order ?? 0) || x.name_en.localeCompare(y.name_en))
+                                .map((s: any) => (
+                                  <div key={s.id} className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2">
+                                    <div className="min-w-0">
+                                      <div className="truncate font-medium">{s.name_en} <span className="text-muted-foreground">/ {s.name_th}</span></div>
+                                      <div className="truncate text-xs text-muted-foreground">{s.slug} / {s.is_active ? "active" : "inactive"}</div>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => setEditingSubtype({ ...s, category_id: row.id })}>Edit</Button>
+                                  </div>
+                                ))}
+                              {(row.subtypes ?? []).length === 0 && <p className="text-xs text-muted-foreground">No dish types for this category.</p>}
+                            </div>
+                          </details>
                         </div>
-                        <Button size="sm" variant="outline" onClick={() => setEditingSubtype({ ...s, category_id: row.id })}>Edit</Button>
-                      </div>
-                    ))}
-                  {(row.subtypes ?? []).length === 0 && <p className="text-xs text-muted-foreground">No dish types for this category.</p>}
-                </div>
-              </div>
+                      ))}
+                    </div>
+                  </details>
                 ))}
+                {groups.length === 0 && (
+                  <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+                    {(cats.data ?? []).length === 0 ? "No categories yet." : "No categories match your filter."}
+                  </p>
+                )}
               </div>
-            ))}
-            {(cats.data ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No categories yet.</p>}
-          </div>
+            );
+          })()}
         </div>
       </div>
       <div className="rounded-lg border border-border bg-card p-4">
