@@ -640,7 +640,7 @@ function Reports() {
 function Taxonomy() {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [c, setC] = useState({ slug: "", name_en: "", name_th: "", cuisine: "" });
+  const [c, setC] = useState<{ slug: string; name_en: string; name_th: string; cuisine: string; requires_subtype: boolean }>({ slug: "", name_en: "", name_th: "", cuisine: "", requires_subtype: false });
   const [cu, setCu] = useState({ slug: "", name_en: "", name_th: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
   const [catFilter, setCatFilter] = useState("");
@@ -650,7 +650,7 @@ function Taxonomy() {
   const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
   const cuisines = useQuery({ queryKey: ["cuisines"], queryFn: () => listCuisines() });
   const [editing, setEditing] = useState<
-    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string }
+    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean }
     | null
   >(null);
   const [deleting, setDeleting] = useState<
@@ -667,7 +667,7 @@ function Taxonomy() {
     mutationFn: async () => requireOk(await upsertCategory({ data: c })),
     onSuccess: () => {
       toast.success("Saved");
-      setC({ slug: "", name_en: "", name_th: "", cuisine: "" });
+      setC({ slug: "", name_en: "", name_th: "", cuisine: "", requires_subtype: false });
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
     },
@@ -719,7 +719,8 @@ function Taxonomy() {
   const editMut = useMutation({
     mutationFn: async () => {
       if (!editing) return;
-      const payload = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th, cuisine: editing.cuisine };
+      const payload: any = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th, cuisine: editing.cuisine };
+      if (editing.kind === "category") payload.requires_subtype = !!editing.requires_subtype;
       if (editing.kind === "category") requireOk(await upsertCategory({ data: payload }));
       else requireOk(await upsertArea({ data: payload }));
     },
@@ -835,6 +836,13 @@ function Taxonomy() {
               </SelectContent>
             </Select>
           </div>
+          <label className="flex items-start gap-2 rounded-md border border-border bg-background p-3 text-sm">
+            <input type="checkbox" className="mt-0.5" checked={c.requires_subtype} onChange={(e) => setC({ ...c, requires_subtype: e.target.checked })} />
+            <span>
+              <span className="font-semibold">Requires dish type</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">Dishes in this category cannot be approved without a dish type (e.g. Sushi → Nigiri Salmon).</span>
+            </span>
+          </label>
           <Button onClick={saveC} disabled={cMut.isPending}>Save</Button>
         </div>
         <div className="mt-6">
@@ -879,11 +887,14 @@ function Taxonomy() {
                         <div key={row.slug} className="px-3 py-3 text-sm">
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
+                              <div className="truncate font-medium">
+                                {row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span>
+                                {row.requires_subtype && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">Requires type</span>}
+                              </div>
                               <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
                             </div>
                             <div className="flex shrink-0 gap-2">
-                              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "", requires_subtype: !!row.requires_subtype })}>Edit</Button>
                               <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "category", id: row.id, name_en: row.name_en, slug: row.slug })}>Delete</Button>
                             </div>
                           </div>
@@ -994,6 +1005,15 @@ function Taxonomy() {
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+              {editing.kind === "category" && (
+                <label className="flex items-start gap-2 rounded-md border border-border bg-background p-3 text-sm">
+                  <input type="checkbox" className="mt-0.5" checked={!!editing.requires_subtype} onChange={(e) => setEditing({ ...editing, requires_subtype: e.target.checked })} />
+                  <span>
+                    <span className="font-semibold">Requires dish type</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">Blocks approval of dishes in this category until a dish type is picked.</span>
+                  </span>
+                </label>
               )}
             </div>
           )}
