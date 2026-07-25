@@ -52,10 +52,12 @@ export function mapsDirectionsUrl(place: { name?: string | null; address?: strin
 async function withTriedCounts(supabase: ReturnType<typeof publicClient>, rows: any[]) {
   if (rows.length === 0) return rows;
   const ids = rows.map((row) => row.id).filter(Boolean);
-  const { data, error } = await supabase.from("dish_tries").select("dish_id").in("dish_id", ids);
+  const { data, error } = await (supabase as any).rpc("get_dish_tried_counts", { _dish_ids: ids });
   if (error) throw new Error(error.message);
   const counts: Record<string, number> = {};
-  for (const row of data ?? []) counts[row.dish_id] = (counts[row.dish_id] ?? 0) + 1;
+  for (const row of (data ?? []) as { dish_id: string; tries_count: number }[]) {
+    counts[row.dish_id] = Number(row.tries_count) || 0;
+  }
   return rows.map((row) => ({ ...row, tried_count: counts[row.id] ?? 0 }));
 }
 
