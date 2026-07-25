@@ -1,15 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import type { ToolContext } from "@lovable.dev/mcp-js";
 
-// Anon/public Supabase client for MCP tools. Uses the publishable key only —
-// never the service role — so RLS applies as `anon` and only intentionally
-// public data is reachable.
-export function mcpPublicClient() {
+// Supabase client for MCP tools. Uses the publishable key + the caller's
+// verified OAuth bearer token so RLS runs as the signed-in JaanNee user.
+// Never uses the service role.
+export function mcpUserClient(ctx: ToolContext) {
   const url = process.env.SUPABASE_URL!;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+  const token = ctx.getToken();
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     global: {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       fetch: (input, init) => {
         const h = new Headers(init?.headers);
         if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`)

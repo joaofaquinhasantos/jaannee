@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { dishSelect, mcpPublicClient } from "../supabase";
+import { dishSelect, mcpUserClient } from "../supabase";
 
 export default defineTool({
   name: "leaderboard",
@@ -12,8 +12,11 @@ export default defineTool({
     areaSlug: z.string().optional().describe("Area slug from list_areas. Omit for all areas."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ categorySlug, areaSlug }) => {
-    const supabase = mcpPublicClient();
+  handler: async ({ categorySlug, areaSlug }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = mcpUserClient(ctx);
     const [catRes, areaRes] = await Promise.all([
       supabase.from("categories").select("id").eq("slug", categorySlug).maybeSingle(),
       areaSlug
