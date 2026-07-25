@@ -42,6 +42,7 @@ export const listDishesAdmin = createServerFn({ method: "GET" })
       .from("dishes")
       .select(
         `id, name_en, name_th, price_thb, photo_url, note, status, created_at, comparisons_count,
+        place_id, category_id, subtype_id,
         category:categories(name_en, slug), subtype:dish_subtypes(name_en, slug), place:places(name, area:areas(name_en))`,
       )
       .order("created_at", { ascending: false })
@@ -175,7 +176,7 @@ export const assignDishCategoryAdmin = createServerFn({ method: "POST" })
 
 export const createCategoryForDishAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { dishId: string; slug: string; name_en: string; name_th: string; cuisine?: string }) =>
+  .inputValidator((i: { dishId: string; slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean }) =>
     z
       .object({
         dishId: z.string().uuid(),
@@ -183,6 +184,7 @@ export const createCategoryForDishAdmin = createServerFn({ method: "POST" })
         name_en: z.string().min(1).max(80),
         name_th: z.string().min(1).max(80),
         cuisine: z.string().max(60).optional(),
+        requires_subtype: z.boolean().optional(),
       })
       .parse(i),
   )
@@ -195,6 +197,7 @@ export const createCategoryForDishAdmin = createServerFn({ method: "POST" })
         name_en: data.name_en,
         name_th: data.name_th,
         cuisine: data.cuisine || null,
+        requires_subtype: data.requires_subtype ?? false,
       })
       .select("id")
       .single();
@@ -209,7 +212,7 @@ export const createCategoryForDishAdmin = createServerFn({ method: "POST" })
       })
       .eq("id", data.dishId);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, requires_subtype: !!data.requires_subtype };
   });
 
 const adminPhotoUrlSchema = z
