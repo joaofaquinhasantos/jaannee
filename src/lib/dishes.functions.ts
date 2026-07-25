@@ -581,18 +581,26 @@ export const submitComparison = createServerFn({ method: "POST" })
     if ((tried ?? []).length < 2) {
       throw new Error("Mark both dishes as tried before voting");
     }
+    const { data: catRow, error: catErr } = await context.supabase
+      .from("categories")
+      .select("id, requires_subtype")
+      .eq("id", dishes[0].category_id!)
+      .maybeSingle();
+    if (catErr) throw new Error(catErr.message);
     const { data: subtypes, error: se } = await context.supabase
       .from("dish_subtypes")
       .select("id, category_id, is_active")
-      .in("category_id", [dishes[0].category_id!, dishes[1].category_id!]);
+      .eq("category_id", dishes[0].category_id!);
     if (se) throw new Error(se.message);
     const activeSubtypes = (subtypes ?? []).filter((s: any) => s.is_active);
-    const hasActiveSubtypes = activeSubtypes.some((s: any) => s.category_id === dishes[0].category_id);
-    if (hasActiveSubtypes) {
-      if (!dishes[0].subtype_id || !dishes[1].subtype_id || dishes[0].subtype_id !== dishes[1].subtype_id)
+    const scoped = Boolean((catRow as any)?.requires_subtype) || activeSubtypes.length > 0;
+    if (scoped) {
+      if (!dishes[0].subtype_id || !dishes[1].subtype_id)
+        throw new Error("Both dishes must have a dish type");
+      if (dishes[0].subtype_id !== dishes[1].subtype_id)
         throw new Error("Dishes must be the same dish type");
-      if (!activeSubtypes.some((s: any) => s.id === dishes[0].subtype_id))
-        throw new Error("Dish type is inactive");
+      const match = activeSubtypes.find((s: any) => s.id === dishes[0].subtype_id);
+      if (!match) throw new Error("Dish type is inactive or belongs to another category");
     } else if (dishes[0].subtype_id || dishes[1].subtype_id) {
       throw new Error("Dish type is not valid for this category");
     }
