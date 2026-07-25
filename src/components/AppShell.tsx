@@ -90,6 +90,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-4 md:pt-10">{children}</main>
+      <footer className="border-t border-border bg-card py-8 pb-28 md:py-10 md:pb-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} JaanNee
+          </p>
+          <Link
+            to="/connect"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-primary"
+          >
+            <Bot className="h-4 w-4" />
+            Connect AI assistant
+          </Link>
+        </div>
+      </footer>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-around px-2 py-2">
           {nav.map((n) => (
