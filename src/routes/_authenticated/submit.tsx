@@ -179,11 +179,18 @@ function Submit() {
   const onFile = async (f: File) => {
     setUploading(true);
     try {
+      const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
+      const MAX_BYTES = 8 * 1024 * 1024;
+      if (!ALLOWED.includes(f.type)) throw new Error("Photo must be JPEG, PNG, or WebP.");
+      if (f.size > MAX_BYTES) throw new Error("Photo must be 8 MB or smaller.");
       const { data: u, error: userError } = await supabase.auth.getUser();
       if (userError) throw new Error(userError.message);
       if (!u.user) throw new Error("Sign in before uploading photos");
-      const path = `${u.user.id}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error } = await supabase.storage.from("dish-photos").upload(path, f, { upsert: false });
+      const ext = f.type === "image/png" ? "png" : f.type === "image/webp" ? "webp" : "jpg";
+      const path = `${u.user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("dish-photos")
+        .upload(path, f, { upsert: false, contentType: f.type });
       if (error) throw new Error(error.message);
       setPhotoUrl(`/photos/${path}`);
     } catch (e: any) {
