@@ -92,31 +92,56 @@ function Compare() {
     () => triedDishes.filter((d) => d.category?.slug === cat),
     [triedDishes, cat],
   );
-  // Subtype-scoped when the category flag is set, or when any tried dish
-  // in this category carries a subtype (approval trigger guarantees that
-  // approved dishes in scoped categories always have a subtype).
+  // Ranking-pool rule: a category is subtype-scoped when
+  // requires_subtype = true OR the category has at least one active
+  // subtype. This is a property of the category, not of the user's
+  // tried dishes.
+  const activeCategorySubtypes = useMemo(() => {
+    const subs = ((selectedCat?.subtypes ?? []) as any[]).filter(
+      (s) => s.is_active === true,
+    );
+    return subs.sort(
+      (a: any, b: any) =>
+        (a.display_order ?? 0) - (b.display_order ?? 0) ||
+        String(a.name_en).localeCompare(String(b.name_en)),
+    );
+  }, [selectedCat]);
   const scoped =
-    !!selectedCat?.requires_subtype || triedInCat.some((d) => !!d.subtype_id);
+    !!selectedCat?.requires_subtype || activeCategorySubtypes.length > 0;
+  // Only offer subtypes the user has tried dishes in, restricted to
+  // active subtypes that belong to the selected category. Legacy
+  // subtype-less or inactive-subtype dishes are excluded.
   const eligibleSubtypes = useMemo(() => {
+    const activeById = new Map<string, any>();
+    for (const s of activeCategorySubtypes) activeById.set(s.id, s);
     const byId = new Map<string, any>();
     for (const d of triedInCat) {
-      if (!d.subtype?.id || byId.has(d.subtype.id)) continue;
-      byId.set(d.subtype.id, d.subtype);
+      const sid = d.subtype?.id;
+      if (!sid || byId.has(sid)) continue;
+      const active = activeById.get(sid);
+      if (!active) continue;
+      byId.set(sid, active);
     }
     return [...byId.values()].sort(
       (a: any, b: any) =>
         (a.display_order ?? 0) - (b.display_order ?? 0) ||
-        a.name_en.localeCompare(b.name_en),
+        String(a.name_en).localeCompare(String(b.name_en)),
     );
-  }, [triedInCat]);
+  }, [triedInCat, activeCategorySubtypes]);
 
   const list = useMemo(() => {
     if (!cat) return [] as any[];
     if (scoped && !subtype) return [];
-    return triedInCat.filter((d) =>
-      scoped ? d.subtype?.slug === subtype : !d.subtype_id,
-    );
-  }, [cat, subtype, scoped, triedInCat]);
+    if (scoped) {
+      const activeSlugs = new Set(
+        activeCategorySubtypes.map((s: any) => s.slug),
+      );
+      return triedInCat.filter(
+        (d) => d.subtype?.slug === subtype && activeSlugs.has(d.subtype?.slug),
+      );
+    }
+    return triedInCat.filter((d) => !d.subtype_id);
+  }, [cat, subtype, scoped, triedInCat, activeCategorySubtypes]);
 
   // Auto-select first eligible category (respecting ?category=).
   useEffect(() => {
