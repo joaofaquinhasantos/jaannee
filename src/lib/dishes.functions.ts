@@ -97,10 +97,11 @@ export const listDishes = createServerFn({ method: "GET" })
   .inputValidator((i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string }) => i ?? {})
   .handler(async ({ data }) => {
     const supabase = publicClient();
+    if (data.subtypeSlug && !data.categorySlug) return [];
     // Resolve slug filters to ids so filtering runs in Postgres, not JS.
     const [catRes, areaRes] = await Promise.all([
       data.categorySlug
-        ? supabase.from("categories").select("id").eq("slug", data.categorySlug).maybeSingle()
+        ? supabase.from("categories").select("id, requires_subtype").eq("slug", data.categorySlug).maybeSingle()
         : Promise.resolve({ data: null, error: null } as any),
       data.areaSlug
         ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
@@ -108,6 +109,16 @@ export const listDishes = createServerFn({ method: "GET" })
     ]);
     if (data.categorySlug && !catRes.data) return [];
     if (data.areaSlug && !areaRes.data) return [];
+    // Detect subtype scoping so we never mix pools by Elo.
+    let scoped = false;
+    if (catRes.data) {
+      const { data: activeSubs } = await supabase
+        .from("dish_subtypes")
+        .select("id")
+        .eq("category_id", catRes.data.id)
+        .eq("is_active", true);
+      scoped = Boolean((catRes.data as any).requires_subtype) || (activeSubs ?? []).length > 0;
+    }
     const subtypeRes =
       data.subtypeSlug && catRes.data
         ? await supabase
@@ -119,6 +130,11 @@ export const listDishes = createServerFn({ method: "GET" })
             .maybeSingle()
         : { data: null, error: null };
     if (data.subtypeSlug && !subtypeRes.data) return [];
+    if (data.categorySlug && !data.subtypeSlug && scoped && !data.subtypeSlug) {
+      // Subtype-scoped category selected without a subtype: do not order
+      // across pools by Elo. Callers should present a subtype picker.
+      return [];
+    }
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
