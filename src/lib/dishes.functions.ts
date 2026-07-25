@@ -176,12 +176,12 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
   const supabase = publicClient();
   const { data, error } = await supabase
     .from("categories")
-    .select("*, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, display_order)")
+    .select("*, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, display_order, is_active)")
     .order("name_en");
   if (error) {
     const fallback = await supabase
       .from("categories")
-      .select("*, subtypes:dish_subtypes(id, slug, name_en, name_th, display_order)")
+      .select("*, subtypes:dish_subtypes(id, slug, name_en, name_th, display_order, is_active)")
       .order("name_en");
     if (fallback.error) throw new Error(fallback.error.message);
     return (fallback.data ?? []).map((category: any) => ({ ...category, cuisine_ref: null }));
