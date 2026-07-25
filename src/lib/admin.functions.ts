@@ -324,7 +324,7 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
     for (const k of need) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
 
     const [{ data: cats }, { data: areas }, { data: subtypes }] = await Promise.all([
-      context.supabase.from("categories").select("id, slug, subtypes:dish_subtypes(id, slug, is_active)"),
+      context.supabase.from("categories").select("id, slug, requires_subtype, subtypes:dish_subtypes(id, slug, is_active)"),
       context.supabase.from("areas").select("id, slug"),
       context.supabase.from("dish_subtypes").select("id, slug, category_id, is_active"),
     ]);
@@ -359,7 +359,8 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         const activeSubtypes = subtypesByCategory.get(cat.id) ?? [];
         const subtypeSlug = get("subtype_slug");
         const subtype = subtypeSlug ? activeSubtypes.find((s: any) => s.slug === subtypeSlug) : null;
-        if (activeSubtypes.length > 0 && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
+        const scoped = Boolean((cat as any).requires_subtype) || activeSubtypes.length > 0;
+        if (scoped && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
         if (subtypeSlug && !subtype) throw new Error(`Unknown subtype_slug for ${get("category_slug")}: ${subtypeSlug}`);
 
         const coords = parseOptionalCoords(get("lat"), get("lng"));
@@ -430,7 +431,10 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         created++;
       } catch (e: any) {
         failed++;
-        errors.push({ row: li + 1, reason: e.message });
+        const msg = (e && (e as any).code === "23505")
+          ? "Duplicate dish for this restaurant"
+          : e.message;
+        errors.push({ row: li + 1, reason: msg });
       }
     }
     return { created, skipped, failed, errors, skips };
