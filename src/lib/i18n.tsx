@@ -44,7 +44,7 @@ export const dict = {
   },
   tried_by: { en: "Tried by", th: "เคยกินโดย" },
   youve_tried_too: { en: "You've tried", th: "คุณเคยกิน" },
-  which_was_better: { en: "too — which was better?", th: "ด้วย — จานไหนดีกว่า" },
+  which_was_better: { en: "too — which dish did you prefer?", th: "ด้วย — คุณชอบจานไหนมากกว่า" },
   status_top: { en: "Top Contender", th: "จานตัวเต็ง" },
   status_needs_update: { en: "Needs an Update", th: "ต้องอัปเดต" },
   added_ago: { en: "Added", th: "เพิ่มเมื่อ" },
@@ -73,8 +73,8 @@ export const dict = {
   how_title: { en: "How JaanNee works", th: "JaanNee ทำงานอย่างไร" },
   how_discover: { en: "Discover dishes by category and area.", th: "ค้นหาจานตามหมวดหมู่และย่าน" },
   how_compare: {
-    en: "Choose the better dish in quick head-to-head votes.",
-    th: "โหวตเลือกจานที่ดีกว่าแบบตัวต่อตัว",
+    en: "Compare two dishes you have tried and choose the one you prefer.",
+    th: "เปรียบเทียบสองจานที่คุณเคยกิน แล้วเลือกจานที่คุณชอบมากกว่า",
   },
   how_submit: {
     en: "Submit missing dishes so the rankings get sharper.",
@@ -89,8 +89,8 @@ export const dict = {
     th: "เพิ่มจานหรือล้างตัวกรองเพื่อเริ่มสร้างอันดับ",
   },
   rankings_intro: {
-    en: "Rank positions appear only after a dish earns 5 comparisons inside its dish type.",
-    th: "อันดับสดใช้ผลเปรียบเทียบทั้งหมด จานที่คะแนนยังน้อยจะติดป้ายชั่วคราวจนกว่าจะครบ 5 โหวต",
+    en: "A dish receives a public rank after at least 5 diner comparisons within the same dish type.",
+    th: "จานจะได้รับอันดับสาธารณะเมื่อมีการเปรียบเทียบจากนักชิมอย่างน้อย 5 ครั้งภายในประเภทจานเดียวกัน",
   },
   provisional: { en: "Provisional", th: "ชั่วคราว" },
   trusted_rank: { en: "Trusted rank", th: "อันดับน่าเชื่อถือ" },
@@ -100,12 +100,12 @@ export const dict = {
     th: "เพิ่มจานหรือเปรียบเทียบจานที่มีเพื่อให้กระดานนี้เริ่มมีชีวิต",
   },
   compare_intro: {
-    en: "Choose two dishes in the same category. Pick the one you would order again.",
-    th: "เลือกสองจานในหมวดเดียวกัน แล้วโหวตจานที่อยากกลับไปกินอีก",
+    en: "Choose two dishes you have personally tried and select the one you prefer.",
+    th: "เลือกสองจานที่คุณเคยกินด้วยตัวเอง แล้วเลือกจานที่คุณชอบมากกว่า",
   },
   choose_category: { en: "Choose category", th: "เลือกหมวดหมู่" },
   pick_dish: { en: "Pick a dish", th: "เลือกจาน" },
-  which_better: { en: "Which was better?", th: "จานไหนดีกว่า" },
+  which_better: { en: "Which dish do you prefer?", th: "คุณชอบจานไหนมากกว่า" },
   compare_empty: {
     en: "This category needs at least two approved dishes before comparisons can start.",
     th: "หมวดนี้ต้องมีจานที่อนุมัติแล้วอย่างน้อยสองจานก่อนเริ่มเปรียบเทียบ",
@@ -147,6 +147,52 @@ export const dict = {
     th: "ผู้ท้าชิงเหล่านี้ต้องการการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้งก่อนได้รับอันดับสาธารณะ",
   },
   unranked_label: { en: "New contender", th: "ผู้ท้าชิงหน้าใหม่" },
+  head_to_head: { en: "Head to head", th: "ตัวต่อตัว" },
+  compare_page_intro: {
+    en: "Compare only dishes you have personally tried, within the same category and dish type.",
+    th: "เปรียบเทียบเฉพาะจานที่คุณเคยกินเอง ภายในหมวดและประเภทจานเดียวกัน",
+  },
+  sign_in_to_compare: { en: "Sign in to compare dishes", th: "เข้าสู่ระบบเพื่อเปรียบเทียบจาน" },
+  sign_in_compare_body: {
+    en: "Comparisons are based on dishes you have personally tried. Sign in to continue.",
+    th: "การเปรียบเทียบใช้จานที่คุณเคยกินเอง เข้าสู่ระบบเพื่อดำเนินการต่อ",
+  },
+  preselect_not_tried: {
+    en: "That dish must be marked as tried before it can be compared.",
+    th: "ต้องทำเครื่องหมายว่าเคยกินจานนี้ก่อนจึงจะเปรียบเทียบได้",
+  },
+  loading_tried: { en: "Loading your tried dishes…", th: "กำลังโหลดจานที่คุณเคยกิน…" },
+  tried_load_error: {
+    en: "We couldn't load your tried dishes.",
+    th: "เราไม่สามารถโหลดจานที่คุณเคยกินได้",
+  },
+  try_again: { en: "Try again", th: "ลองอีกครั้ง" },
+  no_tried_yet: { en: "No tried dishes yet", th: "ยังไม่มีจานที่เคยกิน" },
+  mark_tried_before_compare: {
+    en: "Mark dishes as tried before comparing them.",
+    th: "ทำเครื่องหมายว่าเคยกินจานก่อนที่จะเปรียบเทียบ",
+  },
+  discover_dishes: { en: "Discover dishes", th: "ค้นพบจาน" },
+  choose_dish_type_first: { en: "Choose a dish type first", th: "เลือกประเภทจานก่อน" },
+  same_dish_type_only: {
+    en: "Comparisons only happen between the same actual dish type.",
+    th: "การเปรียบเทียบเกิดขึ้นเฉพาะระหว่างประเภทจานเดียวกันเท่านั้น",
+  },
+  need_two_tried: { en: "You need two tried dishes", th: "คุณต้องมีจานที่เคยกินสองจาน" },
+  need_two_tried_body: {
+    en: "Mark at least two dishes as tried in this category and dish type before comparing them.",
+    th: "ทำเครื่องหมายอย่างน้อยสองจานว่าเคยกินในหมวดและประเภทจานนี้ก่อนเปรียบเทียบ",
+  },
+  discover_more_dishes: { en: "Discover more dishes", th: "ค้นพบจานเพิ่มเติม" },
+  dish_a: { en: "Dish A", th: "จาน A" },
+  dish_b: { en: "Dish B", th: "จาน B" },
+  profile_posts: { en: "Posts", th: "โพสต์" },
+  profile_tried: { en: "Tried", th: "เคยกิน" },
+  profile_comparisons: { en: "Comparisons", th: "การเปรียบเทียบ" },
+  profile_history_body: {
+    en: "Your posts, tried dishes, and comparison history.",
+    th: "โพสต์ จานที่คุณเคยกิน และประวัติการเปรียบเทียบของคุณ",
+  },
 };
 
 export type Key = keyof typeof dict;
