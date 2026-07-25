@@ -680,7 +680,7 @@ const cuisineSchema = slugSchema.optional();
 
 export const upsertCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string }) =>
+  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean }) =>
     z
       .object({
         slug: z
@@ -691,14 +691,22 @@ export const upsertCategory = createServerFn({ method: "POST" })
         name_en: z.string().min(1).max(80),
         name_th: z.string().min(1).max(80),
         cuisine: cuisineSchema,
+        requires_subtype: z.boolean().optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    const payload: Record<string, unknown> = {
+      slug: data.slug,
+      name_en: data.name_en,
+      name_th: data.name_th,
+      cuisine: data.cuisine || null,
+    };
+    if (typeof data.requires_subtype === "boolean") payload.requires_subtype = data.requires_subtype;
     const { error } = await context.supabase
       .from("categories")
-      .upsert({ ...data, cuisine: data.cuisine || null }, { onConflict: "slug" });
+      .upsert(payload as any, { onConflict: "slug" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
