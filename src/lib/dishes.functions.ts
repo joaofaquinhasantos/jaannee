@@ -62,6 +62,53 @@ async function withTriedCounts(supabase: ReturnType<typeof publicClient>, rows: 
   return rows.map((row) => ({ ...row, tried_count: counts[row.id] ?? 0 }));
 }
 
+// Public discovery ordering. Ranked dishes (>=5 comparisons) come first,
+// ordered by Elo desc, then comparisons desc, then created_at desc, then id.
+// Unranked contenders (<5 comparisons) come after, ordered by comparisons
+// desc, then tried_count desc, then created_at desc, then id. Elo is never
+// used to order unranked dishes. Null/missing numeric values are treated
+// as 0 (or Elo default 1000 already lives on the row). No type suppression.
+export const PUBLIC_RANK_THRESHOLD = 5;
+
+function num(v: unknown, fallback = 0): number {
+  const n = typeof v === "number" ? v : v == null ? NaN : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function dateTs(v: unknown): number {
+  if (typeof v !== "string" && !(v instanceof Date)) return 0;
+  const t = new Date(v as string).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+export function orderDiscoveryDishes<T extends Record<string, unknown>>(rows: T[]): T[] {
+  const ranked: T[] = [];
+  const contenders: T[] = [];
+  for (const row of rows) {
+    if (num(row.comparisons_count) >= PUBLIC_RANK_THRESHOLD) ranked.push(row);
+    else contenders.push(row);
+  }
+  ranked.sort((a, b) => {
+    const eloDiff = num(b.elo) - num(a.elo);
+    if (eloDiff !== 0) return eloDiff;
+    const cmpDiff = num(b.comparisons_count) - num(a.comparisons_count);
+    if (cmpDiff !== 0) return cmpDiff;
+    const dateDiff = dateTs(b.created_at) - dateTs(a.created_at);
+    if (dateDiff !== 0) return dateDiff;
+    return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+  });
+  contenders.sort((a, b) => {
+    const cmpDiff = num(b.comparisons_count) - num(a.comparisons_count);
+    if (cmpDiff !== 0) return cmpDiff;
+    const triedDiff = num(b.tried_count) - num(a.tried_count);
+    if (triedDiff !== 0) return triedDiff;
+    const dateDiff = dateTs(b.created_at) - dateTs(a.created_at);
+    if (dateDiff !== 0) return dateDiff;
+    return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+  });
+  return [...ranked, ...contenders];
+}
+
 const imageUrlSchema = z
   .string()
   .trim()
@@ -144,10 +191,9 @@ export const listDishes = createServerFn({ method: "GET" })
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return withTriedCounts(
-      supabase,
-      (rows ?? []).filter((row: any) => !row.subtype_id || row.subtype?.is_active),
-    );
+    const filtered = (rows ?? []).filter((row: any) => !row.subtype_id || row.subtype?.is_active);
+    const hydrated = await withTriedCounts(supabase, filtered);
+    return orderDiscoveryDishes(hydrated as any[]);
   });
 
 export const getDish = createServerFn({ method: "GET" })
