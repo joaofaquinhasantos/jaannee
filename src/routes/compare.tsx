@@ -29,10 +29,12 @@ export const Route = createFileRoute("/compare")({
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    dish: typeof s.dish === "string" ? s.dish : undefined,
-    category: typeof s.category === "string" ? s.category : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { dish?: string; category?: string } => {
+    const out: { dish?: string; category?: string } = {};
+    if (typeof s.dish === "string") out.dish = s.dish;
+    if (typeof s.category === "string") out.category = s.category;
+    return out;
+  },
   component: Compare,
 });
 
