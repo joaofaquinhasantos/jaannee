@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
-import { BarChart3, Home, PlusCircle, Swords, ShieldCheck } from "lucide-react";
+import { BarChart3, Home, PlusCircle, Swords, ShieldCheck, Bot } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
