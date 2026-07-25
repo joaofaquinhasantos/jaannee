@@ -300,6 +300,7 @@ function PendingList() {
   const [assigning, setAssigning] = useState<Record<string, string>>({});
   const [assigningSubtype, setAssigningSubtype] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState<any | null>(null);
+  const [correcting, setCorrecting] = useState<Record<string, boolean>>({});
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderateDish({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pending"] }),
@@ -316,8 +317,12 @@ function PendingList() {
   });
   const createMut = useMutation({
     mutationFn: () => createCategoryForDishAdmin({ data: creating }),
-    onSuccess: () => {
-      toast.success("Category created and assigned");
+    onSuccess: (r: any) => {
+      if (r?.requires_subtype) {
+        toast.success("Category created. Add and assign a dish type before approving this dish.");
+      } else {
+        toast.success("Category created and assigned");
+      }
       setCreating(null);
       qc.invalidateQueries({ queryKey: ["pending"] });
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
@@ -325,6 +330,8 @@ function PendingList() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+  const catsList = (cats.data ?? []) as any[];
+  const findCat = (id: string | null | undefined) => (id ? catsList.find((c: any) => c.id === id) : null);
   return (
     <div className="mt-4 space-y-3">
       {(q.data ?? []).map((d: any) => (
@@ -332,61 +339,20 @@ function PendingList() {
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
             {d.photo_url && <img src={d.photo_url} className="h-full w-full object-cover" alt="" />}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-medium">{d.name_en}</div>
-            <div className="text-xs text-muted-foreground">{d.place?.name} · {d.place?.area?.name_en} · {d.category?.name_en} {d.price_thb && `· ฿${d.price_thb}`}</div>
-            {d.note && <div className="mt-1 text-xs italic text-muted-foreground">{d.note}</div>}
-            {!d.category_id && (
-              <div className="mt-3 rounded-md border border-dashed border-border bg-background p-3">
-                <p className="text-xs font-bold uppercase text-primary">Requested new category</p>
-                <p className="mt-1 text-sm font-medium">{d.requested_category_en}{d.requested_category_th ? ` / ${d.requested_category_th}` : ""}</p>
-                {(() => {
-                  const chosenCatId = assigning[d.id] ?? "";
-                  const chosenCat = (cats.data ?? []).find((c: any) => c.id === chosenCatId);
-                  const activeSubs = (chosenCat?.subtypes ?? []).filter((s: any) => s.is_active);
-                  const scoped = Boolean(chosenCat?.requires_subtype) || activeSubs.length > 0;
-                  const subId = assigningSubtype[d.id] ?? "";
-                  const canAssign = !!chosenCatId && (!scoped || !!subId);
-                  return (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Select value={chosenCatId} onValueChange={(v) => { setAssigning({ ...assigning, [d.id]: v }); setAssigningSubtype({ ...assigningSubtype, [d.id]: "" }); }}>
-                        <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
-                        <SelectContent>
-                          {(cats.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      {scoped && (
-                        <Select value={subId} onValueChange={(v) => setAssigningSubtype({ ...assigningSubtype, [d.id]: v })}>
-                          <SelectTrigger className="w-56"><SelectValue placeholder="Choose dish type" /></SelectTrigger>
-                          <SelectContent>
-                            {activeSubs.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name_en}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      <Button size="sm" variant="outline" disabled={!canAssign || assignMut.isPending} onClick={() => assignMut.mutate({ dishId: d.id, categoryId: chosenCatId, subtypeId: scoped ? subId : null })}>Assign</Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setCreating({
-                      dishId: d.id,
-                      slug: (d.requested_category_en ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-                      name_en: d.requested_category_en ?? "",
-                      name_th: d.requested_category_th || d.requested_category_en || "",
-                      cuisine: "",
-                    })}
-                  >
-                    Create category
-                  </Button>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => mut.mutate({ id: d.id, action: "approve" })}>Approve</Button>
-            <Button size="sm" variant="outline" onClick={() => mut.mutate({ id: d.id, action: "reject" })}>Reject</Button>
-          </div>
+          <PendingDishRow
+            d={d}
+            catsList={catsList}
+            findCat={findCat}
+            assigning={assigning}
+            setAssigning={setAssigning}
+            assigningSubtype={assigningSubtype}
+            setAssigningSubtype={setAssigningSubtype}
+            correcting={correcting}
+            setCorrecting={setCorrecting}
+            assignMut={assignMut}
+            mut={mut}
+            setCreating={setCreating}
+          />
         </div>
       ))}
       {(q.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Queue is empty.</p>}
@@ -408,6 +374,13 @@ function PendingList() {
                   </SelectContent>
                 </Select>
               </div>
+              <label className="flex items-start gap-2 rounded-md border border-border bg-background p-3 text-sm">
+                <input type="checkbox" className="mt-0.5" checked={!!creating.requires_subtype} onChange={(e) => setCreating({ ...creating, requires_subtype: e.target.checked })} />
+                <span>
+                  <span className="font-semibold">Requires dish type</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Dish stays pending until you add and assign a dish type in this category.</span>
+                </span>
+              </label>
             </div>
           )}
           <DialogFooter>
@@ -518,10 +491,15 @@ function DishAdmin() {
               </div>
               <div className="mt-1 truncate text-xs text-muted-foreground">{d.id}</div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => { setEditingPhoto(d); setPhotoUrl(d.photo_url ?? ""); }}>Photo</Button>
-              <Button size="sm" variant="outline" onClick={() => { setMergeSource(d); setMergeTargetId(""); }}>Merge</Button>
-              <Button size="sm" variant="outline" onClick={() => setDeletingDish(d)}>Delete</Button>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => { setEditingPhoto(d); setPhotoUrl(d.photo_url ?? ""); }}>Photo</Button>
+                <Button size="sm" variant="outline" disabled={(d.comparisons_count ?? 0) > 0} onClick={() => { setMergeSource(d); setMergeTargetId(""); }}>Merge</Button>
+                <Button size="sm" variant="outline" disabled={(d.comparisons_count ?? 0) > 0} onClick={() => setDeletingDish(d)}>Delete</Button>
+              </div>
+              {(d.comparisons_count ?? 0) > 0 && (
+                <p className="text-xs text-muted-foreground">Ranking history protects this dish from merging or deletion.</p>
+              )}
             </div>
           </div>
         ))}
@@ -544,9 +522,12 @@ function DishAdmin() {
                   type="file"
                   accept={PHOTO_ACCEPT_ATTR}
                   disabled={uploadingPhoto}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadPhoto(file);
+                  onChange={async (e) => {
+                    const input = e.currentTarget;
+                    const file = input.files?.[0];
+                    if (file) {
+                      try { await uploadPhoto(file); } finally { input.value = ""; }
+                    }
                   }}
                   className="file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
                 />
@@ -588,14 +569,33 @@ function DishAdmin() {
               <p className="text-sm">Remove <span className="font-semibold">{mergeSource.name_en}</span> and keep another dish.</p>
               <div>
                 <Label>Keep dish</Label>
-                <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
-                  <SelectTrigger><SelectValue placeholder="Choose dish to keep" /></SelectTrigger>
-                  <SelectContent>
-                    {(dishes.data ?? []).filter((d: any) => d.id !== mergeSource.id).map((d: any) => (
-                      <SelectItem key={d.id} value={d.id}>{d.name_en} / {d.place?.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {(() => {
+                  const candidates = (dishes.data ?? []).filter((d: any) =>
+                    d.id !== mergeSource.id &&
+                    (d.comparisons_count ?? 0) === 0 &&
+                    (mergeSource.comparisons_count ?? 0) === 0 &&
+                    d.place_id === mergeSource.place_id &&
+                    d.category_id === mergeSource.category_id &&
+                    ((d.subtype_id ?? null) === (mergeSource.subtype_id ?? null))
+                  );
+                  if (candidates.length === 0) {
+                    return (
+                      <p className="rounded-md border border-dashed border-border bg-background p-3 text-xs text-muted-foreground">
+                        No safe duplicate target is available. Both dishes must be at the same place, in the same ranking pool, and have zero comparisons.
+                      </p>
+                    );
+                  }
+                  return (
+                    <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
+                      <SelectTrigger><SelectValue placeholder="Choose dish to keep" /></SelectTrigger>
+                      <SelectContent>
+                        {candidates.map((d: any) => (
+                          <SelectItem key={d.id} value={d.id}>{d.name_en} / {d.place?.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
               <p className="text-xs text-muted-foreground">
                 Merging is only allowed before either dish has any comparison history. Both dishes must share the same place, category, and dish type. Tried marks and reports move to the kept dish; comparison rows, Elo, and comparisons_count are never rewritten.
@@ -608,6 +608,112 @@ function DishAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+
+function PendingDishRow(props: {
+  d: any;
+  catsList: any[];
+  findCat: (id: string | null | undefined) => any;
+  assigning: Record<string, string>;
+  setAssigning: (v: Record<string, string>) => void;
+  assigningSubtype: Record<string, string>;
+  setAssigningSubtype: (v: Record<string, string>) => void;
+  correcting: Record<string, boolean>;
+  setCorrecting: (v: Record<string, boolean>) => void;
+  assignMut: any;
+  mut: any;
+  setCreating: (v: any) => void;
+}) {
+  const { d, catsList, findCat, assigning, setAssigning, assigningSubtype, setAssigningSubtype, correcting, setCorrecting, assignMut, mut, setCreating } = props;
+  const currentCat = findCat(d.category_id);
+  const currentActiveSubs = ((currentCat?.subtypes ?? []) as any[]).filter((s: any) => s.is_active);
+  const currentScoped = Boolean(currentCat?.requires_subtype) || currentActiveSubs.length > 0;
+  const currentSubtypeOk = !currentScoped || (!!d.subtype_id && currentActiveSubs.some((s: any) => s.id === d.subtype_id));
+  const showCorrect = !!correcting[d.id];
+  const showAssignBlock = !d.category_id || showCorrect || (currentScoped && !currentSubtypeOk);
+  const chosenCatId = assigning[d.id] ?? (d.category_id ?? "");
+  const chosenCat = findCat(chosenCatId);
+  const activeSubs = ((chosenCat?.subtypes ?? []) as any[]).filter((s: any) => s.is_active);
+  const requires = Boolean(chosenCat?.requires_subtype);
+  const scoped = requires || activeSubs.length > 0;
+  const incomplete = requires && activeSubs.length === 0;
+  const defaultSub = (chosenCatId === d.category_id ? (d.subtype_id ?? "") : "");
+  const subId = assigningSubtype[d.id] ?? defaultSub;
+  const canAssign = !!chosenCatId && !incomplete && (!scoped || !!subId);
+  const canApprove = !!d.category_id && currentSubtypeOk;
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="font-medium">{d.name_en}</div>
+      <div className="text-xs text-muted-foreground">{d.place?.name} · {d.place?.area?.name_en} · {d.category?.name_en ?? "no category"} {d.price_thb && `· ฿${d.price_thb}`}</div>
+      {d.note && <div className="mt-1 text-xs italic text-muted-foreground">{d.note}</div>}
+      {d.category_id && (
+        <div className="mt-2 text-xs text-muted-foreground">
+          Dish type: <span className="font-semibold">{d.subtype?.name_en ?? (currentScoped ? "— (required)" : "not applicable")}</span>
+          {" · "}
+          <button type="button" className="text-primary underline" onClick={() => setCorrecting({ ...correcting, [d.id]: !showCorrect })}>
+            {showCorrect ? "Cancel" : "Change category or type"}
+          </button>
+        </div>
+      )}
+      {showAssignBlock && (
+        <div className="mt-3 rounded-md border border-dashed border-border bg-background p-3">
+          {!d.category_id ? (
+            <>
+              <p className="text-xs font-bold uppercase text-primary">Requested new category</p>
+              <p className="mt-1 text-sm font-medium">{d.requested_category_en}{d.requested_category_th ? ` / ${d.requested_category_th}` : ""}</p>
+            </>
+          ) : (
+            <p className="text-xs font-bold uppercase text-primary">
+              {currentScoped && !currentSubtypeOk ? "Dish type required" : "Reassign category"}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Select value={chosenCatId} onValueChange={(v) => { setAssigning({ ...assigning, [d.id]: v }); setAssigningSubtype({ ...assigningSubtype, [d.id]: "" }); }}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
+              <SelectContent>
+                {catsList.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {scoped && (
+              <Select value={subId} onValueChange={(v) => setAssigningSubtype({ ...assigningSubtype, [d.id]: v })} disabled={incomplete}>
+                <SelectTrigger className="w-56"><SelectValue placeholder="Choose dish type" /></SelectTrigger>
+                <SelectContent>
+                  {activeSubs.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name_en}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <Button size="sm" variant="outline" disabled={!canAssign || assignMut.isPending} onClick={() => { assignMut.mutate({ dishId: d.id, categoryId: chosenCatId, subtypeId: scoped ? subId : null }); setCorrecting({ ...correcting, [d.id]: false }); }}>Save</Button>
+            {!d.category_id && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCreating({
+                  dishId: d.id,
+                  slug: (d.requested_category_en ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+                  name_en: d.requested_category_en ?? "",
+                  name_th: d.requested_category_th || d.requested_category_en || "",
+                  cuisine: "",
+                  requires_subtype: false,
+                })}
+              >
+                Create category
+              </Button>
+            )}
+            {incomplete && (
+              <p className="w-full text-xs font-medium text-primary">
+                Create and activate a dish type for this category before assigning the dish.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="mt-3 flex gap-2">
+        <Button size="sm" disabled={!canApprove || mut.isPending} onClick={() => mut.mutate({ id: d.id, action: "approve" })}>Approve</Button>
+        <Button size="sm" variant="outline" onClick={() => mut.mutate({ id: d.id, action: "reject" })}>Reject</Button>
+      </div>
     </div>
   );
 }
@@ -885,13 +991,17 @@ function Taxonomy() {
                     <div className="divide-y divide-border border-t border-border">
                       {rows.map((row: any) => (
                         <div key={row.slug} className="px-3 py-3 text-sm">
+                          {(() => {
+                            const activeCount = ((row.subtypes ?? []) as any[]).filter((s: any) => s.is_active).length;
+                            return (
+                          <>
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="truncate font-medium">
                                 {row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span>
                                 {row.requires_subtype && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">Requires type</span>}
                               </div>
-                              <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
+                              <div className="truncate text-xs text-muted-foreground">{row.slug} · {activeCount} active dish type{activeCount === 1 ? "" : "s"}</div>
                             </div>
                             <div className="flex shrink-0 gap-2">
                               <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "", requires_subtype: !!row.requires_subtype })}>Edit</Button>
@@ -922,6 +1032,14 @@ function Taxonomy() {
                               {(row.subtypes ?? []).length === 0 && <p className="text-xs text-muted-foreground">No dish types for this category.</p>}
                             </div>
                           </details>
+                          {row.requires_subtype && activeCount === 0 && (
+                            <p className="mt-2 rounded-md border border-primary/40 bg-primary/5 p-2 text-xs font-medium text-primary">
+                              This category cannot approve or rank dishes until at least one active dish type exists.
+                            </p>
+                          )}
+                          </>
+                          );
+                          })()}
                         </div>
                       ))}
                     </div>
@@ -1015,6 +1133,16 @@ function Taxonomy() {
                   </span>
                 </label>
               )}
+              {editing.kind === "category" && !editing.requires_subtype && (() => {
+                const cat = (cats.data ?? []).find((c: any) => c.slug === editing.slug);
+                const activeCount = ((cat?.subtypes ?? []) as any[]).filter((s: any) => s.is_active).length;
+                if (activeCount === 0) return null;
+                return (
+                  <p className="rounded-md border border-border bg-secondary p-2 text-xs text-muted-foreground">
+                    This category will remain subtype-scoped while active dish types exist.
+                  </p>
+                );
+              })()}
             </div>
           )}
           <DialogFooter>

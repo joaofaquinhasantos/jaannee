@@ -73,6 +73,10 @@ function Submit() {
     enabled: !!category_id,
   });
   const activeSubtypes = subtypes.data ?? [];
+  const selectedCategory = (categories.data ?? []).find((c: any) => c.id === category_id) as any;
+  const categoryRequiresSubtype = Boolean(selectedCategory?.requires_subtype);
+  const categoryScoped = categoryRequiresSubtype || activeSubtypes.length > 0;
+  const categoryIncomplete = categoryRequiresSubtype && activeSubtypes.length === 0;
   const nearby = useQuery({
     queryKey: ["nearby-places", geo?.lat, geo?.lng],
     queryFn: () => listNearbyPlaces({ data: geo! }),
@@ -128,6 +132,11 @@ function Submit() {
     e.preventDefault();
     if (!name_en || (!category_id && !requestedCategoryEn) || (!selectedPlace && (!place_name || !area_id))) {
       toast.error(t("submit_required"));
+      return;
+    }
+    if (!requestingCategory && categoryIncomplete) {
+      setSubtypeError("This category is not ready for submissions because it has no active dish types.");
+      toast.error("This category is not ready for submissions because it has no active dish types.");
       return;
     }
     if (!requestingCategory && activeSubtypes.length > 0 && !subtype_id) {
@@ -325,7 +334,7 @@ function Submit() {
               Choose photo
             </span>
           </button>
-          <input ref={fileRef} type="file" accept={PHOTO_ACCEPT_ATTR} className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+          <input ref={fileRef} type="file" accept={PHOTO_ACCEPT_ATTR} className="hidden" onChange={async (e) => { const input = e.currentTarget; const file = input.files?.[0]; if (file) { try { await onFile(file); } finally { input.value = ""; } } }} />
         </div>
       </AppShell>
     );
@@ -415,6 +424,11 @@ function Submit() {
               <Input value={name_en} onChange={(e) => setNameEn(e.target.value)} placeholder="Autofills from category" required maxLength={120} className="mt-2 h-12 text-base" />
             </section>
 
+            {!requestingCategory && categoryIncomplete && (
+              <p className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm font-medium text-primary">
+                This category is not ready for submissions because it has no active dish types.
+              </p>
+            )}
             {!requestingCategory && activeSubtypes.length > 0 && (
               <section>
                 <Label>Dish type *</Label>
@@ -467,10 +481,10 @@ function Submit() {
               </CollapsibleContent>
             </Collapsible>
 
-            <Button type="submit" className="h-12 w-full">Submit</Button>
+            <Button type="submit" className="h-12 w-full" disabled={!requestingCategory && categoryIncomplete}>Submit</Button>
           </form>
         </div>
-        <input ref={fileRef} type="file" accept={PHOTO_ACCEPT_ATTR} className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+        <input ref={fileRef} type="file" accept={PHOTO_ACCEPT_ATTR} className="hidden" onChange={async (e) => { const input = e.currentTarget; const file = input.files?.[0]; if (file) { try { await onFile(file); } finally { input.value = ""; } } }} />
       </div>
     </AppShell>
   );
