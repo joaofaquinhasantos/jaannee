@@ -12,7 +12,7 @@ export const Route = createFileRoute("/u/$username")({
   head: ({ params }) => {
     const url = `https://jaannee.lovable.app/u/${params.username}`;
     const title = `@${params.username} on JaanNee`;
-    const desc = `See the dishes @${params.username} has tried, posted, and compared as a diner on JaanNee — Thailand's dish-by-dish ranking board.`;
+    const desc = `See the dishes @${params.username} has tried, posted, and compared as a diner on JaanNee's dish-by-dish leaderboard.`;
     return {
       meta: [
         { title },
