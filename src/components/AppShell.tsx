@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
-import { BarChart3, Home, PlusCircle, Swords, ShieldCheck, Bot } from "lucide-react";
+import { BarChart3, Home, PlusCircle, Swords, ShieldCheck } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
@@ -61,13 +61,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link
-              to="/connect"
-              className="hidden rounded-md border border-border bg-card px-2.5 py-1.5 text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:flex"
-              aria-label="Connect AI assistant"
-            >
-              <Bot className="h-4 w-4" />
-            </Link>
             <button
               onClick={() => setLang(lang === "en" ? "th" : "en")}
               className="rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
@@ -91,17 +84,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-4 md:pt-10">{children}</main>
       <footer className="border-t border-border bg-card py-8 pb-28 md:py-10 md:pb-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} JaanNee
           </p>
-          <Link
-            to="/connect"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-primary"
-          >
-            <Bot className="h-4 w-4" />
-            Connect AI assistant
-          </Link>
         </div>
       </footer>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden">

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/dish/$id")({
     const price = d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : "";
     const status = dishStatusLabel(d, (k) => (dict as any)[k]?.en ?? String(k)).text;
     const baseDesc = `${place}${price} / ${status}`.trim();
-    const desc = `${name} at ${place || "a Bangkok spot"}${price} — ${status}. See how this dish ranks on JaanNee, Thailand's dish-by-dish ranking board.`;
+    const desc = `${name} at ${place || "a Bangkok spot"}${price} — ${status}. See how this dish ranks on JaanNee's dish-by-dish leaderboard.`;
     const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
     const rawPhoto: string | undefined = d.photo_url;
     const ogImage = rawPhoto

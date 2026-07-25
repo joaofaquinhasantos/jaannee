@@ -99,7 +99,7 @@ function Index() {
           {[
             { n: "01", label: "Nominate", body: "Snap a plate, tag the stall, add a price. New dishes start pending." },
             { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in diners only." },
-            { n: "03", label: "Rank", body: "After five diner comparisons a dish earns a rank on its board. No stars, no ratings." },
+            { n: "03", label: "Rank", body: "After five diner comparisons a dish earns a rank on its board. No stars, no scores." },
           ].map((step, i) => (
             <div key={step.n} className={`flex flex-col rounded-lg border border-border bg-card p-3 md:p-4 ${i === 1 ? "md:mt-8" : ""}`}>
               <span className="font-display text-4xl leading-none text-accent md:text-5xl">{step.n}</span>
