@@ -61,6 +61,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-2">
+            <Link
+              to="/connect"
+              className="hidden rounded-md border border-border bg-card px-2.5 py-1.5 text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:flex"
+              aria-label="Connect AI assistant"
+            >
+              <Bot className="h-4 w-4" />
+            </Link>
             <button
               onClick={() => setLang(lang === "en" ? "th" : "en")}
               className="rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
