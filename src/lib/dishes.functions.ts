@@ -455,8 +455,9 @@ export const listActivityFeed = createServerFn({ method: "GET" })
   .inputValidator((i: Record<string, never>) => i ?? {})
   .handler(async () => {
     const supabase = publicClient();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [triesRes, dishesRes] = await Promise.all([
-      (supabase as any)
+      (supabaseAdmin as any)
         .from("dish_tries")
         .select(`user_id, dish_id, created_at, dish:dishes(${dishSelect})`)
         .order("created_at", { ascending: false })
@@ -498,8 +499,9 @@ export const listFollowingActivityFeed = createServerFn({ method: "GET" })
     const followingIds = (follows ?? []).map((r: any) => r.following_id);
     if (followingIds.length === 0) return [];
     const supabase = publicClient();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [triesRes, dishesRes] = await Promise.all([
-      (supabase as any)
+      (supabaseAdmin as any)
         .from("dish_tries")
         .select(`user_id, dish_id, created_at, dish:dishes(${dishSelect})`)
         .in("user_id", followingIds)
@@ -718,14 +720,14 @@ export const publicProfile = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [tried, compared, counts] = await Promise.all([
       profile.tried_public
-        ? (supabase as any)
+        ? (supabaseAdmin as any)
             .from("dish_tries")
             .select(`dish_id, created_at, dish:dishes(${dishSelect})`)
             .eq("user_id", profile.id)
             .order("created_at", { ascending: false })
             .limit(24)
         : Promise.resolve({ data: [] }),
-      (supabase as any).from("comparisons").select("id").eq("user_id", profile.id),
+      (supabaseAdmin as any).from("comparisons").select("id").eq("user_id", profile.id),
       (supabaseAdmin as any).rpc("get_follow_counts", { _user_id: profile.id }).maybeSingle(),
     ]);
     return {
