@@ -193,11 +193,56 @@ function Index() {
             }}
           />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(dishes.data ?? []).map((d: any) => (
-              <DishCard key={d.id} dish={d} />
-            ))}
-          </div>
+          (() => {
+            const rows = (dishes.data ?? []) as any[];
+            const ranked = rows.filter((d) => (d.comparisons_count ?? 0) >= 5);
+            const contenders = rows.filter((d) => (d.comparisons_count ?? 0) < 5);
+            // Numeric ranks are only meaningful within one valid ranking
+            // pool. listDishes returns [] for a subtype-scoped category
+            // without a subtype, so when a category filter is set here
+            // the results are already one pool. Without a category filter
+            // the discovery view can mix pools, so we omit numeric ranks.
+            const singlePool = Boolean(cat);
+            return (
+              <div className="space-y-10">
+                {ranked.length > 0 && (
+                  <section>
+                    <div className="mb-4">
+                      <h2 className="font-display text-3xl leading-tight">{t("ranked_dishes")}</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">{t("ranked_dishes_body")}</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {ranked.map((d: any, i: number) => (
+                        <DishCard key={d.id} dish={d} rank={singlePool ? i + 1 : undefined} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {contenders.length > 0 && (
+                  <section className={ranked.length > 0 ? "border-t border-border pt-6" : undefined}>
+                    <div className="mb-4">
+                      {ranked.length === 0 ? (
+                        <>
+                          <h2 className="font-display text-3xl leading-tight">{t("no_ranked_yet_title")}</h2>
+                          <p className="mt-1 text-sm text-muted-foreground">{t("no_ranked_yet_body")}</p>
+                        </>
+                      ) : (
+                        <>
+                          <h2 className="font-display text-3xl leading-tight">{t("new_contenders")}</h2>
+                          <p className="mt-1 text-sm text-muted-foreground">{t("new_contenders_body")}</p>
+                        </>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {contenders.map((d: any) => (
+                        <DishCard key={d.id} dish={d} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+            );
+          })()
         )}
       </section>
       {(activity.data ?? []).length > 0 && (
