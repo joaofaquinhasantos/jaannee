@@ -283,19 +283,23 @@ export const listNearbyPlaces = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const supabase = publicClient();
-    const { data: rows, error } = await (supabase as any)
-      .from("places")
-      .select("id, name, area_id, address, lat, lng, area:areas(id, slug, name_en, name_th)")
-      .eq("status", "approved")
-      .not("lat", "is", null)
-      .not("lng", "is", null)
-      .limit(1000);
+    const { data: rows, error } = await (supabase as any).rpc("nearby_places", {
+      _lat: data.lat,
+      _lng: data.lng,
+      _radius_km: 1,
+    });
     if (error) return [];
-    return (rows ?? [])
-      .map((place: any) => ({ ...place, distance_m: distanceMeters(data.lat, data.lng, Number(place.lat), Number(place.lng)) }))
-      .filter((place: any) => place.distance_m <= 1000)
-      .sort((a: any, b: any) => a.distance_m - b.distance_m)
-      .slice(0, 6);
+    // Hydrate area for parity with previous callers.
+    const areaIds = [...new Set(((rows ?? []) as any[]).map((r) => r.area_id).filter(Boolean))];
+    const { data: areas } = areaIds.length
+      ? await (supabase as any).from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
+      : { data: [] };
+    const byId = new Map(((areas ?? []) as any[]).map((a) => [a.id, a]));
+    return ((rows ?? []) as any[]).slice(0, 6).map((r) => ({
+      ...r,
+      distance_m: Math.round(Number(r.distance_km) * 1000),
+      area: byId.get(r.area_id) ?? null,
+    }));
   });
 
 function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: number) {
@@ -363,14 +367,6 @@ export const submitDish = createServerFn({ method: "POST" })
       if (pe) throw new Error(pe.message);
       placeId = place.id;
     }
-    const { data: dupe, error: dupeError } = await context.supabase
-      .from("dishes")
-      .select("id")
-      .eq("place_id", placeId)
-      .ilike("name_en", data.name_en)
-      .limit(1);
-    if (dupeError) throw new Error(dupeError.message);
-    if ((dupe ?? []).length > 0) throw new Error("This dish already exists at the selected place");
     const { data: dish, error } = await context.supabase
       .from("dishes")
       .insert({
@@ -389,7 +385,12 @@ export const submitDish = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      if ((error as any).code === "23505") {
+        throw new Error("This dish already exists at the selected restaurant.");
+      }
+      throw new Error(error.message);
+    }
     return { id: dish.id };
   });
 
