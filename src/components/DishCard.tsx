@@ -43,7 +43,7 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
             </div>
           ) : (
             <span className={`absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur ${toneCls}`}>
-              {isRanked ? s.text : `${t("gathering_progress")} · ${comparisonCount}/5`}
+              {isRanked ? s.text : `${t("unranked_label")} · ${comparisonCount}/5`}
             </span>
           )}
           {dish.price_thb != null && (
