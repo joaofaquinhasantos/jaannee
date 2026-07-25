@@ -469,7 +469,7 @@ export type Database = {
     Functions: {
       admin_merge_dishes: {
         Args: { _keep_id: string; _remove_id: string }
-        Returns: undefined
+        Returns: Json
       }
       apply_elo: {
         Args: {
@@ -482,6 +482,10 @@ export type Database = {
         Returns: undefined
       }
       category_has_active_subtypes: {
+        Args: { _category_id: string }
+        Returns: boolean
+      }
+      category_is_subtype_scoped: {
         Args: { _category_id: string }
         Returns: boolean
       }
@@ -508,7 +512,12 @@ export type Database = {
         Returns: boolean
       }
       nearby_places: {
-        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Args: {
+          _lat: number
+          _lng: number
+          _max_results?: number
+          _radius_km?: number
+        }
         Returns: {
           address: string
           area_id: string
