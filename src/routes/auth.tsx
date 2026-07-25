@@ -14,10 +14,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — JaanNee" },
-      { name: "description", content: "Sign in to JaanNee with a magic link or Google to add dishes, mark what you have tried, and vote in dish comparisons." },
+      { name: "description", content: "Sign in to JaanNee with a magic link or Google to add dishes, mark what you have tried, and compare dishes head-to-head." },
       { name: "robots", content: "noindex, follow" },
       { property: "og:title", content: "Sign in — JaanNee" },
-      { property: "og:description", content: "Sign in to JaanNee to add dishes, mark tried, and vote in dish comparisons." },
+      { property: "og:description", content: "Sign in to JaanNee to add dishes, mark tried, and compare dishes head-to-head." },
       { property: "og:url", content: "https://jaannee.lovable.app/auth" },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/auth" }],

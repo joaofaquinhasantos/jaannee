@@ -24,12 +24,12 @@ export const Route = createFileRoute("/compare")({
   head: () => ({
     meta: [
       { title: "Compare two dishes — JaanNee" },
-      { name: "description", content: "Pick two Thai dishes in the same category and choose the winner. Every vote shapes the JaanNee leaderboard for that plate." },
+      { name: "description", content: "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the JaanNee ranking for that plate." },
       { property: "og:title", content: "Compare two dishes — JaanNee" },
-      { property: "og:description", content: "Pick two Thai dishes in the same category and vote the winner. Every vote shapes the leaderboard." },
+      { property: "og:description", content: "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking." },
       { property: "og:url", content: "https://jaannee.lovable.app/compare" },
       { name: "twitter:title", content: "Compare two dishes — JaanNee" },
-      { name: "twitter:description", content: "Pick two Thai dishes in the same category and vote the winner. Every vote shapes the leaderboard." },
+      { name: "twitter:description", content: "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking." },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
   }),
@@ -327,8 +327,8 @@ function Compare() {
         <div className="mt-8">
           <p className="text-center text-sm font-semibold uppercase text-muted-foreground">{t("which_better")}</p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <WinnerCard dish={a} onPick={() => mut.mutate(a.id)} disabled={mut.isPending} />
-            <WinnerCard dish={b} onPick={() => mut.mutate(b.id)} disabled={mut.isPending} />
+            <PickCard dish={a} onPick={() => mut.mutate(a.id)} disabled={mut.isPending} />
+            <PickCard dish={b} onPick={() => mut.mutate(b.id)} disabled={mut.isPending} />
           </div>
         </div>
       )}
@@ -391,7 +391,7 @@ function DishPicker({
   );
 }
 
-function WinnerCard({
+function PickCard({
   dish,
   onPick,
   disabled,

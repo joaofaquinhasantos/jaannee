@@ -16,12 +16,12 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "JaanNee — Rank Thailand's best dishes, plate by plate" },
-      { name: "description", content: "Add plates, vote dish against dish, and find the best Pad Kra Pao, Khao Soi, Boat Noodles and more across Bangkok restaurants and stalls." },
+      { name: "description", content: "Add plates and compare dishes head-to-head to find the best Pad Kra Pao, Khao Soi, Boat Noodles and more in Bangkok." },
       { property: "og:title", content: "JaanNee — Rank Thailand's best dishes, plate by plate" },
-      { property: "og:description", content: "Add plates, vote dish against dish, and find the best Pad Kra Pao, Khao Soi, Boat Noodles and more across Bangkok restaurants and stalls." },
+      { property: "og:description", content: "Add plates and compare dishes head-to-head to find the best Pad Kra Pao, Khao Soi, Boat Noodles and more in Bangkok." },
       { property: "og:url", content: "https://jaannee.lovable.app/" },
       { name: "twitter:title", content: "JaanNee — Rank Thailand's best dishes, plate by plate" },
-      { name: "twitter:description", content: "Add plates, vote dish against dish, and find the best Pad Kra Pao, Khao Soi, Boat Noodles and more across Bangkok restaurants and stalls." },
+      { name: "twitter:description", content: "Add plates and compare dishes head-to-head to find the best Pad Kra Pao, Khao Soi, Boat Noodles and more in Bangkok." },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/" }],
   }),
@@ -76,7 +76,7 @@ function Index() {
             What should people eat in Bangkok?
           </h1>
           <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
-            Add plates, vote dish against dish, and find the bite worth crossing town for.
+            Add plates, compare dish against dish, and find the bite worth crossing town for.
           </p>
           <p className="mt-3 font-thai text-lg font-medium text-foreground/80">
             จานไหนดี ให้คนกินช่วยตัดสิน
@@ -98,8 +98,8 @@ function Index() {
         <div className="mt-5 grid grid-cols-3 gap-2 md:mt-0 md:gap-3">
           {[
             { n: "01", label: "Nominate", body: "Snap a plate, tag the stall, add a price. New dishes start pending." },
-            { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in votes count." },
-            { n: "03", label: "Rank", body: "After five comparisons a dish earns a rank on its board. No stars, no reviews." },
+            { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in diners only." },
+            { n: "03", label: "Rank", body: "After five diner comparisons a dish earns a rank on its board. No stars, no ratings." },
           ].map((step, i) => (
             <div key={step.n} className={`flex flex-col rounded-lg border border-border bg-card p-3 md:p-4 ${i === 1 ? "md:mt-8" : ""}`}>
               <span className="font-display text-4xl leading-none text-accent md:text-5xl">{step.n}</span>
@@ -286,7 +286,7 @@ function Index() {
                   <p className="truncate font-medium">
                     {item.profile?.display_name || item.profile?.username || "Someone"}{" "}
                     <span className="font-normal text-muted-foreground">
-                      {item.type === "tried" ? "ate" : "posted"}
+                      {item.type === "tried" ? "tried" : "posted"}
                     </span>{" "}
                     {item.dish?.name_en}
                   </p>

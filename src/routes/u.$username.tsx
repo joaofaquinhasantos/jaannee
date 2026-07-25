@@ -12,7 +12,7 @@ export const Route = createFileRoute("/u/$username")({
   head: ({ params }) => {
     const url = `https://jaannee.lovable.app/u/${params.username}`;
     const title = `@${params.username} on JaanNee`;
-    const desc = `See the dishes @${params.username} has tried, posted, and compared on JaanNee — Thailand's dish-by-dish ranking board.`;
+    const desc = `See the dishes @${params.username} has tried, posted, and compared as a diner on JaanNee — Thailand's dish-by-dish ranking board.`;
     return {
       meta: [
         { title },
@@ -124,7 +124,7 @@ function PublicProfilePage() {
         </div>
         <div className="mt-5 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center">
           <Stat label="Tried" value={tried.length} />
-          <Stat label="Votes" value={q.data.comparisons_count ?? 0} />
+          <Stat label="Comparisons" value={q.data.comparisons_count ?? 0} />
           <Stat label="Followers" value={q.data.followers_count ?? 0} />
         </div>
       </section>
