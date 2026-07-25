@@ -19,7 +19,7 @@
       {
         "name": "list_categories",
         "title": "List categories",
-        "description": "List all dish categories on JaanNee (e.g. Pad Thai, Tom Yum). Returns slug plus English and Thai names for each category.",
+        "description": "List all dish categories on JaanNee (e.g. Pad Thai, Tom Yum). Each category returns slug, English + Thai names, cuisine, a `requires_subtype` flag, and any active dish sub-types. When `requires_subtype` is true or `subtypes` is non-empty, other tools that operate on rankings (list_dishes, leaderboard) require a `subtypeSlug`.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
