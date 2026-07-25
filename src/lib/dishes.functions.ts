@@ -97,10 +97,11 @@ export const listDishes = createServerFn({ method: "GET" })
   .inputValidator((i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string }) => i ?? {})
   .handler(async ({ data }) => {
     const supabase = publicClient();
+    if (data.subtypeSlug && !data.categorySlug) return [];
     // Resolve slug filters to ids so filtering runs in Postgres, not JS.
     const [catRes, areaRes] = await Promise.all([
       data.categorySlug
-        ? supabase.from("categories").select("id").eq("slug", data.categorySlug).maybeSingle()
+        ? supabase.from("categories").select("id, requires_subtype").eq("slug", data.categorySlug).maybeSingle()
         : Promise.resolve({ data: null, error: null } as any),
       data.areaSlug
         ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
@@ -108,6 +109,16 @@ export const listDishes = createServerFn({ method: "GET" })
     ]);
     if (data.categorySlug && !catRes.data) return [];
     if (data.areaSlug && !areaRes.data) return [];
+    // Detect subtype scoping so we never mix pools by Elo.
+    let scoped = false;
+    if (catRes.data) {
+      const { data: activeSubs } = await supabase
+        .from("dish_subtypes")
+        .select("id")
+        .eq("category_id", catRes.data.id)
+        .eq("is_active", true);
+      scoped = Boolean((catRes.data as any).requires_subtype) || (activeSubs ?? []).length > 0;
+    }
     const subtypeRes =
       data.subtypeSlug && catRes.data
         ? await supabase
@@ -119,6 +130,11 @@ export const listDishes = createServerFn({ method: "GET" })
             .maybeSingle()
         : { data: null, error: null };
     if (data.subtypeSlug && !subtypeRes.data) return [];
+    if (data.categorySlug && !data.subtypeSlug && scoped && !data.subtypeSlug) {
+      // Subtype-scoped category selected without a subtype: do not order
+      // across pools by Elo. Callers should present a subtype picker.
+      return [];
+    }
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
@@ -278,24 +294,33 @@ export const searchPlaces = createServerFn({ method: "GET" })
   });
 
 export const listNearbyPlaces = createServerFn({ method: "GET" })
-  .inputValidator((i: { lat: number; lng: number }) =>
-    z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).parse(i),
+  .inputValidator((i: { lat: number; lng: number; radiusKm?: number; maxResults?: number }) =>
+    z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+        radiusKm: z.number().positive().max(50).optional(),
+        maxResults: z.number().int().min(1).max(50).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
-    const supabase = publicClient();
-    const { data: rows, error } = await (supabase as any).rpc("nearby_places", {
+    // nearby_places is service_role-only; run through the admin client.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await (supabaseAdmin as any).rpc("nearby_places", {
       _lat: data.lat,
       _lng: data.lng,
-      _radius_km: 1,
+      _radius_km: data.radiusKm ?? 1,
+      _max_results: data.maxResults ?? 6,
     });
-    if (error) return [];
+    if (error) throw new Error(error.message);
     // Hydrate area for parity with previous callers.
     const areaIds = [...new Set(((rows ?? []) as any[]).map((r) => r.area_id).filter(Boolean))];
     const { data: areas } = areaIds.length
-      ? await (supabase as any).from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
+      ? await (supabaseAdmin as any).from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
       : { data: [] };
     const byId = new Map(((areas ?? []) as any[]).map((a) => [a.id, a]));
-    return ((rows ?? []) as any[]).slice(0, 6).map((r) => ({
+    return ((rows ?? []) as any[]).map((r) => ({
       ...r,
       distance_m: Math.round(Number(r.distance_km) * 1000),
       area: byId.get(r.area_id) ?? null,
@@ -581,18 +606,26 @@ export const submitComparison = createServerFn({ method: "POST" })
     if ((tried ?? []).length < 2) {
       throw new Error("Mark both dishes as tried before voting");
     }
+    const { data: catRow, error: catErr } = await context.supabase
+      .from("categories")
+      .select("id, requires_subtype")
+      .eq("id", dishes[0].category_id!)
+      .maybeSingle();
+    if (catErr) throw new Error(catErr.message);
     const { data: subtypes, error: se } = await context.supabase
       .from("dish_subtypes")
       .select("id, category_id, is_active")
-      .in("category_id", [dishes[0].category_id!, dishes[1].category_id!]);
+      .eq("category_id", dishes[0].category_id!);
     if (se) throw new Error(se.message);
     const activeSubtypes = (subtypes ?? []).filter((s: any) => s.is_active);
-    const hasActiveSubtypes = activeSubtypes.some((s: any) => s.category_id === dishes[0].category_id);
-    if (hasActiveSubtypes) {
-      if (!dishes[0].subtype_id || !dishes[1].subtype_id || dishes[0].subtype_id !== dishes[1].subtype_id)
+    const scoped = Boolean((catRow as any)?.requires_subtype) || activeSubtypes.length > 0;
+    if (scoped) {
+      if (!dishes[0].subtype_id || !dishes[1].subtype_id)
+        throw new Error("Both dishes must have a dish type");
+      if (dishes[0].subtype_id !== dishes[1].subtype_id)
         throw new Error("Dishes must be the same dish type");
-      if (!activeSubtypes.some((s: any) => s.id === dishes[0].subtype_id))
-        throw new Error("Dish type is inactive");
+      const match = activeSubtypes.find((s: any) => s.id === dishes[0].subtype_id);
+      if (!match) throw new Error("Dish type is inactive or belongs to another category");
     } else if (dishes[0].subtype_id || dishes[1].subtype_id) {
       throw new Error("Dish type is not valid for this category");
     }
@@ -787,7 +820,7 @@ export const leaderboard = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const supabase = publicClient();
     const [catRes, areaRes] = await Promise.all([
-      supabase.from("categories").select("id").eq("slug", data.categorySlug).maybeSingle(),
+      supabase.from("categories").select("id, requires_subtype").eq("slug", data.categorySlug).maybeSingle(),
       data.areaSlug
         ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
         : Promise.resolve({ data: null, error: null } as any),
@@ -800,11 +833,12 @@ export const leaderboard = createServerFn({ method: "GET" })
       .eq("category_id", catRes.data.id)
       .eq("is_active", true);
     if (subErr) throw new Error(subErr.message);
-    const hasActiveSubtypes = (activeSubtypes ?? []).length > 0;
+    const scoped = Boolean((catRes.data as any).requires_subtype) || (activeSubtypes ?? []).length > 0;
     const subtype = data.subtypeSlug
       ? (activeSubtypes ?? []).find((s: any) => s.slug === data.subtypeSlug)
       : null;
-    if (hasActiveSubtypes && !subtype) return [];
+    if (scoped && !subtype) return [];
+    if (!scoped && data.subtypeSlug) return [];
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
@@ -815,7 +849,7 @@ export const leaderboard = createServerFn({ method: "GET" })
       .gte("comparisons_count", data.minimumComparisons ?? 5)
       .order("elo", { ascending: false })
       .limit(50);
-    if (hasActiveSubtypes) q = q.eq("subtype_id", subtype!.id);
+    if (scoped) q = q.eq("subtype_id", subtype!.id);
     else q = q.is("subtype_id", null);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;

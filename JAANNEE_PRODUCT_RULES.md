@@ -33,8 +33,16 @@ Rules: comparisons rejected unless both dishes share the same pool; leaderboards
 - `(place_id, normalize_dish_name(name_en))` is a unique index on non-rejected dishes. Duplicate submissions raise `23505` and are mapped to "This dish already exists at the selected restaurant."
 
 ## 7. Safe destructive operations
-- A dish **cannot be deleted** if any comparisons reference it (`trg_dishes_delete_guard`). Admins merge instead.
-- Merging goes through `public.admin_merge_dishes(keep, remove)`: requires same pool, moves tried-marks and reports, rewrites comparisons to point at the keeper, deletes the loser — atomically.
+- A dish **cannot be deleted** if any comparisons reference it
+  (`trg_dishes_delete_guard`). Zero-comparison dishes may be deleted;
+  the FK cascade removes their tried-marks and reports. Dishes with
+  ranking history are protected and cannot be deleted **or** merged.
+- Merging goes through `public.admin_merge_dishes(keep, remove)` and is
+  **only allowed before either dish has any comparison history**. It
+  requires the same place, category, and sub-type (null-safe), then
+  transfers tried-marks and reports to the keeper and deletes the
+  duplicate — atomically. Comparison rows, Elo, and `comparisons_count`
+  are **never** rewritten or deleted by merge.
 
 ## 8. Photos
 - `dish-photos` bucket is private; served through `/photos/*` proxy with long cache headers.

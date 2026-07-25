@@ -68,11 +68,29 @@ export const moderateDish = createServerFn({ method: "POST" })
     if (data.action === "approve") {
       const { data: dish, error: checkError } = await context.supabase
         .from("dishes")
-        .select("category_id")
+        .select("category_id, subtype_id")
         .eq("id", data.id)
         .maybeSingle();
       if (checkError) throw new Error(checkError.message);
       if (!dish?.category_id) throw new Error("Assign a category before approving this dish");
+      // Application-level pre-check so the admin gets a clear message
+      // before the DB trigger fires.
+      const { data: catRow, error: catErr } = await context.supabase
+        .from("categories")
+        .select("requires_subtype")
+        .eq("id", dish.category_id)
+        .maybeSingle();
+      if (catErr) throw new Error(catErr.message);
+      const { data: activeSubs, error: subsErr } = await context.supabase
+        .from("dish_subtypes")
+        .select("id, is_active")
+        .eq("category_id", dish.category_id)
+        .eq("is_active", true);
+      if (subsErr) throw new Error(subsErr.message);
+      const scoped = Boolean((catRow as any)?.requires_subtype) || (activeSubs ?? []).length > 0;
+      if (scoped && !dish.subtype_id) {
+        throw new Error("This category requires a dish type before approval.");
+      }
     }
     const patch =
       data.action === "approve"
@@ -107,16 +125,46 @@ export const moderateDish = createServerFn({ method: "POST" })
 
 export const assignDishCategoryAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { dishId: string; categoryId: string }) =>
-    z.object({ dishId: z.string().uuid(), categoryId: z.string().uuid() }).parse(i),
+  .inputValidator((i: { dishId: string; categoryId: string; subtypeId?: string | null }) =>
+    z
+      .object({
+        dishId: z.string().uuid(),
+        categoryId: z.string().uuid(),
+        subtypeId: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    // Determine whether the target category is subtype-scoped.
+    const { data: cat, error: ce } = await context.supabase
+      .from("categories")
+      .select("id, requires_subtype")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (ce) throw new Error(ce.message);
+    if (!cat) throw new Error("Category not found");
+    const { data: activeSubs, error: se } = await context.supabase
+      .from("dish_subtypes")
+      .select("id, category_id, is_active")
+      .eq("category_id", data.categoryId)
+      .eq("is_active", true);
+    if (se) throw new Error(se.message);
+    const scoped = Boolean((cat as any).requires_subtype) || (activeSubs ?? []).length > 0;
+    let subtypeId: string | null = null;
+    if (scoped) {
+      if (!data.subtypeId) throw new Error("This category requires a dish type — pick one before assigning.");
+      const match = (activeSubs ?? []).find((s: any) => s.id === data.subtypeId);
+      if (!match) throw new Error("Selected dish type does not belong to this category or is inactive.");
+      subtypeId = data.subtypeId;
+    } else {
+      if (data.subtypeId) throw new Error("This category does not use dish types.");
+    }
     const { error } = await context.supabase
       .from("dishes")
       .update({
         category_id: data.categoryId,
-        subtype_id: null,
+        subtype_id: subtypeId,
         requested_category_en: null,
         requested_category_th: null,
       })
@@ -202,8 +250,8 @@ export const deleteDishAdmin = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("dishes").delete().eq("id", data.id);
     if (error) {
-      const msg = /pairwise comparisons/i.test(error.message)
-        ? "This dish has comparisons — merge it into another dish instead of deleting."
+      const msg = /ranking history/i.test(error.message)
+        ? "This dish has ranking history and cannot be deleted or merged."
         : error.message;
       throw new Error(msg);
     }
@@ -219,8 +267,10 @@ export const mergeDishAdmin = createServerFn({ method: "POST" })
     await ensureAdmin(context);
     if (data.keepId === data.removeId) throw new Error("Choose two different dishes");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Atomic transactional merge (see supabase/manual/20260725_integrity_hardening.sql).
-    // Enforces same category+sub-type pool, moves tries/reports/comparisons, then deletes.
+    // Atomic safe merge (see supabase/manual/20260725_integrity_hardening.sql).
+    // Merging is rejected when either dish already has comparison history.
+    // Tried marks and reports move to the kept dish. Comparison rows, Elo,
+    // and comparisons_count are never rewritten or deleted by merge.
     const { error } = await (supabaseAdmin as any).rpc("admin_merge_dishes", {
       _keep_id: data.keepId,
       _remove_id: data.removeId,
@@ -274,7 +324,7 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
     for (const k of need) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
 
     const [{ data: cats }, { data: areas }, { data: subtypes }] = await Promise.all([
-      context.supabase.from("categories").select("id, slug, subtypes:dish_subtypes(id, slug, is_active)"),
+      context.supabase.from("categories").select("id, slug, requires_subtype, subtypes:dish_subtypes(id, slug, is_active)"),
       context.supabase.from("areas").select("id, slug"),
       context.supabase.from("dish_subtypes").select("id, slug, category_id, is_active"),
     ]);
@@ -309,7 +359,8 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         const activeSubtypes = subtypesByCategory.get(cat.id) ?? [];
         const subtypeSlug = get("subtype_slug");
         const subtype = subtypeSlug ? activeSubtypes.find((s: any) => s.slug === subtypeSlug) : null;
-        if (activeSubtypes.length > 0 && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
+        const scoped = Boolean((cat as any).requires_subtype) || activeSubtypes.length > 0;
+        if (scoped && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
         if (subtypeSlug && !subtype) throw new Error(`Unknown subtype_slug for ${get("category_slug")}: ${subtypeSlug}`);
 
         const coords = parseOptionalCoords(get("lat"), get("lng"));
@@ -380,7 +431,10 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         created++;
       } catch (e: any) {
         failed++;
-        errors.push({ row: li + 1, reason: e.message });
+        const msg = (e && (e as any).code === "23505")
+          ? "Duplicate dish for this restaurant"
+          : e.message;
+        errors.push({ row: li + 1, reason: msg });
       }
     }
     return { created, skipped, failed, errors, skips };
@@ -648,7 +702,7 @@ const cuisineSchema = slugSchema.optional();
 
 export const upsertCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string }) =>
+  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean }) =>
     z
       .object({
         slug: z
@@ -659,14 +713,22 @@ export const upsertCategory = createServerFn({ method: "POST" })
         name_en: z.string().min(1).max(80),
         name_th: z.string().min(1).max(80),
         cuisine: cuisineSchema,
+        requires_subtype: z.boolean().optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    const payload: Record<string, unknown> = {
+      slug: data.slug,
+      name_en: data.name_en,
+      name_th: data.name_th,
+      cuisine: data.cuisine || null,
+    };
+    if (typeof data.requires_subtype === "boolean") payload.requires_subtype = data.requires_subtype;
     const { error } = await context.supabase
       .from("categories")
-      .upsert({ ...data, cuisine: data.cuisine || null }, { onConflict: "slug" });
+      .upsert(payload as any, { onConflict: "slug" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

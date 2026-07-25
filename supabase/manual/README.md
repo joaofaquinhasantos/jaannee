@@ -1,34 +1,36 @@
 # Manual DB scripts
 
-Manual SQL kept alongside the app for reproducibility. The live database is
-canonical; these scripts are how we rebuild it from scratch and how we
-verify invariants.
+**Database changes for JaanNee are manual-only.** The Lovable migration
+tool is not to be used against the live database as part of normal work.
+The earlier direct migrations that produced files under
+`supabase/migrations/2026072504*.sql` were an exception and must not be
+repeated.
 
 ## Files
 
-- `20260725_integrity_hardening.sql` — cumulative integrity hardening
-  (requires_subtype flag, approval-time sub-type enforcement, tried-before-
-  voting trigger, delete guard, `admin_merge_dishes`, duplicate-name index,
-  `nearby_places` RPC, `normalize_dish_name` helper).
-- `verify_integrity.sql` — invariant checks. Run after any migration; every
-  row should report `OK`.
+- `20260725_integrity_hardening.sql` — corrected final intended integrity
+  state (safe merge, tried-on-every-update trigger, ranking-key,
+  requires_subtype flag + seeds, whitespace-safe normaliser + index
+  rebuild, `nearby_places` with bbox and caps, sensitive-function grants,
+  storage bucket restrictions). Depends on the existing base JaanNee
+  schema; this is **not** a fresh-environment snapshot.
+- `VERIFY_20260725_integrity_hardening.sql` — read-only checks. Runs
+  inside the Supabase SQL editor (no `\psql` commands). Every row should
+  report `OK`.
 
-## Applying
+## Execution order
 
-The Lovable migration tool applies changes to the live DB directly. The
-SQL in `20260725_integrity_hardening.sql` mirrors what was executed via
-that tool on 2026-07-25, so a fresh Supabase project can be brought to the
-same state by running it once.
+1. Read `20260725_integrity_hardening.sql` end to end.
+2. Paste it into the Supabase SQL editor and execute as one session
+   (main transaction + trailing storage bucket update).
+3. Paste `VERIFY_20260725_integrity_hardening.sql` into the SQL editor
+   and confirm every row reports `OK`.
 
-Storage bucket limits (MIME allowlist and 8MB size cap) are enforced in the
-app layer (`src/routes/_authenticated/submit.tsx` and `src/routes/photos.$.ts`)
-because the workspace's storage tooling does not currently expose those
-bucket properties over the API.
+Do not commit or execute either file automatically. Do not use the
+Lovable migration tool for these changes.
 
-## Verifying
+## Fresh-environment note
 
-```sh
-psql "$SUPABASE_DB_URL" -f supabase/manual/verify_integrity.sql
-```
-
-Non-`OK` rows indicate an invariant regression — do not release.
+These scripts assume the existing base JaanNee schema. A full
+fresh-environment snapshot does not exist yet; do not claim these scripts
+can rebuild a new database from scratch.
