@@ -298,6 +298,7 @@ function PendingList() {
   const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
   const cuisines = useQuery({ queryKey: ["cuisines"], queryFn: () => listCuisines() });
   const [assigning, setAssigning] = useState<Record<string, string>>({});
+  const [assigningSubtype, setAssigningSubtype] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState<any | null>(null);
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderateDish({ data: v }),
@@ -305,7 +306,8 @@ function PendingList() {
     onError: (e: any) => toast.error(e.message),
   });
   const assignMut = useMutation({
-    mutationFn: (v: { dishId: string; categoryId: string }) => assignDishCategoryAdmin({ data: v }),
+    mutationFn: (v: { dishId: string; categoryId: string; subtypeId?: string | null }) =>
+      assignDishCategoryAdmin({ data: v }),
     onSuccess: () => {
       toast.success("Category assigned");
       qc.invalidateQueries({ queryKey: ["pending"] });
@@ -338,14 +340,30 @@ function PendingList() {
               <div className="mt-3 rounded-md border border-dashed border-border bg-background p-3">
                 <p className="text-xs font-bold uppercase text-primary">Requested new category</p>
                 <p className="mt-1 text-sm font-medium">{d.requested_category_en}{d.requested_category_th ? ` / ${d.requested_category_th}` : ""}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Select value={assigning[d.id] ?? ""} onValueChange={(v) => setAssigning({ ...assigning, [d.id]: v })}>
-                    <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
-                    <SelectContent>
-                      {(cats.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button size="sm" variant="outline" disabled={!assigning[d.id] || assignMut.isPending} onClick={() => assignMut.mutate({ dishId: d.id, categoryId: assigning[d.id] })}>Assign</Button>
+                {(() => {
+                  const chosenCatId = assigning[d.id] ?? "";
+                  const chosenCat = (cats.data ?? []).find((c: any) => c.id === chosenCatId);
+                  const activeSubs = (chosenCat?.subtypes ?? []).filter((s: any) => s.is_active);
+                  const scoped = Boolean(chosenCat?.requires_subtype) || activeSubs.length > 0;
+                  const subId = assigningSubtype[d.id] ?? "";
+                  const canAssign = !!chosenCatId && (!scoped || !!subId);
+                  return (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Select value={chosenCatId} onValueChange={(v) => { setAssigning({ ...assigning, [d.id]: v }); setAssigningSubtype({ ...assigningSubtype, [d.id]: "" }); }}>
+                        <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
+                        <SelectContent>
+                          {(cats.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {scoped && (
+                        <Select value={subId} onValueChange={(v) => setAssigningSubtype({ ...assigningSubtype, [d.id]: v })}>
+                          <SelectTrigger className="w-56"><SelectValue placeholder="Choose dish type" /></SelectTrigger>
+                          <SelectContent>
+                            {activeSubs.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name_en}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button size="sm" variant="outline" disabled={!canAssign || assignMut.isPending} onClick={() => assignMut.mutate({ dishId: d.id, categoryId: chosenCatId, subtypeId: scoped ? subId : null })}>Assign</Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -359,7 +377,9 @@ function PendingList() {
                   >
                     Create category
                   </Button>
-                </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
