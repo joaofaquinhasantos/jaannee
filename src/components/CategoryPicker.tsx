@@ -100,7 +100,9 @@ export function CategoryPicker({
                       className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <span className="font-semibold">{lang === "th" ? category.name_th : category.name_en}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">{category.slug}</span>
+                      {lang !== "th" && category.name_th ? (
+                        <span className="ml-2 text-xs text-muted-foreground">{category.name_th}</span>
+                      ) : null}
                     </button>
                   ))}
                 </div>

@@ -69,7 +69,9 @@ export function AreaPicker({
                   }`}
                 >
                   <span className="font-semibold">{lang === "th" ? area.name_th : area.name_en}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">{area.slug}</span>
+                  {area.name_th ? (
+                    <span className="ml-2 text-xs text-muted-foreground">{area.name_th}</span>
+                  ) : null}
                 </button>
               ))}
             </div>
