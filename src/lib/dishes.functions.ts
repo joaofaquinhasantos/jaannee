@@ -444,6 +444,39 @@ export const toggleTried = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Returns the approved dishes the currently authenticated diner has marked
+// as tried, with the fields /compare needs to build tried-only pickers and
+// enforce the ranking-pool rule. RLS on dish_tries scopes reads to the
+// caller, so we never expose another user's tried marks.
+export const listCurrentUserTriedDishes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("dish_tries")
+      .select(
+        `dish:dishes!inner(
+          id, name_en, name_th, photo_url, status, subtype_id,
+          category:categories!inner(id, slug, name_en, name_th, requires_subtype),
+          subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
+          place:places(id, name)
+        )`,
+      )
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    const dishes = ((data ?? []) as any[])
+      .map((row) => row.dish)
+      .filter(
+        (d) =>
+          d &&
+          d.status === "approved" &&
+          d.category &&
+          (!d.subtype_id || d.subtype?.is_active),
+      );
+    // De-dupe just in case (unique index makes this defensive).
+    const seen = new Set<string>();
+    return dishes.filter((d) => (seen.has(d.id) ? false : (seen.add(d.id), true)));
+  });
+
 export const followUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { userId: string; follow: boolean }) =>

@@ -1,8 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { listCategories, listDishes, submitComparison } from "@/lib/dishes.functions";
+import {
+  listCategories,
+  listCurrentUserTriedDishes,
+  submitComparison,
+} from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,62 +46,151 @@ function Compare() {
   const { t, lang } = useI18n();
   const nav = useNavigate();
   const search = Route.useSearch();
-  const [authed, setAuthed] = useState(false);
+  const qc = useQueryClient();
+  const [authState, setAuthState] = useState<"loading" | "in" | "out">("loading");
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
+    supabase.auth.getUser().then(({ data }) => setAuthState(data.user ? "in" : "out"));
   }, []);
 
-  const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
-  const [cat, setCat] = useState<string | undefined>(search.category);
-  const [subtype, setSubtype] = useState<string | undefined>();
-  const selectedCat = (categories.data ?? []).find((c: any) => c.slug === cat) as any;
-  const subtypes = ((selectedCat?.subtypes ?? []) as any[]).sort(
-    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
-  );
-  const dishes = useQuery({
-    queryKey: ["dishes", cat, subtype],
-    queryFn: () => listDishes({ data: { categorySlug: cat, subtypeSlug: subtype } }),
-    enabled: !!cat && (!subtypes.length || !!subtype),
+  const categoriesQ = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => listCategories(),
+    enabled: authState === "in",
+  });
+  const triedQ = useQuery({
+    queryKey: ["tried", "current-user", "compare"],
+    queryFn: () => listCurrentUserTriedDishes(),
+    enabled: authState === "in",
   });
 
-  const [aId, setAId] = useState<string | undefined>(search.dish);
-  const [bId, setBId] = useState<string | undefined>();
+  const triedDishes = (triedQ.data ?? []) as any[];
+  const categoriesById = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const c of (categoriesQ.data ?? []) as any[]) map.set(c.id, c);
+    return map;
+  }, [categoriesQ.data]);
 
-  useEffect(() => {
-    if (!cat && categories.data && categories.data.length > 0)
-      setCat((categories.data[0] as any).slug);
-  }, [categories.data, cat]);
-
-  useEffect(() => {
-    if (search.dish && !cat && dishes.data === undefined && categories.data) {
-      listDishes({ data: {} }).then((all) => {
-        const found = (all as any[]).find((d) => d.id === search.dish);
-        if (found) setCat(found.category.slug);
-      });
+  // Categories the user actually has tried dishes in, hydrated from
+  // listCategories so the picker can group by cuisine.
+  const eligibleCategories = useMemo(() => {
+    const byId = new Map<string, any>();
+    for (const d of triedDishes) {
+      if (!d.category?.id || byId.has(d.category.id)) continue;
+      byId.set(d.category.id, categoriesById.get(d.category.id) ?? d.category);
     }
-  }, [search.dish, categories.data]);
+    return [...byId.values()];
+  }, [triedDishes, categoriesById]);
 
-  const list = (dishes.data ?? []) as any[];
+  const [cat, setCat] = useState<string | undefined>(undefined);
+  const [subtype, setSubtype] = useState<string | undefined>(undefined);
+  const [aId, setAId] = useState<string | undefined>(undefined);
+  const [bId, setBId] = useState<string | undefined>(undefined);
+  const [preselectIgnored, setPreselectIgnored] = useState(false);
+
+  const selectedCat = eligibleCategories.find((c: any) => c.slug === cat);
+  const triedInCat = useMemo(
+    () => triedDishes.filter((d) => d.category?.slug === cat),
+    [triedDishes, cat],
+  );
+  // Subtype-scoped when the category flag is set, or when any tried dish
+  // in this category carries a subtype (approval trigger guarantees that
+  // approved dishes in scoped categories always have a subtype).
+  const scoped =
+    !!selectedCat?.requires_subtype || triedInCat.some((d) => !!d.subtype_id);
+  const eligibleSubtypes = useMemo(() => {
+    const byId = new Map<string, any>();
+    for (const d of triedInCat) {
+      if (!d.subtype?.id || byId.has(d.subtype.id)) continue;
+      byId.set(d.subtype.id, d.subtype);
+    }
+    return [...byId.values()].sort(
+      (a: any, b: any) =>
+        (a.display_order ?? 0) - (b.display_order ?? 0) ||
+        a.name_en.localeCompare(b.name_en),
+    );
+  }, [triedInCat]);
+
+  const list = useMemo(() => {
+    if (!cat) return [] as any[];
+    if (scoped && !subtype) return [];
+    return triedInCat.filter((d) =>
+      scoped ? d.subtype?.slug === subtype : !d.subtype_id,
+    );
+  }, [cat, subtype, scoped, triedInCat]);
+
+  // Auto-select first eligible category (respecting ?category=).
+  useEffect(() => {
+    if (cat || eligibleCategories.length === 0) return;
+    const pre = search.category
+      ? eligibleCategories.find((c: any) => c.slug === search.category)
+      : undefined;
+    setCat((pre ?? eligibleCategories[0]).slug);
+  }, [eligibleCategories, cat, search.category]);
+
+  // Preselect ?dish=... only if the user has tried it. If ineligible, note it.
+  useEffect(() => {
+    if (!search.dish || authState !== "in" || !triedQ.isSuccess) return;
+    const match = triedDishes.find((d) => d.id === search.dish);
+    if (!match) {
+      setPreselectIgnored(true);
+      return;
+    }
+    setCat(match.category?.slug);
+    if (match.subtype?.slug) setSubtype(match.subtype.slug);
+    setAId(match.id);
+    // Only run once when tried data is ready.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triedQ.isSuccess]);
+
   const a = useMemo(() => list.find((d) => d.id === aId), [list, aId]);
   const b = useMemo(() => list.find((d) => d.id === bId), [list, bId]);
 
   const mut = useMutation({
     mutationFn: async (winnerId: string) => {
-      if (!authed) {
-        toast.error("Sign in to save your vote");
-        nav({ to: "/auth" });
-        return { ok: false };
-      }
-      return submitComparison({ data: { dishAId: a!.id, dishBId: b!.id, winnerId } });
+      if (!a || !b) throw new Error("Choose both dishes");
+      if (a.id === b.id) throw new Error("Choose two different dishes");
+      if (a.category?.id !== b.category?.id)
+        throw new Error("Dishes must be in the same category");
+      if (scoped && a.subtype?.id !== b.subtype?.id)
+        throw new Error("Dishes must be the same dish type");
+      return submitComparison({ data: { dishAId: a.id, dishBId: b.id, winnerId } });
     },
     onSuccess: (res: any) => {
       if (res?.ok === false) return;
       toast.success(t("comparison_saved"));
       setAId(undefined);
       setBId(undefined);
+      qc.invalidateQueries({ queryKey: ["tried"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  if (authState === "loading") {
+    return (
+      <AppShell>
+        <div className="mt-10 text-sm text-muted-foreground">Loading…</div>
+      </AppShell>
+    );
+  }
+
+  if (authState === "out") {
+    return (
+      <AppShell>
+        <section className="mt-10 max-w-lg rounded-lg border border-border bg-card p-6">
+          <h1 className="font-display text-4xl leading-none">Sign in to compare dishes</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Comparisons are based on dishes you have personally tried. Sign in to continue.
+          </p>
+          <Link to="/auth" search={{ redirect: "/compare" }}>
+            <Button className="mt-5">{t("sign_in")}</Button>
+          </Link>
+        </section>
+      </AppShell>
+    );
+  }
+
+  const loadingTried = triedQ.isLoading || categoriesQ.isLoading;
+  const triedError = triedQ.error as Error | null;
 
   return (
     <AppShell>
@@ -107,93 +200,103 @@ function Compare() {
           <div>
             <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_compare")}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
-              Tap the better dish. Sign in only when your vote needs saving.
+              Compare only dishes you have personally tried, within the same category and dish type.
             </p>
           </div>
-          {!authed && (
-            <Link to="/auth">
-              <Button size="sm" variant="outline">{t("sign_in")}</Button>
-            </Link>
-          )}
         </div>
       </section>
 
-      <div className="mt-6 max-w-sm">
-        {(categories.data ?? []).length > 0 && (
-          <CategoryPicker
-            categories={categories.data ?? []}
-            value={cat}
-            lang={lang}
-            placeholder={t("choose_category")}
-            onChange={(_, category) => {
-              setCat(category.slug);
-              setSubtype(undefined);
-              setAId(undefined);
-              setBId(undefined);
-            }}
-          />
-        )}
-      </div>
-      {subtypes.length > 0 && (
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-          {subtypes.map((s: any) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                setSubtype(s.slug);
-                setAId(undefined);
-                setBId(undefined);
-              }}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-            >
-              {lang === "th" ? s.name_th : s.name_en}
-            </button>
-          ))}
+      {preselectIgnored && (
+        <div className="mt-4 rounded-md border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
+          That dish must be marked as tried before it can be compared.
         </div>
       )}
 
-      {categories.isSuccess && (categories.data ?? []).length === 0 ? (
-        <div className="mt-6 rounded-lg border border-border bg-card p-6">
-          <h2 className="font-display text-3xl">No dishes to compare yet.</h2>
-          <p className="mt-2 max-w-lg text-muted-foreground">
-            Comparisons open up once diners start posting plates. Add the first dish to seed a category.
-          </p>
-          <Link to="/submit">
-            <Button className="mt-5">{t("cta_add")}</Button>
-          </Link>
+      {loadingTried ? (
+        <div className="mt-6 text-sm text-muted-foreground">Loading your tried dishes…</div>
+      ) : triedError ? (
+        <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-6">
+          <h2 className="font-display text-3xl">We couldn't load your tried dishes.</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{triedError.message}</p>
+          <Button className="mt-4" variant="outline" onClick={() => triedQ.refetch()}>
+            Try again
+          </Button>
         </div>
-      ) : cat && subtypes.length > 0 && !subtype ? (
-        <div className="mt-6 rounded-lg border border-border bg-card p-6">
-          <h2 className="font-display text-3xl">Choose a dish type first.</h2>
-          <p className="mt-2 text-muted-foreground">Comparisons only happen inside the same actual dish.</p>
-        </div>
-      ) : cat &&
-        (list.length < 2 && !dishes.isLoading ? (
-          <div className="mt-6 rounded-lg border border-border bg-card p-6">
-            <h2 className="font-display text-3xl">Not enough dishes yet.</h2>
-            <p className="mt-2 text-muted-foreground">{t("compare_empty")}</p>
-            <Link to="/submit">
-              <Button className="mt-5">{t("cta_add")}</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <DishPicker
-              label="Dish A"
-              value={aId}
-              onChange={setAId}
-              options={list.filter((d) => d.id !== bId)}
+      ) : eligibleCategories.length === 0 ? (
+        <EmptyCta
+          title="No tried dishes yet"
+          description="Mark dishes as tried before comparing them."
+          ctaLabel="Discover dishes"
+          to="/"
+        />
+      ) : (
+        <>
+          <div className="mt-6 max-w-sm">
+            <CategoryPicker
+              categories={eligibleCategories}
+              value={cat}
               lang={lang}
-            />
-            <DishPicker
-              label="Dish B"
-              value={bId}
-              onChange={setBId}
-              options={list.filter((d) => d.id !== aId)}
-              lang={lang}
+              placeholder={t("choose_category")}
+              onChange={(_, category) => {
+                setCat(category.slug);
+                setSubtype(undefined);
+                setAId(undefined);
+                setBId(undefined);
+              }}
             />
           </div>
-        ))}
+          {scoped && eligibleSubtypes.length > 0 && (
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+              {eligibleSubtypes.map((s: any) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSubtype(s.slug);
+                    setAId(undefined);
+                    setBId(undefined);
+                  }}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                >
+                  {lang === "th" ? s.name_th : s.name_en}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {cat && scoped && !subtype ? (
+            <div className="mt-6 rounded-lg border border-border bg-card p-6">
+              <h2 className="font-display text-3xl">Choose a dish type first</h2>
+              <p className="mt-2 text-muted-foreground">
+                Comparisons only happen between the same actual dish type.
+              </p>
+            </div>
+          ) : cat && list.length < 2 ? (
+            <EmptyCta
+              title="You need two tried dishes"
+              description="Mark at least two dishes as tried in this category and dish type before comparing them."
+              ctaLabel="Discover more dishes"
+              to="/"
+            />
+          ) : cat ? (
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <DishPicker
+                label="Dish A"
+                value={aId}
+                onChange={setAId}
+                options={list.filter((d) => d.id !== bId)}
+                lang={lang}
+              />
+              <DishPicker
+                label="Dish B"
+                value={bId}
+                onChange={setBId}
+                options={list.filter((d) => d.id !== aId)}
+                lang={lang}
+              />
+            </div>
+          ) : null}
+        </>
+      )}
 
       {a && b && (
         <div className="mt-8">
@@ -208,11 +311,24 @@ function Compare() {
   );
 }
 
-function PreviewTile({ label }: { label: string }) {
+function EmptyCta({
+  title,
+  description,
+  ctaLabel,
+  to,
+}: {
+  title: string;
+  description: string;
+  ctaLabel: string;
+  to: string;
+}) {
   return (
-    <div className="aspect-[4/5] rounded-lg border border-border bg-card p-3">
-      <div className="h-full rounded-md border border-dashed border-border" />
-      <p className="mt-2 text-center text-xs font-bold uppercase text-muted-foreground">{label}</p>
+    <div className="mt-6 rounded-lg border border-border bg-card p-6">
+      <h2 className="font-display text-3xl">{title}</h2>
+      <p className="mt-2 max-w-lg text-muted-foreground">{description}</p>
+      <Link to={to}>
+        <Button className="mt-5">{ctaLabel}</Button>
+      </Link>
     </div>
   );
 }
