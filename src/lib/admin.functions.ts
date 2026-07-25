@@ -860,7 +860,7 @@ export const listCategoriesAdmin = createServerFn({ method: "GET" })
     await ensureAdmin(context);
     const { data, error } = await context.supabase
       .from("categories")
-      .select("id, slug, name_en, name_th, cuisine, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
+      .select("id, slug, name_en, name_th, cuisine, requires_subtype, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
       .order("name_en", { ascending: true });
     if (error) throw new Error(error.message);
     return data ?? [];

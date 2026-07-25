@@ -16,6 +16,7 @@ import { cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronRight } from "lucide-react";
+import { PHOTO_ACCEPT_ATTR, buildPhotoPath, validatePhotoFile } from "@/lib/photo-upload";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
 
@@ -297,6 +298,7 @@ function PendingList() {
   const cats = useQuery({ queryKey: ["admin-categories"], queryFn: () => listCategoriesAdmin() });
   const cuisines = useQuery({ queryKey: ["cuisines"], queryFn: () => listCuisines() });
   const [assigning, setAssigning] = useState<Record<string, string>>({});
+  const [assigningSubtype, setAssigningSubtype] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState<any | null>(null);
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderateDish({ data: v }),
@@ -304,7 +306,8 @@ function PendingList() {
     onError: (e: any) => toast.error(e.message),
   });
   const assignMut = useMutation({
-    mutationFn: (v: { dishId: string; categoryId: string }) => assignDishCategoryAdmin({ data: v }),
+    mutationFn: (v: { dishId: string; categoryId: string; subtypeId?: string | null }) =>
+      assignDishCategoryAdmin({ data: v }),
     onSuccess: () => {
       toast.success("Category assigned");
       qc.invalidateQueries({ queryKey: ["pending"] });
@@ -337,14 +340,30 @@ function PendingList() {
               <div className="mt-3 rounded-md border border-dashed border-border bg-background p-3">
                 <p className="text-xs font-bold uppercase text-primary">Requested new category</p>
                 <p className="mt-1 text-sm font-medium">{d.requested_category_en}{d.requested_category_th ? ` / ${d.requested_category_th}` : ""}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Select value={assigning[d.id] ?? ""} onValueChange={(v) => setAssigning({ ...assigning, [d.id]: v })}>
-                    <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
-                    <SelectContent>
-                      {(cats.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button size="sm" variant="outline" disabled={!assigning[d.id] || assignMut.isPending} onClick={() => assignMut.mutate({ dishId: d.id, categoryId: assigning[d.id] })}>Assign</Button>
+                {(() => {
+                  const chosenCatId = assigning[d.id] ?? "";
+                  const chosenCat = (cats.data ?? []).find((c: any) => c.id === chosenCatId);
+                  const activeSubs = (chosenCat?.subtypes ?? []).filter((s: any) => s.is_active);
+                  const scoped = Boolean(chosenCat?.requires_subtype) || activeSubs.length > 0;
+                  const subId = assigningSubtype[d.id] ?? "";
+                  const canAssign = !!chosenCatId && (!scoped || !!subId);
+                  return (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Select value={chosenCatId} onValueChange={(v) => { setAssigning({ ...assigning, [d.id]: v }); setAssigningSubtype({ ...assigningSubtype, [d.id]: "" }); }}>
+                        <SelectTrigger className="w-56"><SelectValue placeholder="Assign existing category" /></SelectTrigger>
+                        <SelectContent>
+                          {(cats.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {scoped && (
+                        <Select value={subId} onValueChange={(v) => setAssigningSubtype({ ...assigningSubtype, [d.id]: v })}>
+                          <SelectTrigger className="w-56"><SelectValue placeholder="Choose dish type" /></SelectTrigger>
+                          <SelectContent>
+                            {activeSubs.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name_en}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button size="sm" variant="outline" disabled={!canAssign || assignMut.isPending} onClick={() => assignMut.mutate({ dishId: d.id, categoryId: chosenCatId, subtypeId: scoped ? subId : null })}>Assign</Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -358,7 +377,9 @@ function PendingList() {
                   >
                     Create category
                   </Button>
-                </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -432,10 +453,13 @@ function DishAdmin() {
   const uploadPhoto = async (file: File) => {
     setUploadingPhoto(true);
     try {
+      validatePhotoFile(file);
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Sign in before uploading photos");
-      const path = `${userData.user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error } = await supabase.storage.from("dish-photos").upload(path, file, { upsert: false });
+      const path = buildPhotoPath(userData.user.id, file);
+      const { error } = await supabase.storage
+        .from("dish-photos")
+        .upload(path, file, { upsert: false, contentType: file.type });
       if (error) throw new Error(error.message);
       setPhotoUrl(`/photos/${path}`);
       toast.success("Photo uploaded");
@@ -518,7 +542,7 @@ function DishAdmin() {
                 <Label>Upload from device</Label>
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept={PHOTO_ACCEPT_ATTR}
                   disabled={uploadingPhoto}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -526,7 +550,7 @@ function DishAdmin() {
                   }}
                   className="file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">Choose a local image, then save the uploaded photo path.</p>
+                <p className="mt-1 text-xs text-muted-foreground">JPEG, PNG, or WebP up to 8 MB. Choose a local image, then save the uploaded photo path.</p>
               </div>
               {photoUrl && (
                 <img src={photoUrl} className="h-28 w-28 rounded-lg object-cover" alt="Preview" />
@@ -542,7 +566,14 @@ function DishAdmin() {
       <Dialog open={!!deletingDish} onOpenChange={(o) => !o && setDeletingDish(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Delete dish</DialogTitle></DialogHeader>
-          {deletingDish && <p className="text-sm">Delete <span className="font-semibold">{deletingDish.name_en}</span>? Tries, comparisons, and reports for this dish are removed by the database cascade.</p>}
+          {deletingDish && (
+            <div className="space-y-2 text-sm">
+              <p>Delete <span className="font-semibold">{deletingDish.name_en}</span>?</p>
+              <p className="text-muted-foreground">
+                Dishes with ranking history are protected and cannot be deleted. Zero-comparison dishes can be removed; tried marks and reports for the dish go with it. This action cannot be undone.
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletingDish(null)}>Cancel</Button>
             <Button variant="destructive" onClick={() => deleteMut.mutate()} disabled={deleteMut.isPending}>Delete</Button>
@@ -566,7 +597,9 @@ function DishAdmin() {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">Tried marks and reports move to the kept dish. Comparisons involving the removed duplicate are deleted so Elo is not silently rewritten.</p>
+              <p className="text-xs text-muted-foreground">
+                Merging is only allowed before either dish has any comparison history. Both dishes must share the same place, category, and dish type. Tried marks and reports move to the kept dish; comparison rows, Elo, and comparisons_count are never rewritten.
+              </p>
             </div>
           )}
           <DialogFooter>
@@ -607,7 +640,7 @@ function Reports() {
 function Taxonomy() {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [c, setC] = useState({ slug: "", name_en: "", name_th: "", cuisine: "" });
+  const [c, setC] = useState<{ slug: string; name_en: string; name_th: string; cuisine: string; requires_subtype: boolean }>({ slug: "", name_en: "", name_th: "", cuisine: "", requires_subtype: false });
   const [cu, setCu] = useState({ slug: "", name_en: "", name_th: "" });
   const [a, setA] = useState({ slug: "", name_en: "", name_th: "" });
   const [catFilter, setCatFilter] = useState("");
@@ -617,7 +650,7 @@ function Taxonomy() {
   const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
   const cuisines = useQuery({ queryKey: ["cuisines"], queryFn: () => listCuisines() });
   const [editing, setEditing] = useState<
-    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string }
+    | { kind: "category" | "area"; slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean }
     | null
   >(null);
   const [deleting, setDeleting] = useState<
@@ -634,7 +667,7 @@ function Taxonomy() {
     mutationFn: async () => requireOk(await upsertCategory({ data: c })),
     onSuccess: () => {
       toast.success("Saved");
-      setC({ slug: "", name_en: "", name_th: "", cuisine: "" });
+      setC({ slug: "", name_en: "", name_th: "", cuisine: "", requires_subtype: false });
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
     },
@@ -686,7 +719,8 @@ function Taxonomy() {
   const editMut = useMutation({
     mutationFn: async () => {
       if (!editing) return;
-      const payload = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th, cuisine: editing.cuisine };
+      const payload: any = { slug: editing.slug, name_en: editing.name_en, name_th: editing.name_th, cuisine: editing.cuisine };
+      if (editing.kind === "category") payload.requires_subtype = !!editing.requires_subtype;
       if (editing.kind === "category") requireOk(await upsertCategory({ data: payload }));
       else requireOk(await upsertArea({ data: payload }));
     },
@@ -802,6 +836,13 @@ function Taxonomy() {
               </SelectContent>
             </Select>
           </div>
+          <label className="flex items-start gap-2 rounded-md border border-border bg-background p-3 text-sm">
+            <input type="checkbox" className="mt-0.5" checked={c.requires_subtype} onChange={(e) => setC({ ...c, requires_subtype: e.target.checked })} />
+            <span>
+              <span className="font-semibold">Requires dish type</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">Dishes in this category cannot be approved without a dish type (e.g. Sushi → Nigiri Salmon).</span>
+            </span>
+          </label>
           <Button onClick={saveC} disabled={cMut.isPending}>Save</Button>
         </div>
         <div className="mt-6">
@@ -846,11 +887,14 @@ function Taxonomy() {
                         <div key={row.slug} className="px-3 py-3 text-sm">
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="truncate font-medium">{row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span></div>
+                              <div className="truncate font-medium">
+                                {row.name_en} <span className="text-muted-foreground">/ {row.name_th}</span>
+                                {row.requires_subtype && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">Requires type</span>}
+                              </div>
                               <div className="truncate text-xs text-muted-foreground">{row.slug}</div>
                             </div>
                             <div className="flex shrink-0 gap-2">
-                              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "" })}>Edit</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: "category", slug: row.slug, name_en: row.name_en, name_th: row.name_th, cuisine: row.cuisine || "", requires_subtype: !!row.requires_subtype })}>Edit</Button>
                               <Button size="sm" variant="outline" onClick={() => setDeleting({ kind: "category", id: row.id, name_en: row.name_en, slug: row.slug })}>Delete</Button>
                             </div>
                           </div>
@@ -961,6 +1005,15 @@ function Taxonomy() {
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+              {editing.kind === "category" && (
+                <label className="flex items-start gap-2 rounded-md border border-border bg-background p-3 text-sm">
+                  <input type="checkbox" className="mt-0.5" checked={!!editing.requires_subtype} onChange={(e) => setEditing({ ...editing, requires_subtype: e.target.checked })} />
+                  <span>
+                    <span className="font-semibold">Requires dish type</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">Blocks approval of dishes in this category until a dish type is picked.</span>
+                  </span>
+                </label>
               )}
             </div>
           )}
