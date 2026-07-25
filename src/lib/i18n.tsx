@@ -128,6 +128,25 @@ export const dict = {
   back_to_edit: { en: "Back to edit", th: "กลับไปแก้ไข" },
   submit_anyway: { en: "None of these. Submit anyway", th: "ไม่ใช่รายการเหล่านี้ ส่งต่อ" },
   submit_for_review: { en: "Submit for review", th: "ส่งให้ตรวจสอบ" },
+  ranked_dishes: { en: "Ranked dishes", th: "จานที่จัดอันดับแล้ว" },
+  ranked_dishes_body: {
+    en: "Based on at least 5 diner comparisons.",
+    th: "จากการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้ง",
+  },
+  new_contenders: { en: "New contenders", th: "ผู้ท้าชิงหน้าใหม่" },
+  new_contenders_body: {
+    en: "These dishes need more diner comparisons before receiving a public rank.",
+    th: "จานเหล่านี้ต้องการการเปรียบเทียบเพิ่มเติมก่อนได้รับอันดับสาธารณะ",
+  },
+  no_ranked_yet_title: {
+    en: "No dishes are ranked yet",
+    th: "ยังไม่มีจานที่ได้รับอันดับ",
+  },
+  no_ranked_yet_body: {
+    en: "These contenders need at least 5 diner comparisons before receiving a public rank.",
+    th: "ผู้ท้าชิงเหล่านี้ต้องการการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้งก่อนได้รับอันดับสาธารณะ",
+  },
+  unranked_label: { en: "New contender", th: "ผู้ท้าชิงหน้าใหม่" },
 };
 
 export type Key = keyof typeof dict;
