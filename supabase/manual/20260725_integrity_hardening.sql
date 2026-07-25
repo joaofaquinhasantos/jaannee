@@ -176,6 +176,9 @@ CREATE TRIGGER trg_dishes_delete_guard BEFORE DELETE ON public.dishes
 -- Comparisons, Elo, and comparisons_count are NEVER rewritten by merge.
 -- Additional constraints: same place, same category, same subtype (null-safe).
 -- ---------------------------------------------------------------------
+-- The live function currently returns void; PostgreSQL cannot change a
+-- function's return type via CREATE OR REPLACE, so drop it first.
+DROP FUNCTION IF EXISTS public.admin_merge_dishes(uuid, uuid);
 CREATE OR REPLACE FUNCTION public.admin_merge_dishes(_keep_id uuid, _remove_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
