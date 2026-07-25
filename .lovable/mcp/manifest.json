@@ -51,7 +51,7 @@
       {
         "name": "list_dishes",
         "title": "List dishes",
-        "description": "List approved dishes on JaanNee, optionally filtered by category slug and/or area slug. Returns up to 50 dishes ordered by Elo ranking (highest first).",
+        "description": "List approved dishes on JaanNee, optionally filtered by category (and sub-type) and/or area. Subtype-scoped categories require a `subtypeSlug`; multiple ranking pools are never combined. Returns up to 50 dishes ordered by Elo (highest first).",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -62,15 +62,15 @@
           "type": "object",
           "properties": {
             "categorySlug": {
-              "description": "Category slug from list_categories (e.g. 'pad-thai'). Omit to search all categories.",
+              "description": "Category slug from list_categories. Required if subtypeSlug is provided.",
               "type": "string"
             },
             "subtypeSlug": {
-              "description": "Sub-type slug from list_categories.subtypes. Required when the chosen category has active sub-types.",
+              "description": "Sub-type slug from list_categories.subtypes. Required when the chosen category is subtype-scoped. Cannot be supplied for a category that is not subtype-scoped.",
               "type": "string"
             },
             "areaSlug": {
-              "description": "Area slug from list_areas (e.g. 'sathorn'). Omit to search all areas.",
+              "description": "Area slug from list_areas. Omit to search all areas.",
               "type": "string"
             }
           }
@@ -106,7 +106,7 @@
       {
         "name": "leaderboard",
         "title": "Dish leaderboard",
-        "description": "Return the ranked JaanNee leaderboard for a category (and optional area). Only dishes with at least 5 pairwise comparisons are eligible; results are ordered by Elo (highest first).",
+        "description": "Return the ranked JaanNee leaderboard for a category (subtype-scoped when required) and optional area. Only dishes with at least 5 pairwise comparisons are eligible; results are ordered by Elo (highest first). Multiple ranking pools are never combined.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -118,10 +118,10 @@
           "properties": {
             "categorySlug": {
               "type": "string",
-              "description": "Category slug from list_categories, e.g. 'pad-thai'."
+              "description": "Category slug from list_categories."
             },
             "subtypeSlug": {
-              "description": "Sub-type slug from list_categories.subtypes. Required when the category has active sub-types.",
+              "description": "Sub-type slug from list_categories.subtypes. Required when the category is subtype-scoped; forbidden for category-only categories.",
               "type": "string"
             },
             "areaSlug": {
