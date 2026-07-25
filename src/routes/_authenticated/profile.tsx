@@ -81,15 +81,15 @@ function Profile() {
         <div>
           <p className="text-xs font-bold uppercase text-primary">Your taste trail</p>
           <h1 className="mt-2 font-display text-4xl leading-none md:text-5xl">{displayName}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Your posts, tried dishes, and comparison history.</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
         </div>
         <Button variant="ghost" onClick={signOut}>{t("sign_out")}</Button>
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-2 rounded-lg border border-border bg-card p-3 text-center">
-        <Stat label="Posts" value={posted.length} />
-        <Stat label="Tried" value={tried.length} />
-        <Stat label="Comparisons" value={compared.length} />
+        <Stat label={t("profile_posts")} value={posted.length} />
+        <Stat label={t("profile_tried")} value={tried.length} />
+        <Stat label={t("profile_comparisons")} value={compared.length} />
         <Stat label="Followers" value={q.data?.followers_count ?? 0} />
       </div>
 
@@ -152,7 +152,7 @@ function Profile() {
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-4 font-display text-3xl">Comparisons</h2>
+        <h2 className="mb-4 font-display text-3xl">{t("profile_comparisons")}</h2>
         {compared.length === 0 ? <EmptyNote text="No comparisons yet." link /> : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {compared.map((c: any) => (
