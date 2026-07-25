@@ -294,24 +294,33 @@ export const searchPlaces = createServerFn({ method: "GET" })
   });
 
 export const listNearbyPlaces = createServerFn({ method: "GET" })
-  .inputValidator((i: { lat: number; lng: number }) =>
-    z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).parse(i),
+  .inputValidator((i: { lat: number; lng: number; radiusKm?: number; maxResults?: number }) =>
+    z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+        radiusKm: z.number().positive().max(50).optional(),
+        maxResults: z.number().int().min(1).max(50).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
-    const supabase = publicClient();
-    const { data: rows, error } = await (supabase as any).rpc("nearby_places", {
+    // nearby_places is service_role-only; run through the admin client.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await (supabaseAdmin as any).rpc("nearby_places", {
       _lat: data.lat,
       _lng: data.lng,
-      _radius_km: 1,
+      _radius_km: data.radiusKm ?? 1,
+      _max_results: data.maxResults ?? 6,
     });
-    if (error) return [];
+    if (error) throw new Error(error.message);
     // Hydrate area for parity with previous callers.
     const areaIds = [...new Set(((rows ?? []) as any[]).map((r) => r.area_id).filter(Boolean))];
     const { data: areas } = areaIds.length
-      ? await (supabase as any).from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
+      ? await (supabaseAdmin as any).from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
       : { data: [] };
     const byId = new Map(((areas ?? []) as any[]).map((a) => [a.id, a]));
-    return ((rows ?? []) as any[]).slice(0, 6).map((r) => ({
+    return ((rows ?? []) as any[]).map((r) => ({
       ...r,
       distance_m: Math.round(Number(r.distance_km) * 1000),
       area: byId.get(r.area_id) ?? null,
