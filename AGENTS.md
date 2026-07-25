@@ -8,3 +8,10 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## JaanNee product rules
+
+Read [`JAANNEE_PRODUCT_RULES.md`](./JAANNEE_PRODUCT_RULES.md) before changing
+anything that touches ranking, comparisons, sub-types, deletion/merge, or
+photo handling. Manual DB scripts and invariant checks live in
+[`supabase/manual/`](./supabase/manual/).

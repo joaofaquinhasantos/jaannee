@@ -201,7 +201,12 @@ export const deleteDishAdmin = createServerFn({ method: "POST" })
     await ensureAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("dishes").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) {
+      const msg = /pairwise comparisons/i.test(error.message)
+        ? "This dish has comparisons — merge it into another dish instead of deleting."
+        : error.message;
+      throw new Error(msg);
+    }
     return { ok: true };
   });
 
@@ -214,34 +219,13 @@ export const mergeDishAdmin = createServerFn({ method: "POST" })
     await ensureAdmin(context);
     if (data.keepId === data.removeId) throw new Error("Choose two different dishes");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: dishes, error: dishError } = await supabaseAdmin
-      .from("dishes")
-      .select("id")
-      .in("id", [data.keepId, data.removeId]);
-    if (dishError) throw new Error(dishError.message);
-    if (!dishes || dishes.length !== 2) throw new Error("Both dishes must exist");
-
-    const { data: tries, error: triesError } = await supabaseAdmin
-      .from("dish_tries")
-      .select("user_id")
-      .eq("dish_id", data.removeId);
-    if (triesError) throw new Error(triesError.message);
-    if ((tries ?? []).length > 0) {
-      const { error: upsertError } = await supabaseAdmin
-        .from("dish_tries")
-        .upsert(
-          (tries ?? []).map((row: any) => ({ user_id: row.user_id, dish_id: data.keepId })),
-          { onConflict: "user_id,dish_id", ignoreDuplicates: true },
-        );
-      if (upsertError) throw new Error(upsertError.message);
-    }
-    const { error: reportError } = await supabaseAdmin
-      .from("reports")
-      .update({ dish_id: data.keepId })
-      .eq("dish_id", data.removeId);
-    if (reportError) throw new Error(reportError.message);
-    const { error: deleteError } = await supabaseAdmin.from("dishes").delete().eq("id", data.removeId);
-    if (deleteError) throw new Error(deleteError.message);
+    // Atomic transactional merge (see supabase/manual/20260725_integrity_hardening.sql).
+    // Enforces same category+sub-type pool, moves tries/reports/comparisons, then deletes.
+    const { error } = await (supabaseAdmin as any).rpc("admin_merge_dishes", {
+      _keep_id: data.keepId,
+      _remove_id: data.removeId,
+    });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

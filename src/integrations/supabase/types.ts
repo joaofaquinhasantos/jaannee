@@ -45,6 +45,7 @@ export type Database = {
           id: string
           name_en: string
           name_th: string
+          requires_subtype: boolean
           slug: string
         }
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           id?: string
           name_en: string
           name_th: string
+          requires_subtype?: boolean
           slug: string
         }
         Update: {
@@ -61,6 +63,7 @@ export type Database = {
           id?: string
           name_en?: string
           name_th?: string
+          requires_subtype?: boolean
           slug?: string
         }
         Relationships: [
@@ -464,6 +467,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_merge_dishes: {
+        Args: { _keep_id: string; _remove_id: string }
+        Returns: undefined
+      }
       apply_elo: {
         Args: {
           _a: string
@@ -500,6 +507,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      nearby_places: {
+        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Returns: {
+          address: string
+          area_id: string
+          distance_km: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+        }[]
+      }
+      normalize_dish_name: { Args: { _s: string }; Returns: string }
       search_places_by_similarity: {
         Args: { _term: string }
         Returns: {

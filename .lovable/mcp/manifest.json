@@ -19,7 +19,7 @@
       {
         "name": "list_categories",
         "title": "List categories",
-        "description": "List all dish categories on JaanNee (e.g. Pad Thai, Tom Yum). Returns slug plus English and Thai names for each category.",
+        "description": "List all dish categories on JaanNee (e.g. Pad Thai, Tom Yum). Each category returns slug, English + Thai names, cuisine, a `requires_subtype` flag, and any active dish sub-types. When `requires_subtype` is true or `subtypes` is non-empty, other tools that operate on rankings (list_dishes, leaderboard) require a `subtypeSlug`.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -63,6 +63,10 @@
           "properties": {
             "categorySlug": {
               "description": "Category slug from list_categories (e.g. 'pad-thai'). Omit to search all categories.",
+              "type": "string"
+            },
+            "subtypeSlug": {
+              "description": "Sub-type slug from list_categories.subtypes. Required when the chosen category has active sub-types.",
               "type": "string"
             },
             "areaSlug": {
@@ -115,6 +119,10 @@
             "categorySlug": {
               "type": "string",
               "description": "Category slug from list_categories, e.g. 'pad-thai'."
+            },
+            "subtypeSlug": {
+              "description": "Sub-type slug from list_categories.subtypes. Required when the category has active sub-types.",
+              "type": "string"
             },
             "areaSlug": {
               "description": "Area slug from list_areas. Omit for all areas.",
