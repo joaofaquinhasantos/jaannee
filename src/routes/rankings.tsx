@@ -14,12 +14,12 @@ export const Route = createFileRoute("/rankings")({
   head: () => ({
     meta: [
       { title: "Dish rankings — JaanNee" },
-      { name: "description", content: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons from local diners across Bangkok categories and areas." },
+      { name: "description", content: "Live rankings for Thailand's best dishes, based on head-to-head comparisons from local diners across Bangkok categories and areas." },
       { property: "og:title", content: "Dish rankings — JaanNee" },
-      { property: "og:description", content: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons from local diners." },
+      { property: "og:description", content: "Live rankings for Thailand's best dishes, based on head-to-head comparisons from local diners." },
       { property: "og:url", content: "https://jaannee.lovable.app/rankings" },
       { name: "twitter:title", content: "Dish rankings — JaanNee" },
-      { name: "twitter:description", content: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons from local diners." },
+      { name: "twitter:description", content: "Live rankings for Thailand's best dishes, based on head-to-head comparisons from local diners." },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/rankings" }],
     scripts: [
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/rankings")({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: "Dish rankings",
-          description: "Live leaderboards for Thailand's best dishes, ranked by head-to-head comparisons.",
+          description: "Live rankings for Thailand's best dishes, based on head-to-head diner comparisons.",
           url: "https://jaannee.lovable.app/rankings",
           isPartOf: { "@id": "https://jaannee.lovable.app/#website" },
         }),
@@ -95,7 +95,7 @@ function Rankings() {
   return (
     <AppShell>
       <section className="border-b border-border pb-3 md:pb-7">
-        <p className="text-xs font-bold uppercase text-primary">Live chart</p>
+        <p className="text-xs font-bold uppercase text-primary">Live rankings</p>
         <div className="mt-2 grid gap-5 md:mt-3 md:grid-cols-[1fr_auto] md:items-end">
           <div>
             <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_rankings")}</h1>

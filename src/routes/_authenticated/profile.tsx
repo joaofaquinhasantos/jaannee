@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
       { title: "Your JaanNee profile" },
-      { name: "description", content: "Manage your JaanNee profile: display name, username, avatar, bio, and the dishes you have tried, posted, and compared." },
+      { name: "description", content: "Manage your JaanNee profile: display name, username, avatar, bio, and the dishes you have tried, posted, and compared as a diner." },
       { name: "robots", content: "noindex, follow" },
       { property: "og:title", content: "Your JaanNee profile" },
       { property: "og:description", content: "Manage your JaanNee profile and see your tried, posted, and compared dishes." },
@@ -81,7 +81,7 @@ function Profile() {
         <div>
           <p className="text-xs font-bold uppercase text-primary">Your taste trail</p>
           <h1 className="mt-2 font-display text-4xl leading-none md:text-5xl">{displayName}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Your posts, tried dishes, and voting history.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Your posts, tried dishes, and comparison history.</p>
         </div>
         <Button variant="ghost" onClick={signOut}>{t("sign_out")}</Button>
       </div>
@@ -89,7 +89,7 @@ function Profile() {
       <div className="mt-5 grid grid-cols-4 gap-2 rounded-lg border border-border bg-card p-3 text-center">
         <Stat label="Posts" value={posted.length} />
         <Stat label="Tried" value={tried.length} />
-        <Stat label="Votes" value={compared.length} />
+        <Stat label="Comparisons" value={compared.length} />
         <Stat label="Followers" value={q.data?.followers_count ?? 0} />
       </div>
 
