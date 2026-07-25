@@ -202,9 +202,9 @@ function Compare() {
     return (
       <AppShell>
         <section className="mt-10 max-w-lg rounded-lg border border-border bg-card p-6">
-          <h1 className="font-display text-4xl leading-none">Sign in to compare dishes</h1>
+          <h1 className="font-display text-4xl leading-none">{t("sign_in_to_compare")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Comparisons are based on dishes you have personally tried. Sign in to continue.
+            {t("sign_in_compare_body")}
           </p>
           <Link to="/auth" search={{ redirect: "/compare" }}>
             <Button className="mt-5">{t("sign_in")}</Button>
@@ -220,12 +220,12 @@ function Compare() {
   return (
     <AppShell>
       <section className="border-b border-border pb-4 md:pb-7">
-        <p className="text-xs font-bold uppercase text-primary">Head to head</p>
+        <p className="text-xs font-bold uppercase text-primary">{t("head_to_head")}</p>
         <div className="mt-2 flex items-end justify-between gap-3">
           <div>
             <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_compare")}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
-              Compare only dishes you have personally tried, within the same category and dish type.
+              {t("compare_page_intro")}
             </p>
           </div>
         </div>
@@ -233,25 +233,25 @@ function Compare() {
 
       {preselectIgnored && (
         <div className="mt-4 rounded-md border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
-          That dish must be marked as tried before it can be compared.
+          {t("preselect_not_tried")}
         </div>
       )}
 
       {loadingTried ? (
-        <div className="mt-6 text-sm text-muted-foreground">Loading your tried dishes…</div>
+        <div className="mt-6 text-sm text-muted-foreground">{t("loading_tried")}</div>
       ) : triedError ? (
         <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-6">
-          <h2 className="font-display text-3xl">We couldn't load your tried dishes.</h2>
+          <h2 className="font-display text-3xl">{t("tried_load_error")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{triedError.message}</p>
           <Button className="mt-4" variant="outline" onClick={() => triedQ.refetch()}>
-            Try again
+            {t("try_again")}
           </Button>
         </div>
       ) : eligibleCategories.length === 0 ? (
         <EmptyCta
-          title="No tried dishes yet"
-          description="Mark dishes as tried before comparing them."
-          ctaLabel="Discover dishes"
+          title={t("no_tried_yet")}
+          description={t("mark_tried_before_compare")}
+          ctaLabel={t("discover_dishes")}
           to="/"
         />
       ) : (
@@ -290,29 +290,29 @@ function Compare() {
 
           {cat && scoped && !subtype ? (
             <div className="mt-6 rounded-lg border border-border bg-card p-6">
-              <h2 className="font-display text-3xl">Choose a dish type first</h2>
+              <h2 className="font-display text-3xl">{t("choose_dish_type_first")}</h2>
               <p className="mt-2 text-muted-foreground">
-                Comparisons only happen between the same actual dish type.
+                {t("same_dish_type_only")}
               </p>
             </div>
           ) : cat && list.length < 2 ? (
             <EmptyCta
-              title="You need two tried dishes"
-              description="Mark at least two dishes as tried in this category and dish type before comparing them."
-              ctaLabel="Discover more dishes"
+              title={t("need_two_tried")}
+              description={t("need_two_tried_body")}
+              ctaLabel={t("discover_more_dishes")}
               to="/"
             />
           ) : cat ? (
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               <DishPicker
-                label="Dish A"
+                label={t("dish_a")}
                 value={aId}
                 onChange={setAId}
                 options={list.filter((d) => d.id !== bId)}
                 lang={lang}
               />
               <DishPicker
-                label="Dish B"
+                label={t("dish_b")}
                 value={bId}
                 onChange={setBId}
                 options={list.filter((d) => d.id !== aId)}
