@@ -107,16 +107,46 @@ export const moderateDish = createServerFn({ method: "POST" })
 
 export const assignDishCategoryAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { dishId: string; categoryId: string }) =>
-    z.object({ dishId: z.string().uuid(), categoryId: z.string().uuid() }).parse(i),
+  .inputValidator((i: { dishId: string; categoryId: string; subtypeId?: string | null }) =>
+    z
+      .object({
+        dishId: z.string().uuid(),
+        categoryId: z.string().uuid(),
+        subtypeId: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    // Determine whether the target category is subtype-scoped.
+    const { data: cat, error: ce } = await context.supabase
+      .from("categories")
+      .select("id, requires_subtype")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (ce) throw new Error(ce.message);
+    if (!cat) throw new Error("Category not found");
+    const { data: activeSubs, error: se } = await context.supabase
+      .from("dish_subtypes")
+      .select("id, category_id, is_active")
+      .eq("category_id", data.categoryId)
+      .eq("is_active", true);
+    if (se) throw new Error(se.message);
+    const scoped = Boolean((cat as any).requires_subtype) || (activeSubs ?? []).length > 0;
+    let subtypeId: string | null = null;
+    if (scoped) {
+      if (!data.subtypeId) throw new Error("This category requires a dish type — pick one before assigning.");
+      const match = (activeSubs ?? []).find((s: any) => s.id === data.subtypeId);
+      if (!match) throw new Error("Selected dish type does not belong to this category or is inactive.");
+      subtypeId = data.subtypeId;
+    } else {
+      if (data.subtypeId) throw new Error("This category does not use dish types.");
+    }
     const { error } = await context.supabase
       .from("dishes")
       .update({
         category_id: data.categoryId,
-        subtype_id: null,
+        subtype_id: subtypeId,
         requested_category_en: null,
         requested_category_th: null,
       })
@@ -202,8 +232,8 @@ export const deleteDishAdmin = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("dishes").delete().eq("id", data.id);
     if (error) {
-      const msg = /pairwise comparisons/i.test(error.message)
-        ? "This dish has comparisons — merge it into another dish instead of deleting."
+      const msg = /ranking history/i.test(error.message)
+        ? "This dish has ranking history and cannot be deleted or merged."
         : error.message;
       throw new Error(msg);
     }
@@ -219,8 +249,10 @@ export const mergeDishAdmin = createServerFn({ method: "POST" })
     await ensureAdmin(context);
     if (data.keepId === data.removeId) throw new Error("Choose two different dishes");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Atomic transactional merge (see supabase/manual/20260725_integrity_hardening.sql).
-    // Enforces same category+sub-type pool, moves tries/reports/comparisons, then deletes.
+    // Atomic safe merge (see supabase/manual/20260725_integrity_hardening.sql).
+    // Merging is rejected when either dish already has comparison history.
+    // Tried marks and reports move to the kept dish. Comparison rows, Elo,
+    // and comparisons_count are never rewritten or deleted by merge.
     const { error } = await (supabaseAdmin as any).rpc("admin_merge_dishes", {
       _keep_id: data.keepId,
       _remove_id: data.removeId,
