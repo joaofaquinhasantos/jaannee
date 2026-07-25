@@ -68,11 +68,29 @@ export const moderateDish = createServerFn({ method: "POST" })
     if (data.action === "approve") {
       const { data: dish, error: checkError } = await context.supabase
         .from("dishes")
-        .select("category_id")
+        .select("category_id, subtype_id")
         .eq("id", data.id)
         .maybeSingle();
       if (checkError) throw new Error(checkError.message);
       if (!dish?.category_id) throw new Error("Assign a category before approving this dish");
+      // Application-level pre-check so the admin gets a clear message
+      // before the DB trigger fires.
+      const { data: catRow, error: catErr } = await context.supabase
+        .from("categories")
+        .select("requires_subtype")
+        .eq("id", dish.category_id)
+        .maybeSingle();
+      if (catErr) throw new Error(catErr.message);
+      const { data: activeSubs, error: subsErr } = await context.supabase
+        .from("dish_subtypes")
+        .select("id, is_active")
+        .eq("category_id", dish.category_id)
+        .eq("is_active", true);
+      if (subsErr) throw new Error(subsErr.message);
+      const scoped = Boolean((catRow as any)?.requires_subtype) || (activeSubs ?? []).length > 0;
+      if (scoped && !dish.subtype_id) {
+        throw new Error("This category requires a dish type before approval.");
+      }
     }
     const patch =
       data.action === "approve"
