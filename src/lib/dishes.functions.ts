@@ -795,7 +795,7 @@ export const leaderboard = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const supabase = publicClient();
     const [catRes, areaRes] = await Promise.all([
-      supabase.from("categories").select("id").eq("slug", data.categorySlug).maybeSingle(),
+      supabase.from("categories").select("id, requires_subtype").eq("slug", data.categorySlug).maybeSingle(),
       data.areaSlug
         ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
         : Promise.resolve({ data: null, error: null } as any),
@@ -808,11 +808,12 @@ export const leaderboard = createServerFn({ method: "GET" })
       .eq("category_id", catRes.data.id)
       .eq("is_active", true);
     if (subErr) throw new Error(subErr.message);
-    const hasActiveSubtypes = (activeSubtypes ?? []).length > 0;
+    const scoped = Boolean((catRes.data as any).requires_subtype) || (activeSubtypes ?? []).length > 0;
     const subtype = data.subtypeSlug
       ? (activeSubtypes ?? []).find((s: any) => s.slug === data.subtypeSlug)
       : null;
-    if (hasActiveSubtypes && !subtype) return [];
+    if (scoped && !subtype) return [];
+    if (!scoped && data.subtypeSlug) return [];
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
@@ -823,7 +824,7 @@ export const leaderboard = createServerFn({ method: "GET" })
       .gte("comparisons_count", data.minimumComparisons ?? 5)
       .order("elo", { ascending: false })
       .limit(50);
-    if (hasActiveSubtypes) q = q.eq("subtype_id", subtype!.id);
+    if (scoped) q = q.eq("subtype_id", subtype!.id);
     else q = q.is("subtype_id", null);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
