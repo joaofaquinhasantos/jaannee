@@ -18,13 +18,18 @@ export const Route = createFileRoute("/photos/$")({
         if (error || !data) {
           return new Response("Not found", { status: 404 });
         }
-        const contentType = data.type || "application/octet-stream";
+        const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
+        const contentType = ALLOWED.has(data.type) ? data.type : "application/octet-stream";
+        if (contentType === "application/octet-stream") {
+          return new Response("Unsupported media type", { status: 415 });
+        }
         return new Response(data, {
           status: 200,
           headers: {
             "content-type": contentType,
             "cache-control": "public, max-age=31536000, immutable",
             "access-control-allow-origin": "*",
+            "x-content-type-options": "nosniff",
           },
         });
       },
