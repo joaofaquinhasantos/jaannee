@@ -120,6 +120,10 @@
               "type": "string",
               "description": "Category slug from list_categories, e.g. 'pad-thai'."
             },
+            "subtypeSlug": {
+              "description": "Sub-type slug from list_categories.subtypes. Required when the category has active sub-types.",
+              "type": "string"
+            },
             "areaSlug": {
               "description": "Area slug from list_areas. Omit for all areas.",
               "type": "string"
