@@ -571,6 +571,16 @@ export const submitComparison = createServerFn({ method: "POST" })
       throw new Error("Dishes must be in the same category");
     if (dishes.some((d) => d.status !== "approved"))
       throw new Error("Dish not available for comparison");
+    // Tried-before-voting: also validated at the DB layer by trg_comparisons_tried.
+    const { data: tried, error: te } = await context.supabase
+      .from("dish_tries")
+      .select("dish_id")
+      .eq("user_id", context.userId)
+      .in("dish_id", [data.dishAId, data.dishBId]);
+    if (te) throw new Error(te.message);
+    if ((tried ?? []).length < 2) {
+      throw new Error("Mark both dishes as tried before voting");
+    }
     const { data: subtypes, error: se } = await context.supabase
       .from("dish_subtypes")
       .select("id, category_id, is_active")
