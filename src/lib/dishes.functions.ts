@@ -52,10 +52,12 @@ export function mapsDirectionsUrl(place: { name?: string | null; address?: strin
 async function withTriedCounts(supabase: ReturnType<typeof publicClient>, rows: any[]) {
   if (rows.length === 0) return rows;
   const ids = rows.map((row) => row.id).filter(Boolean);
-  const { data, error } = await supabase.from("dish_tries").select("dish_id").in("dish_id", ids);
+  const { data, error } = await (supabase as any).rpc("get_dish_tried_counts", { _dish_ids: ids });
   if (error) throw new Error(error.message);
   const counts: Record<string, number> = {};
-  for (const row of data ?? []) counts[row.dish_id] = (counts[row.dish_id] ?? 0) + 1;
+  for (const row of (data ?? []) as { dish_id: string; tries_count: number }[]) {
+    counts[row.dish_id] = Number(row.tries_count) || 0;
+  }
   return rows.map((row) => ({ ...row, tried_count: counts[row.id] ?? 0 }));
 }
 
@@ -453,8 +455,9 @@ export const listActivityFeed = createServerFn({ method: "GET" })
   .inputValidator((i: Record<string, never>) => i ?? {})
   .handler(async () => {
     const supabase = publicClient();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [triesRes, dishesRes] = await Promise.all([
-      (supabase as any)
+      (supabaseAdmin as any)
         .from("dish_tries")
         .select(`user_id, dish_id, created_at, dish:dishes(${dishSelect})`)
         .order("created_at", { ascending: false })
@@ -496,8 +499,9 @@ export const listFollowingActivityFeed = createServerFn({ method: "GET" })
     const followingIds = (follows ?? []).map((r: any) => r.following_id);
     if (followingIds.length === 0) return [];
     const supabase = publicClient();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [triesRes, dishesRes] = await Promise.all([
-      (supabase as any)
+      (supabaseAdmin as any)
         .from("dish_tries")
         .select(`user_id, dish_id, created_at, dish:dishes(${dishSelect})`)
         .in("user_id", followingIds)
@@ -716,14 +720,14 @@ export const publicProfile = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [tried, compared, counts] = await Promise.all([
       profile.tried_public
-        ? (supabase as any)
+        ? (supabaseAdmin as any)
             .from("dish_tries")
             .select(`dish_id, created_at, dish:dishes(${dishSelect})`)
             .eq("user_id", profile.id)
             .order("created_at", { ascending: false })
             .limit(24)
         : Promise.resolve({ data: [] }),
-      (supabase as any).from("comparisons").select("id").eq("user_id", profile.id),
+      (supabaseAdmin as any).from("comparisons").select("id").eq("user_id", profile.id),
       (supabaseAdmin as any).rpc("get_follow_counts", { _user_id: profile.id }).maybeSingle(),
     ]);
     return {

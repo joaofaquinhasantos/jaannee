@@ -479,6 +479,13 @@ export type Database = {
         Returns: boolean
       }
       dish_ranking_key: { Args: { _dish_id: string }; Returns: string }
+      get_dish_tried_counts: {
+        Args: { _dish_ids: string[] }
+        Returns: {
+          dish_id: string
+          tries_count: number
+        }[]
+      }
       get_follow_counts: {
         Args: { _user_id: string }
         Returns: {
