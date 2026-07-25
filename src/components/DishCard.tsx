@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { dishStatusLabel, toneClass } from "@/lib/dish-status";
+import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 
 export const statusLabel = dishStatusLabel;
 export { toneClass };
@@ -15,7 +16,7 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
   const toneCls = toneClass(s.tone);
   const comparisonCount = dish.comparisons_count ?? 0;
   const triedCount = dish.tried_count ?? 0;
-  const isRanked = comparisonCount >= 5;
+  const isRanked = comparisonCount >= PUBLIC_RANK_THRESHOLD;
   const showRank = isRanked && rank != null;
 
   return (
@@ -43,7 +44,7 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
             </div>
           ) : (
             <span className={`absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur ${toneCls}`}>
-              {isRanked ? s.text : `${t("unranked_label")} · ${comparisonCount}/5`}
+              {isRanked ? s.text : `${t("unranked_label")} · ${comparisonCount}/${PUBLIC_RANK_THRESHOLD}`}
             </span>
           )}
           {dish.price_thb != null && (
@@ -66,7 +67,7 @@ export function DishCard({ dish, rank }: { dish: any; rank?: number }) {
         <div className="flex items-center justify-between gap-2 px-4 py-3.5">
           <div className="space-y-1">
             <p className="text-[11px] font-semibold uppercase text-muted-foreground">
-              {comparisonCount} / 5 {t("comparisons_progress")}
+              {comparisonCount} / {PUBLIC_RANK_THRESHOLD} {t("comparisons_progress")}
             </p>
             {triedCount > 0 && (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">

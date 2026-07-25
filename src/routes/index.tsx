@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
 import { listDishes, listCategories, listAreas, listCategoryCounts, listActivityFeed, listFollowingActivityFeed } from "@/lib/dishes.functions";
+import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/CategoryPicker";
@@ -194,9 +195,9 @@ function Index() {
           />
         ) : (
           (() => {
-            const rows = (dishes.data ?? []) as any[];
-            const ranked = rows.filter((d) => (d.comparisons_count ?? 0) >= 5);
-            const contenders = rows.filter((d) => (d.comparisons_count ?? 0) < 5);
+            const rows = dishes.data ?? [];
+            const ranked = rows.filter((d) => (d.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD);
+            const contenders = rows.filter((d) => (d.comparisons_count ?? 0) < PUBLIC_RANK_THRESHOLD);
             // Numeric ranks are only meaningful within one valid ranking
             // pool. listDishes returns [] for a subtype-scoped category
             // without a subtype, so when a category filter is set here

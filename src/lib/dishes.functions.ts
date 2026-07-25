@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
+
+export { PUBLIC_RANK_THRESHOLD };
 
 function publicClient() {
   const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
@@ -49,8 +52,11 @@ export function mapsDirectionsUrl(place: { name?: string | null; address?: strin
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-async function withTriedCounts(supabase: ReturnType<typeof publicClient>, rows: any[]) {
-  if (rows.length === 0) return rows;
+async function withTriedCounts<T extends { id: string }>(
+  supabase: ReturnType<typeof publicClient>,
+  rows: T[],
+): Promise<Array<T & { tried_count: number }>> {
+  if (rows.length === 0) return rows as Array<T & { tried_count: number }>;
   const ids = rows.map((row) => row.id).filter(Boolean);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as any).rpc("get_dish_tried_counts", { _dish_ids: ids });
@@ -62,14 +68,11 @@ async function withTriedCounts(supabase: ReturnType<typeof publicClient>, rows: 
   return rows.map((row) => ({ ...row, tried_count: counts[row.id] ?? 0 }));
 }
 
-// Public discovery ordering. Ranked dishes (>=5 comparisons) come first,
-// ordered by Elo desc, then comparisons desc, then created_at desc, then id.
-// Unranked contenders (<5 comparisons) come after, ordered by comparisons
-// desc, then tried_count desc, then created_at desc, then id. Elo is never
-// used to order unranked dishes. Null/missing numeric values are treated
-// as 0 (or Elo default 1000 already lives on the row). No type suppression.
-export const PUBLIC_RANK_THRESHOLD = 5;
-
+// Public discovery ordering. Ranked dishes (>= PUBLIC_RANK_THRESHOLD
+// comparisons) come first, ordered by Elo desc, then comparisons desc,
+// then created_at desc, then id. Unranked contenders come after, ordered
+// by comparisons desc, then tried_count desc, then created_at desc, then
+// id. Elo is never used to order contenders.
 function num(v: unknown, fallback = 0): number {
   const n = typeof v === "number" ? v : v == null ? NaN : Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -81,7 +84,15 @@ function dateTs(v: unknown): number {
   return Number.isFinite(t) ? t : 0;
 }
 
-export function orderDiscoveryDishes<T extends Record<string, unknown>>(rows: T[]): T[] {
+export type DiscoveryRow = {
+  id?: string | null;
+  elo?: number | null;
+  comparisons_count?: number | null;
+  tried_count?: number | null;
+  created_at?: string | null;
+};
+
+export function orderDiscoveryDishes<T extends DiscoveryRow>(rows: T[]): T[] {
   const ranked: T[] = [];
   const contenders: T[] = [];
   for (const row of rows) {
@@ -166,6 +177,8 @@ export const listDishes = createServerFn({ method: "GET" })
         .eq("is_active", true);
       scoped = Boolean((catRes.data as any).requires_subtype) || (activeSubs ?? []).length > 0;
     }
+    // Category-only pool: reject any supplied subtype filter.
+    if (data.subtypeSlug && catRes.data && !scoped) return [];
     const subtypeRes =
       data.subtypeSlug && catRes.data
         ? await supabase
@@ -188,12 +201,24 @@ export const listDishes = createServerFn({ method: "GET" })
     q = q.eq("status", "approved").not("category_id", "is", null).order("elo", { ascending: false });
     if (catRes.data) q = q.eq("category_id", catRes.data.id);
     if (subtypeRes.data) q = q.eq("subtype_id", subtypeRes.data.id);
+    // Category-only pool: exclude any legacy subtype-bearing dishes at the DB.
+    else if (catRes.data && !scoped) q = q.is("subtype_id", null);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const filtered = (rows ?? []).filter((row: any) => !row.subtype_id || row.subtype?.is_active);
+    type Row = {
+      id: string;
+      subtype_id: string | null;
+      subtype?: { is_active?: boolean | null } | null;
+      elo?: number | null;
+      comparisons_count?: number | null;
+      created_at?: string | null;
+    };
+    const filtered = ((rows ?? []) as unknown as Row[]).filter(
+      (row) => !row.subtype_id || row.subtype?.is_active,
+    );
     const hydrated = await withTriedCounts(supabase, filtered);
-    return orderDiscoveryDishes(hydrated as any[]);
+    return orderDiscoveryDishes(hydrated);
   });
 
 export const getDish = createServerFn({ method: "GET" })
