@@ -16,6 +16,7 @@ import { cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronRight } from "lucide-react";
+import { PHOTO_ACCEPT_ATTR, buildPhotoPath, validatePhotoFile } from "@/lib/photo-upload";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
 
@@ -432,10 +433,13 @@ function DishAdmin() {
   const uploadPhoto = async (file: File) => {
     setUploadingPhoto(true);
     try {
+      validatePhotoFile(file);
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Sign in before uploading photos");
-      const path = `${userData.user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error } = await supabase.storage.from("dish-photos").upload(path, file, { upsert: false });
+      const path = buildPhotoPath(userData.user.id, file);
+      const { error } = await supabase.storage
+        .from("dish-photos")
+        .upload(path, file, { upsert: false, contentType: file.type });
       if (error) throw new Error(error.message);
       setPhotoUrl(`/photos/${path}`);
       toast.success("Photo uploaded");
@@ -518,7 +522,7 @@ function DishAdmin() {
                 <Label>Upload from device</Label>
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept={PHOTO_ACCEPT_ATTR}
                   disabled={uploadingPhoto}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -526,7 +530,7 @@ function DishAdmin() {
                   }}
                   className="file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">Choose a local image, then save the uploaded photo path.</p>
+                <p className="mt-1 text-xs text-muted-foreground">JPEG, PNG, or WebP up to 8 MB. Choose a local image, then save the uploaded photo path.</p>
               </div>
               {photoUrl && (
                 <img src={photoUrl} className="h-28 w-28 rounded-lg object-cover" alt="Preview" />
@@ -542,7 +546,14 @@ function DishAdmin() {
       <Dialog open={!!deletingDish} onOpenChange={(o) => !o && setDeletingDish(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Delete dish</DialogTitle></DialogHeader>
-          {deletingDish && <p className="text-sm">Delete <span className="font-semibold">{deletingDish.name_en}</span>? Tries, comparisons, and reports for this dish are removed by the database cascade.</p>}
+          {deletingDish && (
+            <div className="space-y-2 text-sm">
+              <p>Delete <span className="font-semibold">{deletingDish.name_en}</span>?</p>
+              <p className="text-muted-foreground">
+                Dishes with ranking history are protected and cannot be deleted. Zero-comparison dishes can be removed; tried marks and reports for the dish go with it. This action cannot be undone.
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletingDish(null)}>Cancel</Button>
             <Button variant="destructive" onClick={() => deleteMut.mutate()} disabled={deleteMut.isPending}>Delete</Button>
@@ -566,7 +577,9 @@ function DishAdmin() {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">Tried marks and reports move to the kept dish. Comparisons involving the removed duplicate are deleted so Elo is not silently rewritten.</p>
+              <p className="text-xs text-muted-foreground">
+                Merging is only allowed before either dish has any comparison history. Both dishes must share the same place, category, and dish type. Tried marks and reports move to the kept dish; comparison rows, Elo, and comparisons_count are never rewritten.
+              </p>
             </div>
           )}
           <DialogFooter>
