@@ -512,7 +512,15 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
       setTriedDone(true);
       if (dish.category?.slug) {
         try {
-          const [triedIds, pool] = await Promise.all([myTriedIds(), listDishes({ data: { categorySlug: dish.category.slug } })]);
+          const [triedIds, pool] = await Promise.all([
+            myTriedIds(),
+            listDishes({
+              data: {
+                categorySlug: dish.category.slug,
+                subtypeSlug: dish.subtype?.slug,
+              },
+            }),
+          ]);
           const other = ((pool ?? []) as any[]).find(
             (candidate) => candidate.id !== dish.id && (triedIds ?? []).includes(candidate.id) && (dish.subtype_id ? candidate.subtype_id === dish.subtype_id : !candidate.subtype_id),
           );

@@ -72,6 +72,7 @@ function Profile() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    qc.clear();
     nav({ to: "/", replace: true });
   };
 

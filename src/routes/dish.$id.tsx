@@ -122,7 +122,13 @@ function DishPage() {
   const isTried = (tried.data ?? []).includes(id);
   const pool = useQuery({
     queryKey: ["dish-ranking-pool", dKey(dish.data)],
-    queryFn: () => listDishes({ data: { categorySlug: (dish.data as any).category?.slug } }),
+    queryFn: () =>
+      listDishes({
+        data: {
+          categorySlug: (dish.data as any).category?.slug,
+          subtypeSlug: (dish.data as any).subtype?.slug,
+        },
+      }),
     enabled: authed && isTried && !!(dish.data as any)?.category?.slug,
   });
 
@@ -130,6 +136,7 @@ function DishPage() {
     mutationFn: () => toggleTried({ data: { dishId: id, tried: !isTried } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tried"] });
+      qc.invalidateQueries({ queryKey: ["dishes"] });
       toast.success(isTried ? "Removed from tried" : "Marked as tried");
     },
     onError: (e: any) => toast.error(e.message),

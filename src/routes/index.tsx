@@ -31,6 +31,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { t, lang } = useI18n();
   const [cat, setCat] = useState<string | undefined>();
+  const [subtype, setSubtype] = useState<string | undefined>();
   const [area, setArea] = useState<string | undefined>();
   const [authed, setAuthed] = useState(false);
   const [followingOnly, setFollowingOnly] = useState(false);
@@ -42,10 +43,21 @@ function Index() {
   }, []);
 
   const dishes = useQuery({
-    queryKey: ["dishes", cat, area],
-    queryFn: () => listDishes({ data: { categorySlug: cat, areaSlug: area } }),
+    queryKey: ["dishes", cat, subtype, area],
+    queryFn: () =>
+      listDishes({ data: { categorySlug: cat, subtypeSlug: subtype, areaSlug: area } }),
   });
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
+  const selectedCategory = (categories.data ?? []).find((c: any) => c.slug === cat);
+  const activeSubtypes = [...((selectedCategory as any)?.subtypes ?? [])]
+    .filter((s: any) => s.is_active)
+    .sort(
+      (a: any, b: any) =>
+        (a.display_order ?? 0) - (b.display_order ?? 0) ||
+        a.name_en.localeCompare(b.name_en),
+    );
+  const subtypeScoped =
+    Boolean((selectedCategory as any)?.requires_subtype) || activeSubtypes.length > 0;
   const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
   const allDishes = useQuery({ queryKey: ["dishes", "area-counts"], queryFn: () => listDishes({ data: {} }) });
@@ -135,6 +147,7 @@ function Index() {
             <button
               onClick={() => {
                 setCat(undefined);
+                setSubtype(undefined);
                 setArea(undefined);
               }}
               className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
@@ -145,11 +158,24 @@ function Index() {
         </div>
 
         <div className="mt-2 flex gap-2 overflow-x-auto pb-2 md:mt-5">
-          <Pill active={!cat} onClick={() => setCat(undefined)}>
+          <Pill
+            active={!cat}
+            onClick={() => {
+              setCat(undefined);
+              setSubtype(undefined);
+            }}
+          >
             {t("filter_all_categories")}
           </Pill>
           {topCategories.map((c: any) => (
-            <Pill key={c.id} active={cat === c.slug} onClick={() => setCat(c.slug)}>
+            <Pill
+              key={c.id}
+              active={cat === c.slug}
+              onClick={() => {
+                setCat(c.slug);
+                setSubtype(undefined);
+              }}
+            >
               {lang === "th" ? c.name_th : c.name_en}
             </Pill>
           ))}
@@ -160,10 +186,38 @@ function Index() {
               lang={lang}
               placeholder={t("filter_all_categories")}
               triggerLabel={cat ? t("change_category") : t("more_categories")}
-              onChange={(_, category) => setCat(category.slug)}
+              onChange={(_, category) => {
+                setCat(category.slug);
+                setSubtype(undefined);
+              }}
             />
           </div>
         </div>
+        {cat && subtypeScoped && (
+          <div className="mt-2">
+            <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">
+              Choose a dish type
+            </p>
+            {activeSubtypes.length > 0 ? (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {activeSubtypes.map((s: any) => (
+                  <Pill
+                    key={s.id}
+                    active={subtype === s.slug}
+                    onClick={() => setSubtype(s.slug)}
+                    variant="secondary"
+                  >
+                    {lang === "th" ? s.name_th : s.name_en}
+                  </Pill>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This category is not ready because it has no active dish types.
+              </p>
+            )}
+          </div>
+        )}
         <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
           <Pill active={!area} onClick={() => setArea(undefined)} variant="secondary">
             {t("filter_all_areas")}
@@ -180,7 +234,14 @@ function Index() {
       </section>
 
       <section className="mt-6">
-        {dishes.isLoading ? (
+        {cat && subtypeScoped && !subtype ? (
+          <div className="rounded-lg border border-border bg-card p-6">
+            <h2 className="font-display text-3xl">Choose a dish type</h2>
+            <p className="mt-2 text-muted-foreground">
+              Rankings compare the same actual dish type, so select one to continue.
+            </p>
+          </div>
+        ) : dishes.isLoading ? (
           <p className="text-muted-foreground">{t("loading")}</p>
         ) : (dishes.data ?? []).length === 0 ? (
           <EditorialEmpty
@@ -190,6 +251,7 @@ function Index() {
             secondary={t("filter_all_categories")}
             onSecondary={() => {
               setCat(undefined);
+              setSubtype(undefined);
               setArea(undefined);
             }}
           />
