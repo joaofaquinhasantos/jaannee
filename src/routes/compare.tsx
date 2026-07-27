@@ -82,8 +82,6 @@ function Compare() {
     return map;
   }, [categoriesQ.data]);
 
-  // Categories the user actually has tried dishes in, hydrated from
-  // listCategories so the picker can group by cuisine.
   const eligibleCategories = useMemo(() => {
     const byId = new Map<string, any>();
     for (const d of triedDishes) {
@@ -104,10 +102,6 @@ function Compare() {
     () => triedDishes.filter((d) => d.category?.slug === cat),
     [triedDishes, cat],
   );
-  // Ranking-pool rule: a category is subtype-scoped when
-  // requires_subtype = true OR the category has at least one active
-  // subtype. This is a property of the category, not of the user's
-  // tried dishes.
   const activeCategorySubtypes = useMemo(() => {
     const subs = ((selectedCat?.subtypes ?? []) as any[]).filter((s) => s.is_active === true);
     return subs.sort(
@@ -117,9 +111,6 @@ function Compare() {
     );
   }, [selectedCat]);
   const scoped = !!selectedCat?.requires_subtype || activeCategorySubtypes.length > 0;
-  // Only offer subtypes the user has tried dishes in, restricted to
-  // active subtypes that belong to the selected category. Legacy
-  // subtype-less or inactive-subtype dishes are excluded.
   const eligibleSubtypes = useMemo(() => {
     const activeById = new Map<string, any>();
     for (const s of activeCategorySubtypes) activeById.set(s.id, s);
@@ -150,7 +141,6 @@ function Compare() {
     return triedInCat.filter((d) => !d.subtype_id);
   }, [cat, subtype, scoped, triedInCat, activeCategorySubtypes]);
 
-  // Auto-select first eligible category (respecting ?category=).
   useEffect(() => {
     if (cat || eligibleCategories.length === 0) return;
     const pre = search.category
@@ -159,7 +149,6 @@ function Compare() {
     setCat((pre ?? eligibleCategories[0]).slug);
   }, [eligibleCategories, cat, search.category]);
 
-  // Preselect ?dish=... only if the user has tried it. If ineligible, note it.
   useEffect(() => {
     if (!search.dish || authState !== "in" || !triedQ.isSuccess) return;
     const match = triedDishes.find((d) => d.id === search.dish);
@@ -170,7 +159,6 @@ function Compare() {
     setCat(match.category?.slug);
     if (match.subtype?.slug) setSubtype(match.subtype.slug);
     setAId(match.id);
-    // Only run once when tried data is ready.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triedQ.isSuccess]);
 
@@ -179,11 +167,14 @@ function Compare() {
 
   const mut = useMutation({
     mutationFn: async (winnerId: string) => {
-      if (!a || !b) throw new Error("Choose both dishes");
-      if (a.id === b.id) throw new Error("Choose two different dishes");
-      if (a.category?.id !== b.category?.id) throw new Error("Dishes must be in the same category");
+      if (!a || !b)
+        throw new Error(lang === "th" ? "เลือกจานทั้งสองจาน" : "Choose both dishes");
+      if (a.id === b.id)
+        throw new Error(lang === "th" ? "เลือกจานที่แตกต่างกันสองจาน" : "Choose two different dishes");
+      if (a.category?.id !== b.category?.id)
+        throw new Error(lang === "th" ? "จานต้องอยู่ในหมวดเดียวกัน" : "Dishes must be in the same category");
       if (scoped && a.subtype?.id !== b.subtype?.id)
-        throw new Error("Dishes must be the same dish type");
+        throw new Error(lang === "th" ? "จานต้องเป็นประเภทเดียวกัน" : "Dishes must be the same dish type");
       return submitComparison({ data: { dishAId: a.id, dishBId: b.id, winnerId } });
     },
     onSuccess: (res: any) => {
@@ -203,7 +194,7 @@ function Compare() {
   if (authState === "loading") {
     return (
       <AppShell>
-        <div className="mt-10 text-sm text-muted-foreground">Loading…</div>
+        <div className="mt-10 text-sm text-muted-foreground">{t("loading")}</div>
       </AppShell>
     );
   }
@@ -290,7 +281,7 @@ function Compare() {
                   }}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                 >
-                  {lang === "th" ? s.name_th : s.name_en}
+                  {lang === "th" ? s.name_th || s.name_en : s.name_en}
                 </button>
               ))}
             </div>
@@ -413,6 +404,9 @@ function PickCard({
   onPick: () => void;
   disabled?: boolean;
 }) {
+  const { lang, t } = useI18n();
+  const primaryName = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+  const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
   return (
     <button
       onClick={onPick}
@@ -421,19 +415,19 @@ function PickCard({
     >
       <div className="absolute inset-0 bg-muted">
         {dish.photo_url ? (
-          <img src={dish.photo_url} alt={dish.name_en} className="h-full w-full object-cover" />
+          <img src={dish.photo_url} alt={primaryName} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center bg-secondary font-display text-4xl italic text-muted-foreground">
-            JaanNee
+            {t("brand")}
           </div>
         )}
       </div>
       <div className="photo-scrim absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 p-6 text-white md:p-8">
-        <p className="label-caps mb-3 text-white/65">Choose this dish</p>
-        <h3 className="type-card-title">{dish.name_en}</h3>
-        {dish.name_th ? (
-          <p className="mt-2 font-thai text-base font-medium text-white/80">{dish.name_th}</p>
+        <p className="label-caps mb-3 text-white/65">{t("choose_this_dish")}</p>
+        <h3 className="type-card-title">{primaryName}</h3>
+        {secondaryName ? (
+          <p className="mt-2 font-thai text-base font-medium text-white/80">{secondaryName}</p>
         ) : null}
         <p className="mt-3 border-t border-white/35 pt-3 text-sm font-bold uppercase tracking-[0.08em] text-white/80">
           {dish.place?.name}
