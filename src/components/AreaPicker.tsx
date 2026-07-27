@@ -31,6 +31,9 @@ export function AreaPicker({
   const [query, setQuery] = useState("");
   const matches = useMemo(() => areas.filter((area) => matchesArea(area, query)), [areas, query]);
   const selected = areas.find((area) => area.slug === value);
+  const areaLabel = (area: any) => (lang === "th" ? area.name_th || area.name_en : area.name_en);
+  const secondaryLabel = (area: any) =>
+    lang === "th" ? (area.name_en !== areaLabel(area) ? area.name_en : null) : area.name_th;
 
   return (
     <>
@@ -55,7 +58,7 @@ export function AreaPicker({
                 : "text-muted-foreground"
           }
         >
-          {selected ? (lang === "th" ? selected.name_th : selected.name_en) : t("filter_all_areas")}
+          {selected ? areaLabel(selected) : t("filter_all_areas")}
         </span>
         <Search
           className={tone === "noir" ? "h-4 w-4 text-white/40" : "h-4 w-4 text-muted-foreground"}
@@ -76,27 +79,28 @@ export function AreaPicker({
           </div>
           <div className="max-h-[60dvh] overflow-y-auto p-2">
             <div className="space-y-1">
-              {matches.map((area) => (
-                <button
-                  key={area.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(area.slug, area);
-                    setOpen(false);
-                    setQuery("");
-                  }}
-                  className={`w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring ${
-                    value === area.slug ? "bg-secondary" : ""
-                  }`}
-                >
-                  <span className="font-semibold">
-                    {lang === "th" ? area.name_th : area.name_en}
-                  </span>
-                  {area.name_th ? (
-                    <span className="ml-2 text-xs text-muted-foreground">{area.name_th}</span>
-                  ) : null}
-                </button>
-              ))}
+              {matches.map((area) => {
+                const secondary = secondaryLabel(area);
+                return (
+                  <button
+                    key={area.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(area.slug, area);
+                      setOpen(false);
+                      setQuery("");
+                    }}
+                    className={`w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring ${
+                      value === area.slug ? "bg-secondary" : ""
+                    }`}
+                  >
+                    <span className="font-semibold">{areaLabel(area)}</span>
+                    {secondary ? (
+                      <span className="ml-2 text-xs text-muted-foreground">{secondary}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
             {matches.length === 0 && (
               <p className="p-4 text-sm text-muted-foreground">{t("no_matching_areas")}</p>
