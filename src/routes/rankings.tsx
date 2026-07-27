@@ -220,33 +220,25 @@ function Rankings() {
         ) : (
           <div className="space-y-10">
             {(board.data ?? []).length > 0 && (
-              <section>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {(board.data ?? []).map((d: any, i: number) => (
-                    <div key={d.id}>
-                      <DishCard dish={d} rank={i + 1} />
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className="rounded-full border border-accent/50 bg-accent/15 px-2.5 py-1 text-xs font-semibold text-foreground">
-                          {t("trusted_rank")}
-                        </span>
-                        <ShareButton
-                          url={(typeof window !== "undefined" ? window.location.origin : "") + `/dish/${d.id}`}
-                          title={d.name_en ?? d.name_th ?? "Dish"}
-                          text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / Currently ranked #${i + 1}`}
-                          label={t("share")}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <section className="space-y-14 md:space-y-20">
+                {(board.data ?? []).slice(0, 3).map((d: any, i: number) => (
+                  <LeaderboardEntry key={d.id} dish={d} rank={i + 1} featured={i === 0} />
+                ))}
+                {(board.data ?? []).length > 3 && (
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-14 md:grid-cols-2">
+                    {(board.data ?? []).slice(3).map((d: any, i: number) => (
+                      <LeaderboardEntry key={d.id} dish={d} rank={i + 4} />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
             {gatheringDishes.length > 0 && (
               <section className="border-t border-border pt-6">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase text-muted-foreground">{t("gathering_progress")}</p>
-                    <h2 className="mt-1 font-display text-3xl leading-tight">{t("not_ranked_yet")}</h2>
+                    <p className="label-caps text-primary">{t("gathering_progress")}</p>
+                    <h2 className="mt-2 font-display text-4xl leading-[0.9]">{t("not_ranked_yet")}</h2>
                   </div>
                   <Link to="/compare" search={{ category: cat } as any}>
                     <Button variant="outline">{t("cta_compare")}</Button>
