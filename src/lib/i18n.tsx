@@ -9,7 +9,7 @@ export const dict = {
   cuisine_western: { en: "Western", th: "ตะวันตก" },
   cuisine_dessert_cafe: { en: "Dessert & cafe", th: "ขนมและคาเฟ่" },
   cuisine_other: { en: "Other", th: "อื่นๆ" },
-  search_categories: { en: "Search English, Thai, or slug", th: "ค้นหาชื่ออังกฤษ ไทย หรือ slug" },
+  search_categories: { en: "Search English or Thai names", th: "ค้นหาชื่อภาษาไทยหรืออังกฤษ" },
   no_matching_categories: { en: "No matching categories.", th: "ไม่พบหมวดที่ตรงกัน" },
   add_new_place: { en: "Add a new place", th: "เพิ่มร้านใหม่" },
   selected_place: { en: "Selected", th: "เลือกแล้ว" },
@@ -32,12 +32,14 @@ export const dict = {
   more_categories: { en: "More categories", th: "หมวดเพิ่มเติม" },
   change_category: { en: "Change category", th: "เปลี่ยนหมวด" },
   more_areas: { en: "More areas", th: "ย่านเพิ่มเติม" },
-  search_areas: { en: "Search area name or slug", th: "ค้นหาชื่อย่านหรือ slug" },
+  search_areas: { en: "Search area name", th: "ค้นหาชื่อย่าน" },
   no_matching_areas: { en: "No matching areas.", th: "ไม่พบย่านที่ตรงกัน" },
+  reset_filters: { en: "Reset", th: "ล้างตัวกรอง" },
   status_new: { en: "New Entry", th: "จานใหม่" },
   status_gathering: { en: "Gathering Comparisons", th: "กำลังรวบรวมข้อมูล" },
   gathering_progress: { en: "Gathering comparisons", th: "กำลังรวบรวมข้อมูล" },
   comparisons_progress: { en: "comparisons", th: "การเปรียบเทียบ" },
+  diner_comparisons: { en: "diner comparisons", th: "การเปรียบเทียบจากนักชิม" },
   not_ranked_yet: {
     en: "Not ranked yet — compare dishes you've tried to build this ranking",
     th: "ยังไม่จัดอันดับ — เปรียบเทียบจานที่คุณเคยกินเพื่อสร้างอันดับนี้",
@@ -61,10 +63,7 @@ export const dict = {
   empty_feed: { en: "No dishes yet. Be the first to add one.", th: "ยังไม่มีจาน มาเพิ่มเป็นคนแรก" },
   loading: { en: "Loading…", th: "กำลังโหลด…" },
   share: { en: "Share", th: "แชร์" },
-  hero_title: {
-    en: "Find the best version of every dish.",
-    th: "หาจานที่ดีที่สุดของแต่ละเมนู",
-  },
+  hero_title: { en: "Find the best version of every dish.", th: "หาจานที่ดีที่สุดของแต่ละเมนู" },
   hero_copy: {
     en: "Discover local dishes, compare dish against dish, and add the gems missing from the map.",
     th: "ค้นหาจานเด็ด เปรียบเทียบจานต่อจาน และเพิ่มร้านที่ยังไม่มีในแผนที่",
@@ -81,10 +80,7 @@ export const dict = {
     en: "Submit missing dishes so the rankings get sharper.",
     th: "เพิ่มจานที่ยังไม่มีเพื่อให้อันดับแม่นขึ้น",
   },
-  empty_feed_title: {
-    en: "The board is waiting for its first dishes.",
-    th: "กระดานนี้กำลังรอจานแรก",
-  },
+  empty_feed_title: { en: "The board is waiting for its first dishes.", th: "กระดานนี้กำลังรอจานแรก" },
   empty_feed_body: {
     en: "Add a dish or clear filters to start building the ranking.",
     th: "เพิ่มจานหรือล้างตัวกรองเพื่อเริ่มสร้างอันดับ",
@@ -105,6 +101,7 @@ export const dict = {
     th: "เลือกสองจานที่คุณเคยกินด้วยตัวเอง แล้วเลือกจานที่คุณชอบมากกว่า",
   },
   choose_category: { en: "Choose category", th: "เลือกหมวดหมู่" },
+  choose_dish_category: { en: "Choose a dish category.", th: "เลือกหมวดหมู่จาน" },
   pick_dish: { en: "Pick a dish", th: "เลือกจาน" },
   which_better: { en: "Which dish do you prefer?", th: "คุณชอบจานไหนมากกว่า" },
   compare_empty: {
@@ -130,19 +127,13 @@ export const dict = {
   submit_anyway: { en: "None of these. Submit anyway", th: "ไม่ใช่รายการเหล่านี้ ส่งต่อ" },
   submit_for_review: { en: "Submit for review", th: "ส่งให้ตรวจสอบ" },
   ranked_dishes: { en: "Ranked dishes", th: "จานที่จัดอันดับแล้ว" },
-  ranked_dishes_body: {
-    en: "Based on at least 5 diner comparisons.",
-    th: "จากการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้ง",
-  },
+  ranked_dishes_body: { en: "Based on at least 5 diner comparisons.", th: "จากการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้ง" },
   new_contenders: { en: "New contenders", th: "ผู้ท้าชิงหน้าใหม่" },
   new_contenders_body: {
     en: "These dishes need more diner comparisons before receiving a public rank.",
     th: "จานเหล่านี้ต้องการการเปรียบเทียบเพิ่มเติมก่อนได้รับอันดับสาธารณะ",
   },
-  no_ranked_yet_title: {
-    en: "No dishes are ranked yet",
-    th: "ยังไม่มีจานที่ได้รับอันดับ",
-  },
+  no_ranked_yet_title: { en: "No dishes are ranked yet", th: "ยังไม่มีจานที่ได้รับอันดับ" },
   no_ranked_yet_body: {
     en: "These contenders need at least 5 diner comparisons before receiving a public rank.",
     th: "ผู้ท้าชิงเหล่านี้ต้องการการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้งก่อนได้รับอันดับสาธารณะ",
@@ -163,10 +154,7 @@ export const dict = {
     th: "ต้องทำเครื่องหมายว่าเคยกินจานนี้ก่อนจึงจะเปรียบเทียบได้",
   },
   loading_tried: { en: "Loading your tried dishes…", th: "กำลังโหลดจานที่คุณเคยกิน…" },
-  tried_load_error: {
-    en: "We couldn't load your tried dishes.",
-    th: "เราไม่สามารถโหลดจานที่คุณเคยกินได้",
-  },
+  tried_load_error: { en: "We couldn't load your tried dishes.", th: "เราไม่สามารถโหลดจานที่คุณเคยกินได้" },
   try_again: { en: "Try again", th: "ลองอีกครั้ง" },
   no_tried_yet: { en: "No tried dishes yet", th: "ยังไม่มีจานที่เคยกิน" },
   mark_tried_before_compare: {
@@ -175,6 +163,8 @@ export const dict = {
   },
   discover_dishes: { en: "Discover dishes", th: "ค้นพบจาน" },
   choose_dish_type_first: { en: "Choose a dish type first", th: "เลือกประเภทจานก่อน" },
+  choose_dish_type: { en: "Choose a dish type", th: "เลือกประเภทจาน" },
+  dish_type: { en: "Dish type", th: "ประเภทจาน" },
   same_dish_type_only: {
     en: "Comparisons only happen between the same actual dish type.",
     th: "การเปรียบเทียบเกิดขึ้นเฉพาะระหว่างประเภทจานเดียวกันเท่านั้น",
@@ -187,6 +177,7 @@ export const dict = {
   discover_more_dishes: { en: "Discover more dishes", th: "ค้นพบจานเพิ่มเติม" },
   dish_a: { en: "Dish A", th: "จาน A" },
   dish_b: { en: "Dish B", th: "จาน B" },
+  choose_this_dish: { en: "Choose this dish", th: "เลือกจานนี้" },
   profile_posts: { en: "Posts", th: "โพสต์" },
   profile_tried: { en: "Tried", th: "เคยกิน" },
   profile_comparisons: { en: "Comparisons", th: "การเปรียบเทียบ" },
@@ -194,6 +185,18 @@ export const dict = {
     en: "Your posts, tried dishes, and comparison history.",
     th: "โพสต์ จานที่คุณเคยกิน และประวัติการเปรียบเทียบของคุณ",
   },
+  discover_bangkok: { en: "Discover Bangkok", th: "ค้นพบกรุงเทพฯ" },
+  featured_category: { en: "Featured category", th: "หมวดแนะนำ" },
+  explore_category: { en: "Explore category", th: "ดูหมวดนี้" },
+  browse_board: { en: "Browse the board", th: "ดูจานในกระดาน" },
+  add_first_dish: { en: "Add the first dish", th: "เพิ่มจานแรก" },
+  photo_needed: { en: "Photo needed", th: "ต้องการรูปภาพ" },
+  help_dish_look_alive: { en: "Help this dish look alive", th: "ช่วยเพิ่มรูปให้จานนี้" },
+  bangkok_dish_board: { en: "Bangkok dish board", th: "กระดานจานเด็ดกรุงเทพฯ" },
+  what_should_bangkok_eat: { en: "What should Bangkok eat?", th: "กรุงเทพฯ ควรกินอะไรดี?" },
+  no_rankings_yet: { en: "No rankings yet.", th: "ยังไม่มีอันดับ" },
+  no_ranking_yet: { en: "No ranking yet.", th: "ยังไม่มีอันดับ" },
+  current_ranked: { en: "Currently ranked", th: "อันดับปัจจุบัน" },
 };
 
 export type Key = keyof typeof dict;
@@ -203,19 +206,30 @@ interface LangCtx {
   setLang: (l: Lang) => void;
   t: (k: Key) => string;
 }
-const Ctx = createContext<LangCtx>({ lang: "en", setLang: () => {}, t: (k) => dict[k]?.en ?? k });
+
+const Ctx = createContext<LangCtx>({
+  lang: "en",
+  setLang: () => {},
+  t: (k) => dict[k]?.en ?? k,
+});
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+
   useEffect(() => {
-    const saved =
-      typeof window !== "undefined" ? (localStorage.getItem("jn_lang") as Lang | null) : null;
+    const saved = typeof window !== "undefined" ? (localStorage.getItem("jn_lang") as Lang | null) : null;
     if (saved === "en" || saved === "th") setLangState(saved);
   }, []);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = lang;
+  }, [lang]);
+
   const setLang = (l: Lang) => {
     setLangState(l);
     if (typeof window !== "undefined") localStorage.setItem("jn_lang", l);
   };
+
   const t = (k: Key) => dict[k]?.[lang] ?? dict[k]?.en ?? k;
   return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>;
 }
