@@ -350,4 +350,688 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
       const row = rows[li];
       const get = (k: string) => (idx(k) >= 0 ? (row[idx(k)]?.trim() ?? "") : "");
       try {
-        const cß®ô¶‰žËkºwµçUÉÉ½È¡%¹Ù…±¥±¹œè€‘í±¹Q•áÑõ€¤ì4(€É•ÑÕÉ¸ì±…Ð°±¹œôì4)ô4(4)…Íå¹Œ™Õ¹Ñ¥½¸™¥¹‘M¥µ¥±…ÉA±…•%¹É•„¡ÍÕÁ…‰…Í”è…¹ä°…É•…%èÍÑÉ¥¹œ°¹…µ”èÍÑÉ¥¹œ¤ì4(€½¹ÍÐì‘…Ñ„°•ÉÉ½Èô€ô…Ý…¥ÐÍÕÁ…‰…Í”4(€€€€¹™É½´ ‰Á±…•Ìˆ¤4(€€€€¹Í•±•Ð ‰¥°¹…µ”°ÍÑ…ÑÕÌ°±…Ð°±¹œˆ¤4(€€€€¹•Ä ‰…É•…}¥ˆ°…É•…%¤4(€€€€¹¥¸ ‰ÍÑ…ÑÕÌˆ°l‰…ÁÁÉ½Ù•ˆ°€‰Á•¹‘¥¹œ‰t¤ì4(€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€½¹ÍÐ¹••‘±”€ô¹½Éµ…±¥é•5…Ñ ¡¹…µ”¤ì4(€±•Ð‰•ÍÐè…¹ä€ô¹Õ±°ì4(€±•Ð‰•ÍÑM½É”€ô€Àì4(€™½È€¡½¹ÍÐÁ±…”½˜‘…Ñ„€üümt¤ì4(€€€½¹ÍÐÍ½É”€ôÍ¥µ¥±…É¥ÑåM½É”¡¹••‘±”°¹½Éµ…±¥é•5…Ñ ¡Á±…”¹¹…µ”¤¤ì4(€€€¥˜€¡Í½É”€ø‰•ÍÑM½É”¤ì4(€€€€€‰•ÍÐ€ôÁ±…”ì4(€€€€€‰•ÍÑM½É”€ôÍ½É”ì4(€€€ô4(€ô4(€É•ÑÕÉ¸‰•ÍÑM½É”€øôA1}5Q!}Q!IM!=1€ü‰•ÍÐ€è¹Õ±°ì4)ô4(4)™Õ¹Ñ¥½¸¹½Éµ…±¥é•5…Ñ ¡Ù…±Õ”èÍÑÉ¥¹œ¤ì4(€É•ÑÕÉ¸Ù…±Õ”¹ÑÉ¥´ ¤¹Ñ½1½Ý•É…Í” ¤¹É•Á±…” ½qÌ¬½œ°€ˆ€ˆ¤ì4)ô4(4)™Õ¹Ñ¥½¸Í¥µ¥±…É¥ÑåM½É”¡„èÍÑÉ¥¹œ°ˆèÍÑÉ¥¹œ¤ì4(€¥˜€ …„ñð€…ˆ¤É•ÑÕÉ¸€Àì4(€¥˜€¡„€ôôôˆ¤É•ÑÕÉ¸€Äì4(€¥˜€¡„¹¥¹±Õ‘•Ì¡ˆ¤ñðˆ¹¥¹±Õ‘•Ì¡„¤¤É•ÑÕÉ¸€À¸äì4(€½¹ÍÐ‰¥É…µÌ€ô€¡Ù…±Õ”èÍÑÉ¥¹œ¤€ôøì4(€€€½¹ÍÐ±•…¸€ô€€‘íÙ…±Õ•ô€ì4(€€€½¹ÍÐ½ÕÐ€ô¹•ÜM•ÐñÍÑÉ¥¹œø ¤ì4(€€€™½È€¡±•Ð¤€ô€Àì¤€ð±•…¸¹±•¹Ñ €´€Äì¤¬¬¤½ÕÐ¹…‘¡±•…¸¹Í±¥”¡¤°¤€¬€È¤¤ì4(€€€É•ÑÕÉ¸½ÕÐì4(€ôì4(€½¹ÍÐ…„€ô‰¥É…µÌ¡„¤ì4(€½¹ÍÐ‰ˆ€ô‰¥É…µÌ¡ˆ¤ì4(€±•Ð½Ù•É±…À€ô€Àì4(€™½È€¡½¹ÍÐ¥Ñ•´½˜…„¤¥˜€¡‰ˆ¹¡…Ì¡¥Ñ•´¤¤½Ù•É±…À¬¬ì4(€É•ÑÕÉ¸€ È€¨½Ù•É±…À¤€¼€¡…„¹Í¥é”€¬‰ˆ¹Í¥é”¤ì4)ô4(4)™Õ¹Ñ¥½¸Ñ½ÍØ¡¡•…‘•ÉÌèÍÑÉ¥¹mt°É½ÝÌèÉÉ…äñI•½ÉñÍÑÉ¥¹œ°Õ¹­¹½Ý¸øø¤ì4(€É•ÑÕÉ¸qÕ‘í¡•…‘•ÉÌ¹©½¥¸ ˆ°ˆ¥õq¸‘íÉ½ÝÌ¹µ…À ¡É½Ü¤€ôø¡•…‘•ÉÌ¹µ…À ¡ ¤€ôøÍÙ•±°¡É½Ým¡t¤¤¹©½¥¸ ˆ°ˆ¤¤¹©½¥¸ ‰q¸ˆ¥õ€ì4)ô4(4)™Õ¹Ñ¥½¸ÍÙ•±°¡Ù…±Õ”èÕ¹­¹½Ý¸¤ì4(€¥˜€¡Ù…±Õ”€ôô¹Õ±°¤É•ÑÕÉ¸€ˆˆì4(€½¹ÍÐÑ•áÐ€ôMÑÉ¥¹œ¡Ù…±Õ”¤ì4(€É•ÑÕÉ¸€½lˆ±qÉq¹t¼¹Ñ•ÍÐ¡Ñ•áÐ¤€ü€ˆ‘íÑ•áÐ¹É•Á±…” ¼ˆ½œ°€œˆˆœ¥ô‰€€èÑ•áÐì4)ô4(4(¼¼…Ñ•½É¥•Ì€˜É•…Ì…‘µ¥¸4)½¹ÍÐÍ±ÕM¡•µ„€ôè4(€€¹ÍÑÉ¥¹œ ¤4(€€¹µ¥¸ Ä¤4(€€¹µ…à ØÀ¤4(€€¹É••à ½ym„µèÀ´äµt¬¼¤ì4)½¹ÍÐÕ¥Í¥¹•M¡•µ„€ôÍ±ÕM¡•µ„¹½ÁÑ¥½¹…° ¤ì4(4)•áÁ½ÉÐ½¹ÍÐÕÁÍ•ÉÑ…Ñ•½Éä€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èìÍ±ÕœèÍÑÉ¥¹œì¹…µ•}•¸èÍÑÉ¥¹œì¹…µ•}Ñ èÍÑÉ¥¹œìÕ¥Í¥¹”üèÍÑÉ¥¹œìÉ•ÅÕ¥É•Í}ÍÕ‰ÑåÁ”üè‰½½±•…¸ìÉ•™•É•¹•}Á¡½Ñ½}ÕÉ°üèÍÑÉ¥¹œô¤€ôø(€€€è4(€€€€€€¹½‰©•Ð¡ì4(€€€€€€€Í±Õœèè4(€€€€€€€€€€¹ÍÑÉ¥¹œ ¤4(€€€€€€€€€€¹µ¥¸ Ä¤4(€€€€€€€€€€¹µ…à ØÀ¤4(€€€€€€€€€€¹É••à ½ym„µèÀ´äµt¬¼¤°4(€€€€€€€¹…µ•}•¸èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€€€¹…µ•}Ñ èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€€€Õ¥Í¥¹”èÕ¥Í¥¹•M¡•µ„°(€€€€€€€É•ÅÕ¥É•Í}ÍÕ‰ÑåÁ”èè¹‰½½±•…¸ ¤¹½ÁÑ¥½¹…° ¤°(€€€€€€€É•™•É•¹•}Á¡½Ñ½}ÕÉ°è…‘µ¥¹A¡½Ñ½UÉ±M¡•µ„°(€€€€€ô¤4(€€€€€€¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐÁ…å±½…èI•½ÉñÍÑÉ¥¹œ°Õ¹­¹½Ý¸ø€ôì4(€€€€€Í±Õœè‘…Ñ„¹Í±Õœ°4(€€€€€¹…µ•}•¸è‘…Ñ„¹¹…µ•}•¸°4(€€€€€¹…µ•}Ñ è‘…Ñ„¹¹…µ•}Ñ °4(€€€€€Õ¥Í¥¹”è‘…Ñ„¹Õ¥Í¥¹”ñð¹Õ±°°4(€€€ôì4(€€€¥˜€¡ÑåÁ•½˜‘…Ñ„¹É•ÅÕ¥É•Í}ÍÕ‰ÑåÁ”€ôôô€‰‰½½±•…¸ˆ¤Á…å±½…¹É•ÅÕ¥É•Í}ÍÕ‰ÑåÁ”€ô‘…Ñ„¹É•ÅÕ¥É•Í}ÍÕ‰ÑåÁ”ì(€€€¥˜€¡‘…Ñ„¹É•™•É•¹•}Á¡½Ñ½}ÕÉ°€„ôôÕ¹‘•™¥¹•¤ì(€€€€€Á…å±½…¹É•™•É•¹•}Á¡½Ñ½}ÕÉ°€ô‘…Ñ„¹É•™•É•¹•}Á¡½Ñ½}ÕÉ°ñð¹Õ±°ì(€€€ô(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰…Ñ•½É¥•Ìˆ¤4(€€€€€€¹ÕÁÍ•ÉÐ¡Á…å±½……Ì…¹ä°ì½¹½¹™±¥Ðè€‰Í±Õœˆô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐÕÁÍ•ÉÑÉ•„€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èìÍ±ÕœèÍÑÉ¥¹œì¹…µ•}•¸èÍÑÉ¥¹œì¹…µ•}Ñ èÍÑÉ¥¹œô¤€ôø4(€€€è4(€€€€€€¹½‰©•Ð¡ì4(€€€€€€€Í±Õœèè4(€€€€€€€€€€¹ÍÑÉ¥¹œ ¤4(€€€€€€€€€€¹µ¥¸ Ä¤4(€€€€€€€€€€¹µ…à ØÀ¤4(€€€€€€€€€€¹É••à ½ym„µèÀ´äµt¬¼¤°4(€€€€€€€¹…µ•}•¸èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€€€¹…µ•}Ñ èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€ô¤4(€€€€€€¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰…É•…Ìˆ¤¹ÕÁÍ•ÉÐ¡‘…Ñ„°ì½¹½¹™±¥Ðè€‰Í±Õœˆô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐÕÁÍ•ÉÑÕ¥Í¥¹”€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èìÍ±ÕœèÍÑÉ¥¹œì¹…µ•}•¸èÍÑÉ¥¹œì¹…µ•}Ñ èÍÑÉ¥¹œô¤€ôø4(€€€è4(€€€€€€¹½‰©•Ð¡ì4(€€€€€€€Í±ÕœèÍ±ÕM¡•µ„°4(€€€€€€€¹…µ•}•¸èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€€€¹…µ•}Ñ èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€ô¤4(€€€€€€¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰Õ¥Í¥¹•Ìˆ¤¹ÕÁÍ•ÉÐ¡‘…Ñ„°ì½¹½¹™±¥Ðè€‰Í±Õœˆô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ‘•±•Ñ•Õ¥Í¥¹”€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èìÍ±ÕœèÍÑÉ¥¹œô¤€ôøè¹½‰©•Ð¡ìÍ±ÕœèÍ±ÕM¡•µ„ô¤¹Á…ÉÍ”¡¤¤¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì½Õ¹Ð°•ÉÉ½Èè½Õ¹ÑÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰…Ñ•½É¥•Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥ˆ°ì½Õ¹Ðè€‰•á…Ðˆ°¡•…èÑÉÕ”ô¤4(€€€€€€¹•Ä ‰Õ¥Í¥¹”ˆ°‘…Ñ„¹Í±Õœ¤ì4(€€€¥˜€¡½Õ¹ÑÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡½Õ¹ÑÉÉ½È¹µ•ÍÍ…”¤ì4(€€€¥˜€ ¡½Õ¹Ð€üü€À¤€ø€À¤Ñ¡É½Ü¹•ÜÉÉ½È¡…¹¹½Ð‘•±•Ñ”Õ¥Í¥¹”Ý¡¥±”€‘í½Õ¹Ñô…Ñ•½È‘í½Õ¹Ð€ôôô€Ä€ü€‰äˆ€è€‰¥•Ì‰ôÕÍ”¥Ð¹€¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰Õ¥Í¥¹•Ìˆ¤¹‘•±•Ñ” ¤¹•Ä ‰Í±Õœˆ°‘…Ñ„¹Í±Õœ¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ‘•±•Ñ•…Ñ•½Éä€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èì¥èÍÑÉ¥¹œô¤€ôøè¹½‰©•Ð¡ì¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤ô¤¹Á…ÉÍ”¡¤¤¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì½Õ¹Ð°•ÉÉ½Èè½Õ¹ÑÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰‘¥Í¡•Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥ˆ°ì½Õ¹Ðè€‰•á…Ðˆ°¡•…èÑÉÕ”ô¤4(€€€€€€¹•Ä ‰…Ñ•½Éå}¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡½Õ¹ÑÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡½Õ¹ÑÉÉ½È¹µ•ÍÍ…”¤ì4(€€€¥˜€ ¡½Õ¹Ð€üü€À¤€ø€À¤Ñ¡É½Ü¹•ÜÉÉ½È¡…¹¹½Ð‘•±•Ñ”…Ñ•½ÉäÝ¡¥±”€‘í½Õ¹Ñô‘¥Í ‘í½Õ¹Ð€ôôô€Ä€ü€ˆˆ€è€‰•Ì‰ôÕÍ”¥Ð¹€¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰…Ñ•½É¥•Ìˆ¤¹‘•±•Ñ” ¤¹•Ä ‰¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ‘•±•Ñ•É•„€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èì¥èÍÑÉ¥¹œô¤€ôøè¹½‰©•Ð¡ì¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤ô¤¹Á…ÉÍ”¡¤¤¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì½Õ¹Ð°•ÉÉ½Èè½Õ¹ÑÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰Á±…•Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥ˆ°ì½Õ¹Ðè€‰•á…Ðˆ°¡•…èÑÉÕ”ô¤4(€€€€€€¹•Ä ‰…É•…}¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡½Õ¹ÑÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡½Õ¹ÑÉÉ½È¹µ•ÍÍ…”¤ì4(€€€¥˜€ ¡½Õ¹Ð€üü€À¤€ø€À¤Ñ¡É½Ü¹•ÜÉÉ½È¡…¹¹½Ð‘•±•Ñ”…É•„Ý¡¥±”€‘í½Õ¹ÑôÁ±…”‘í½Õ¹Ð€ôôô€Ä€ü€ˆˆ€è€‰Ì‰ôÕÍ”¥Ð¹€¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰…É•…Ìˆ¤¹‘•±•Ñ” ¤¹•Ä ‰¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐÉ…¹Ñ‘µ¥¹M•±˜€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì½¹Ñ•áÐô¤€ôøì4(€€€€¼¼MÑ…Ñ¥Œ•µ…¥°…±±½Ý±¥ÍÐ¸5%9}5%1L¥Ì„½µµ„µÍ•Á…É…Ñ•±¥ÍÐ½¹™¥ÕÉ•Í•ÉÙ•ÈµÍ¥‘”¸4(€€€½¹ÍÐÉ…Ü€ôÁÉ½•ÍÌ¹•¹Ø¹5%9}5%1L€üü€ˆˆì4(€€€½¹ÍÐ…±±½Ü€ôÉ…Ü4(€€€€€€¹ÍÁ±¥Ð ˆ°ˆ¤4(€€€€€€¹µ…À ¡Ì¤€ôøÌ¹ÑÉ¥´ ¤¹Ñ½1½Ý•É…Í” ¤¤4(€€€€€€¹™¥±Ñ•È¡	½½±•…¸¤ì4(€€€½¹ÍÐ•µ…¥°€ô€¡½¹Ñ•áÐ¹±…¥µÌü¹•µ…¥°…ÌÍÑÉ¥¹œðÕ¹‘•™¥¹•¤ü¹Ñ½1½Ý•É…Í” ¤ì4(€€€¥˜€ …•µ…¥°¤Ñ¡É½Ü¹•ÜÉÉ½È ‰9¼•µ…¥°½¸Í•ÍÍ¥½¸ˆ¤ì4(€€€¥˜€ ……±±½Ü¹¥¹±Õ‘•Ì¡•µ…¥°¤¤Ñ¡É½Ü¹•ÜÉÉ½È ‰Q¡¥Ì•µ…¥°¥Ì¹½Ð¥¸Ñ¡”…‘µ¥¸…±±½Ý±¥ÍÐˆ¤ì4(€€€½¹ÍÐìÍÕÁ…‰…Í•‘µ¥¸ô€ô…Ý…¥Ð¥µÁ½ÉÐ ‰ ½¥¹Ñ•É…Ñ¥½¹Ì½ÍÕÁ…‰…Í”½±¥•¹Ð¹Í•ÉÙ•Èˆ¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥ÐÍÕÁ…‰…Í•‘µ¥¸4(€€€€€€¹™É½´ ‰ÕÍ•É}É½±•Ìˆ¤4(€€€€€€¹ÕÁÍ•ÉÐ¡ìÕÍ•É}¥è½¹Ñ•áÐ¹ÕÍ•É%°É½±”è€‰…‘µ¥¸ˆô°ì½¹½¹™±¥Ðè€‰ÕÍ•É}¥±É½±”ˆô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ±¥ÍÑA•¹‘¥¹A±…•Ì€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰Pˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì‘…Ñ„°•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰Á±…•Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥°¹…µ”°…‘‘É•ÍÌ°ÍÑ…ÑÕÌ°É•…Ñ•‘}…Ð°…É•„é…É•…Ì¡¹…µ•}•¸¤ˆ¤4(€€€€€€¹•Ä ‰ÍÑ…ÑÕÌˆ°€‰Á•¹‘¥¹œˆ¤4(€€€€€€¹½É‘•È ‰É•…Ñ•‘}…Ðˆ°ì…Í•¹‘¥¹œè™…±Í”ô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸‘…Ñ„€üümtì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ±¥ÍÑ…Ñ•½É¥•Í‘µ¥¸€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰Pˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì‘…Ñ„°•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰…Ñ•½É¥•Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥°Í±Õœ°¹…µ•}•¸°¹…µ•}Ñ °Õ¥Í¥¹”°É•™•É•¹•}Á¡½Ñ½}ÕÉ°°É•ÅÕ¥É•Í}ÍÕ‰ÑåÁ”°Õ¥Í¥¹•}É•˜éÕ¥Í¥¹•Ì¡Í±Õœ°¹…µ•}•¸°¹…µ•}Ñ ¤°ÍÕ‰ÑåÁ•Ìé‘¥Í¡}ÍÕ‰ÑåÁ•Ì¡¥°Í±Õœ°¹…µ•}•¸°¹…µ•}Ñ °¥Í}…Ñ¥Ù”°‘¥ÍÁ±…å}½É‘•È¤ˆ¤(€€€€€€¹½É‘•È ‰¹…µ•}•¸ˆ°ì…Í•¹‘¥¹œèÑÉÕ”ô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸‘…Ñ„€üümtì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐÕÁÍ•ÉÑMÕ‰ÑåÁ”€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èì4(€€€¥üèÍÑÉ¥¹œì4(€€€…Ñ•½Éå}¥èÍÑÉ¥¹œì4(€€€Í±ÕœüèÍÑÉ¥¹œì4(€€€¹…µ•}•¸èÍÑÉ¥¹œì4(€€€¹…µ•}Ñ èÍÑÉ¥¹œì4(€€€¥Í}…Ñ¥Ù”üè‰½½±•…¸ì4(€€€‘¥ÍÁ±…å}½É‘•Èüè¹Õµ‰•Èì4(€ô¤€ôø4(€€€è4(€€€€€€¹½‰©•Ð¡ì4(€€€€€€€¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€€€…Ñ•½Éå}¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤°4(€€€€€€€Í±Õœèè4(€€€€€€€€€€¹ÍÑÉ¥¹œ ¤4(€€€€€€€€€€¹µ¥¸ Ä¤4(€€€€€€€€€€¹µ…à ØÀ¤4(€€€€€€€€€€¹É••à ½ym„µèÀ´äµt¬¼¤4(€€€€€€€€€€¹½ÁÑ¥½¹…° ¤°4(€€€€€€€¹…µ•}•¸èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€€€¹…µ•}Ñ èè¹ÍÑÉ¥¹œ ¤¹µ¥¸ Ä¤¹µ…à àÀ¤°4(€€€€€€€¥Í}…Ñ¥Ù”èè¹‰½½±•…¸ ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€€€‘¥ÍÁ±…å}½É‘•Èèè¹¹Õµ‰•È ¤¹¥¹Ð ¤¹µ¥¸ À¤¹µ…à ÄÀÀÀÀ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€ô¤4(€€€€€€¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€¥˜€¡‘…Ñ„¹¥¤ì4(€€€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€€€¹™É½´ ‰‘¥Í¡}ÍÕ‰ÑåÁ•Ìˆ¤4(€€€€€€€€¹ÕÁ‘…Ñ”¡ì4(€€€€€€€€€¹…µ•}•¸è‘…Ñ„¹¹…µ•}•¸°4(€€€€€€€€€¹…µ•}Ñ è‘…Ñ„¹¹…µ•}Ñ °4(€€€€€€€€€¥Í}…Ñ¥Ù”è‘…Ñ„¹¥Í}…Ñ¥Ù”€üüÑÉÕ”°4(€€€€€€€€€‘¥ÍÁ±…å}½É‘•Èè‘…Ñ„¹‘¥ÍÁ±…å}½É‘•È€üü€À°4(€€€€€€€ô¤4(€€€€€€€€¹•Ä ‰¥ˆ°‘…Ñ„¹¥¤ì4(€€€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€€€ô4(€€€¥˜€ …‘…Ñ„¹Í±Õœ¤Ñ¡É½Ü¹•ÜÉÉ½È ‰M±Õœ¥ÌÉ•ÅÕ¥É•ˆ¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰‘¥Í¡}ÍÕ‰ÑåÁ•Ìˆ¤¹¥¹Í•ÉÐ¡ì4(€€€€€…Ñ•½Éå}¥è‘…Ñ„¹…Ñ•½Éå}¥°4(€€€€€Í±Õœè‘…Ñ„¹Í±Õœ°4(€€€€€¹…µ•}•¸è‘…Ñ„¹¹…µ•}•¸°4(€€€€€¹…µ•}Ñ è‘…Ñ„¹¹…µ•}Ñ °4(€€€€€¥Í}…Ñ¥Ù”è‘…Ñ„¹¥Í}…Ñ¥Ù”€üüÑÉÕ”°4(€€€€€‘¥ÍÁ±…å}½É‘•Èè‘…Ñ„¹‘¥ÍÁ±…å}½É‘•È€üü€À°4(€€€ô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ±¥ÍÑÉ•…Í‘µ¥¸€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰Pˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì‘…Ñ„°•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”4(€€€€€€¹™É½´ ‰…É•…Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥°Í±Õœ°¹…µ•}•¸°¹…µ•}Ñ ˆ¤4(€€€€€€¹½É‘•È ‰¹…µ•}•¸ˆ°ì…Í•¹‘¥¹œèÑÉÕ”ô¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸‘…Ñ„€üümtì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐ±¥ÍÑA±…•Í‘µ¥¸€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰Pˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èìÅÕ•ÉäüèÍÑÉ¥¹œô¤€ôø4(€€€è¹½‰©•Ð¡ìÅÕ•Éäèè¹ÍÑÉ¥¹œ ¤¹µ…à ÄÈÀ¤¹½ÁÑ¥½¹…° ¤ô¤¹Á…ÉÍ”¡¤€üüíô¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€±•ÐÅÕ•Éä€ô€¡½¹Ñ•áÐ¹ÍÕÁ…‰…Í”…Ì…¹ä¤4(€€€€€€¹™É½´ ‰Á±…•Ìˆ¤4(€€€€€€¹Í•±•Ð ‰¥°¹…µ”°…‘‘É•ÍÌ°ÍÑ…ÑÕÌ°±…Ð°±¹œ°…É•„é…É•…Ì¡¥°¹…µ•}•¸°¹…µ•}Ñ ¤ˆ¤4(€€€€€€¹¥¸ ‰ÍÑ…ÑÕÌˆ°l‰…ÁÁÉ½Ù•ˆ°€‰Á•¹‘¥¹œ‰t¤ì4(4(€€€½¹ÍÐÑ•É´€ô‘…Ñ„¹ÅÕ•Éäü¹ÑÉ¥´ ¤ì4(€€€¥˜€¡Ñ•É´¤ì4(€€€€€½¹ÍÐ•Í…Á•€ôÑ•É´¹É•Á±…” ½l•}t½œ°€¡µ…Ñ ¤€ôøqp‘íµ…Ñ¡õ€¤ì4(€€€€€ÅÕ•Éä€ôÅÕ•Éä¹½È¡¹…µ”¹¥±¥­”¸”‘í•Í…Á•‘ô”±…‘‘É•ÍÌ¹¥±¥­”¸”‘í•Í…Á•‘ô•€¤ì4(€€€ô4(4(€€€½¹ÍÐì‘…Ñ„èÉ½ÝÌ°•ÉÉ½Èô€ô…Ý…¥ÐÅÕ•Éä4(€€€€€€¹½É‘•È ‰±…Ðˆ°ì…Í•¹‘¥¹œèÑÉÕ”°¹Õ±±Í¥ÉÍÐèÑÉÕ”ô¤4(€€€€€€¹½É‘•È ‰±¹œˆ°ì…Í•¹‘¥¹œèÑÉÕ”°¹Õ±±Í¥ÉÍÐèÑÉÕ”ô¤4(€€€€€€¹½É‘•È ‰¹…µ”ˆ°ì…Í•¹‘¥¹œèÑÉÕ”ô¤4(€€€€€€¹±¥µ¥Ð ÄÀÀÀ¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸É½ÝÌ€üümtì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐÕÁ‘…Ñ•A±…•½½É‘¥¹…Ñ•Í‘µ¥¸€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èì¥èÍÑÉ¥¹œì±…Ðüè¹Õµ‰•Èð¹Õ±°ì±¹œüè¹Õµ‰•Èð¹Õ±°ô¤€ôø4(€€€è4(€€€€€€¹½‰©•Ð¡ì4(€€€€€€€¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤°4(€€€€€€€±…Ðèè¹¹Õµ‰•È ¤¹µ¥¸ ´äÀ¤¹µ…à äÀ¤¹¹Õ±±…‰±” ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€€€±¹œèè¹¹Õµ‰•È ¤¹µ¥¸ ´ÄàÀ¤¹µ…à ÄàÀ¤¹¹Õ±±…‰±” ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€ô¤4(€€€€€€¹É•™¥¹” ¡Ø¤€ôø€¡Ø¹±…Ð€ôô¹Õ±°€˜˜Ø¹±¹œ€ôô¹Õ±°¤ñð€¡Ø¹±…Ð€„ô¹Õ±°€˜˜Ø¹±¹œ€„ô¹Õ±°¤°€‰M•Ð‰½Ñ ±…Ñ¥ÑÕ‘”…¹±½¹¥ÑÕ‘”°½È±•…È‰½Ñ ¸ˆ¤4(€€€€€€¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð€¡½¹Ñ•áÐ¹ÍÕÁ…‰…Í”…Ì…¹ä¤4(€€€€€€¹™É½´ ‰Á±…•Ìˆ¤4(€€€€€€¹ÕÁ‘…Ñ”¡ì±…Ðè‘…Ñ„¹±…Ð€üü¹Õ±°°±¹œè‘…Ñ„¹±¹œ€üü¹Õ±°ô¤4(€€€€€€¹•Ä ‰¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐÕÁ‘…Ñ•A±…•‘µ¥¸€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èì¥èÍÑÉ¥¹œì¹…µ”èÍÑÉ¥¹œì…É•…%èÍÑÉ¥¹œì…‘‘É•ÍÌüèÍÑÉ¥¹œìÍÑ…ÑÕÌè€‰…ÁÁÉ½Ù•ˆð€‰Á•¹‘¥¹œˆð€‰É•©•Ñ•ˆì±…Ðüè¹Õµ‰•Èð¹Õ±°ì±¹œüè¹Õµ‰•Èð¹Õ±°ô¤€ôø4(€€€è4(€€€€€€¹½‰©•Ð¡ì4(€€€€€€€¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤°4(€€€€€€€¹…µ”èè¹ÍÑÉ¥¹œ ¤¹ÑÉ¥´ ¤¹µ¥¸ Ä¤¹µ…à ÄØÀ¤°4(€€€€€€€…É•…%èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤°4(€€€€€€€…‘‘É•ÍÌèè¹ÍÑÉ¥¹œ ¤¹ÑÉ¥´ ¤¹µ…à ÌÀÀ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€€€ÍÑ…ÑÕÌèè¹•¹Õ´¡l‰…ÁÁÉ½Ù•ˆ°€‰Á•¹‘¥¹œˆ°€‰É•©•Ñ•‰t¤°4(€€€€€€€±…Ðèè¹¹Õµ‰•È ¤¹µ¥¸ ´äÀ¤¹µ…à äÀ¤¹¹Õ±±…‰±” ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€€€±¹œèè¹¹Õµ‰•È ¤¹µ¥¸ ´ÄàÀ¤¹µ…à ÄàÀ¤¹¹Õ±±…‰±” ¤¹½ÁÑ¥½¹…° ¤°4(€€€€€ô¤4(€€€€€€¹É•™¥¹” ¡Ø¤€ôø€¡Ø¹±…Ð€ôô¹Õ±°€˜˜Ø¹±¹œ€ôô¹Õ±°¤ñð€¡Ø¹±…Ð€„ô¹Õ±°€˜˜Ø¹±¹œ€„ô¹Õ±°¤°€‰M•Ð‰½Ñ ±…Ñ¥ÑÕ‘”…¹±½¹¥ÑÕ‘”°½È±•…È‰½Ñ ¸ˆ¤4(€€€€€€¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð€¡½¹Ñ•áÐ¹ÍÕÁ…‰…Í”…Ì…¹ä¤4(€€€€€€¹™É½´ ‰Á±…•Ìˆ¤4(€€€€€€¹ÕÁ‘…Ñ”¡ì4(€€€€€€€¹…µ”è‘…Ñ„¹¹…µ”°4(€€€€€€€…É•…}¥è‘…Ñ„¹…É•…%°4(€€€€€€€…‘‘É•ÍÌè‘…Ñ„¹…‘‘É•ÍÌñð¹Õ±°°4(€€€€€€€ÍÑ…ÑÕÌè‘…Ñ„¹ÍÑ…ÑÕÌ°4(€€€€€€€±…Ðè‘…Ñ„¹±…Ð€üü¹Õ±°°4(€€€€€€€±¹œè‘…Ñ„¹±¹œ€üü¹Õ±°°4(€€€€€ô¤4(€€€€€€¹•Ä ‰¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(4)•áÁ½ÉÐ½¹ÍÐµ½‘•É…Ñ•A±…”€ôÉ•…Ñ•M•ÉÙ•É¸¡ìµ•Ñ¡½è€‰A=MPˆô¤4(€€¹µ¥‘‘±•Ý…É”¡mÉ•ÅÕ¥É•MÕÁ…‰…Í•ÕÑ¡t¤4(€€¹¥¹ÁÕÑY…±¥‘…Ñ½È ¡¤èì¥èÍÑÉ¥¹œì…Ñ¥½¸è€‰…ÁÁÉ½Ù”ˆð€‰É•©•Ðˆô¤€ôø4(€€€è¹½‰©•Ð¡ì¥èè¹ÍÑÉ¥¹œ ¤¹ÕÕ¥ ¤°…Ñ¥½¸èè¹•¹Õ´¡l‰…ÁÁÉ½Ù”ˆ°€‰É•©•Ð‰t¤ô¤¹Á…ÉÍ”¡¤¤°4(€€¤4(€€¹¡…¹‘±•È¡…Íå¹Œ€¡ì‘…Ñ„°½¹Ñ•áÐô¤€ôøì4(€€€…Ý…¥Ð•¹ÍÕÉ•‘µ¥¸¡½¹Ñ•áÐ¤ì4(€€€½¹ÍÐÍÑ…ÑÕÌ€ô‘…Ñ„¹…Ñ¥½¸€ôôô€‰…ÁÁÉ½Ù”ˆ€ü€‰…ÁÁÉ½Ù•ˆ€è€‰É•©•Ñ•ˆì4(€€€½¹ÍÐì•ÉÉ½Èô€ô…Ý…¥Ð½¹Ñ•áÐ¹ÍÕÁ…‰…Í”¹™É½´ ‰Á±…•Ìˆ¤¹ÕÁ‘…Ñ”¡ìÍÑ…ÑÕÌô¤¹•Ä ‰¥ˆ°‘…Ñ„¹¥¤ì4(€€€¥˜€¡•ÉÉ½È¤Ñ¡É½Ü¹•ÜÉÉ½È¡•ÉÉ½È¹µ•ÍÍ…”¤ì4(€€€É•ÑÕÉ¸ì½¬èÑÉÕ”ôì4(€ô¤ì4(
+        const cat = catMap.get(get("category_slug"));
+        const areaId = areaMap.get(get("area_slug"));
+        if (!cat) throw new Error(`Unknown category_slug: ${get("category_slug")}`);
+        if (!areaId) throw new Error(`Unknown area_slug: ${get("area_slug")}`);
+        const placeName = get("place_name");
+        if (!placeName) throw new Error("place_name is required");
+        const dishName = get("dish_name_en");
+        if (!dishName) throw new Error("dish_name_en is required");
+
+        const activeSubtypes = subtypesByCategory.get(cat.id) ?? [];
+        const subtypeSlug = get("subtype_slug");
+        const subtype = subtypeSlug ? activeSubtypes.find((s: any) => s.slug === subtypeSlug) : null;
+        const scoped = Boolean((cat as any).requires_subtype) || activeSubtypes.length > 0;
+        if (scoped && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
+        if (subtypeSlug && !subtype) throw new Error(`Unknown subtype_slug for ${get("category_slug")}: ${subtypeSlug}`);
+
+        const coords = parseOptionalCoords(get("lat"), get("lng"));
+        const existingPlace = await findSimilarPlaceInArea(context.supabase, areaId, placeName);
+        let place: any = null;
+        if (existingPlace) {
+          place = existingPlace;
+          if (coords && existingPlace.lat == null && existingPlace.lng == null) {
+            const { error: coordError } = await (context.supabase as any)
+              .from("places")
+              .update({ lat: coords.lat, lng: coords.lng })
+              .eq("id", existingPlace.id)
+              .is("lat", null)
+              .is("lng", null);
+            if (coordError) throw new Error(coordError.message);
+          }
+        }
+        else {
+          const { data: np, error: npe } = await context.supabase
+            .from("places")
+            .insert({
+              name: placeName,
+              area_id: areaId,
+              address: get("address") || null,
+              lat: coords?.lat ?? null,
+              lng: coords?.lng ?? null,
+              created_by: context.userId,
+              status: data.autoApprove ? "approved" : "pending",
+            })
+            .select("id, name, status, lat, lng")
+            .single();
+          if (npe) throw new Error(npe.message);
+          place = np;
+        }
+        if (data.autoApprove && place.status !== "approved") {
+          const { error: approveError } = await context.supabase.from("places").update({ status: "approved" }).eq("id", place.id);
+          if (approveError) throw new Error(approveError.message);
+        }
+        const { data: existingDish, error: dishCheckError } = await context.supabase
+          .from("dishes")
+          .select("id, name_en")
+          .eq("place_id", place.id)
+          .ilike("name_en", dishName)
+          .limit(1)
+          .maybeSingle();
+        if (dishCheckError) throw new Error(dishCheckError.message);
+        if (existingDish) {
+          skipped++;
+          skips.push({ row: li + 1, reason: `Skipped existing dish: ${existingDish.name_en}` });
+          continue;
+        }
+        const priceStr = get("price_thb");
+        const price = priceStr ? Number(priceStr) : undefined;
+        if (priceStr && !Number.isFinite(price)) throw new Error(`Invalid price_thb: ${priceStr}`);
+        const { error: die } = await context.supabase.from("dishes").insert({
+          name_en: dishName,
+          name_th: get("dish_name_th") || null,
+          place_id: place.id,
+          category_id: cat.id,
+          subtype_id: subtype?.id ?? null,
+          price_thb: price ?? null,
+          photo_url: get("photo_url") || null,
+          note: get("note") || null,
+          status: data.autoApprove ? "approved" : "pending",
+          submitted_by: context.userId,
+        });
+        if (die) throw new Error(die.message);
+        created++;
+      } catch (e: any) {
+        failed++;
+        const msg = (e && (e as any).code === "23505")
+          ? "Duplicate dish for this restaurant"
+          : e.message;
+        errors.push({ row: li + 1, reason: msg });
+      }
+    }
+    return { created, skipped, failed, errors, skips };
+  });
+
+export const importPlacesCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { csv: string; autoApprove?: boolean }) =>
+    z.object({ csv: z.string().min(1).max(500000), autoApprove: z.boolean().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const rows = parseCsvRows(data.csv);
+    if (rows.length < 2) throw new Error("CSV needs a header row and at least one data row");
+    const header = rows[0].map((h, i) => cleanHeader(h, i));
+    const idx = (k: string) => header.indexOf(k);
+    for (const k of ["name", "area_slug"]) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
+    const { data: areas, error: areasError } = await context.supabase.from("areas").select("id, slug");
+    if (areasError) throw new Error(areasError.message);
+    const areaMap = new Map((areas ?? []).map((a: any) => [a.slug, a.id]));
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors: ImportIssue[] = [];
+    const skips: ImportIssue[] = [];
+    for (let li = 1; li < rows.length; li++) {
+      const row = rows[li];
+      const get = (k: string) => (idx(k) >= 0 ? (row[idx(k)]?.trim() ?? "") : "");
+      try {
+        const name = get("name");
+        if (!name) throw new Error("name is required");
+        const areaId = areaMap.get(get("area_slug"));
+        if (!areaId) throw new Error(`Unknown area_slug: ${get("area_slug")}`);
+        const coords = parseOptionalCoords(get("lat"), get("lng"));
+        const existingPlace = await findSimilarPlaceInArea(context.supabase, areaId, name);
+        if (existingPlace) {
+          skipped++;
+          skips.push({ row: li + 1, reason: `Skipped similar place: ${existingPlace.name}` });
+          continue;
+        }
+        const { error } = await (context.supabase as any).from("places").insert({
+          name,
+          area_id: areaId,
+          address: get("address") || null,
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
+          created_by: context.userId,
+          status: data.autoApprove ? "approved" : "pending",
+        });
+        if (error) throw new Error(error.message);
+        created++;
+      } catch (e: any) {
+        failed++;
+        errors.push({ row: li + 1, reason: e.message });
+      }
+    }
+    return { created, skipped, failed, errors, skips };
+  });
+
+export const exportPlacesCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await (context.supabase as any)
+      .from("places")
+      .select("id, name, address, lat, lng, status, created_at, area:areas(slug)")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return toCsv(
+      ["id", "name", "area_slug", "address", "lat", "lng", "status", "created_at"],
+      (data ?? []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        area_slug: p.area?.slug,
+        address: p.address,
+        lat: p.lat,
+        lng: p.lng,
+        status: p.status,
+        created_at: p.created_at,
+      })),
+    );
+  });
+
+export const exportDishesCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("dishes")
+      .select(
+        `id, name_en, name_th, price_thb, photo_url, note, status, comparisons_count, elo, created_at,
+        category:categories(slug), subtype:dish_subtypes(slug), place:places(id, name, area:areas(slug))`,
+      )
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return toCsv(
+      [
+        "id",
+        "category_slug",
+        "subtype_slug",
+        "area_slug",
+        "place_name",
+        "place_id",
+        "dish_name_en",
+        "dish_name_th",
+        "price_thb",
+        "photo_url",
+        "note",
+        "status",
+        "comparisons_count",
+        "elo",
+        "created_at",
+      ],
+      (data ?? []).map((d: any) => ({
+        id: d.id,
+        category_slug: d.category?.slug,
+        subtype_slug: d.subtype?.slug,
+        area_slug: d.place?.area?.slug,
+        place_name: d.place?.name,
+        place_id: d.place?.id,
+        dish_name_en: d.name_en,
+        dish_name_th: d.name_th,
+        price_thb: d.price_thb,
+        photo_url: d.photo_url,
+        note: d.note,
+        status: d.status,
+        comparisons_count: d.comparisons_count,
+        elo: d.elo,
+        created_at: d.created_at,
+      })),
+    );
+  });
+
+function parseCsvRows(csv: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < csv.length; i++) {
+    const c = csv[i];
+    if (inQ) {
+      if (c === '"') {
+        if (csv[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQ = false;
+        }
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") {
+      row.push(cur);
+      cur = "";
+    } else if (c === "\n") {
+      row.push(cur.replace(/\r$/, ""));
+      if (row.some((v) => v.trim().length > 0)) rows.push(row);
+      row = [];
+      cur = "";
+    } else cur += c;
+  }
+  row.push(cur.replace(/\r$/, ""));
+  if (row.some((v) => v.trim().length > 0)) rows.push(row);
+  return rows;
+}
+
+function parseCsvRow(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQ = false;
+        }
+      } else cur += c;
+    } else {
+      if (c === ",") {
+        out.push(cur);
+        cur = "";
+      } else if (c === '"') inQ = true;
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+function cleanHeader(value: string, index: number) {
+  return (index === 0 ? value.replace(/^\uFEFF/, "") : value).trim().toLowerCase();
+}
+
+function parseOptionalCoords(latText: string, lngText: string) {
+  if (!latText && !lngText) return null;
+  if (!latText || !lngText) throw new Error("Set both lat and lng, or leave both blank");
+  const lat = Number(latText);
+  const lng = Number(lngText);
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new Error(`Invalid lat: ${latText}`);
+  if (!Number.isFinite(lng) || lng < -180 || lng > 180) throw new Error(`Invalid lng: ${lngText}`);
+  return { lat, lng };
+}
+
+async function findSimilarPlaceInArea(supabase: any, areaId: string, name: string) {
+  const { data, error } = await supabase
+    .from("places")
+    .select("id, name, status, lat, lng")
+    .eq("area_id", areaId)
+    .in("status", ["approved", "pending"]);
+  if (error) throw new Error(error.message);
+  const needle = normalizeMatch(name);
+  let best: any = null;
+  let bestScore = 0;
+  for (const place of data ?? []) {
+    const score = similarityScore(needle, normalizeMatch(place.name));
+    if (score > bestScore) {
+      best = place;
+      bestScore = score;
+    }
+  }
+  return bestScore >= PLACE_MATCH_THRESHOLD ? best : null;
+}
+
+function normalizeMatch(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function similarityScore(a: string, b: string) {
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return 0.9;
+  const bigrams = (value: string) => {
+    const clean = ` ${value} `;
+    const out = new Set<string>();
+    for (let i = 0; i < clean.length - 1; i++) out.add(clean.slice(i, i + 2));
+    return out;
+  };
+  const aa = bigrams(a);
+  const bb = bigrams(b);
+  let overlap = 0;
+  for (const item of aa) if (bb.has(item)) overlap++;
+  return (2 * overlap) / (aa.size + bb.size);
+}
+
+function toCsv(headers: string[], rows: Array<Record<string, unknown>>) {
+  return `\uFEFF${headers.join(",")}\n${rows.map((row) => headers.map((h) => csvCell(row[h])).join(",")).join("\n")}`;
+}
+
+function csvCell(value: unknown) {
+  if (value == null) return "";
+  const text = String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+// Categories & Areas admin
+const slugSchema = z
+  .string()
+  .min(1)
+  .max(60)
+  .regex(/^[a-z0-9-]+$/);
+const cuisineSchema = slugSchema.optional();
+
+export const upsertCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean; reference_photo_url?: string }) =>
+    z
+      .object({
+        slug: z
+          .string()
+          .min(1)
+          .max(60)
+          .regex(/^[a-z0-9-]+$/),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+        cuisine: cuisineSchema,
+        requires_subtype: z.boolean().optional(),
+        reference_photo_url: adminPhotoUrlSchema,
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const payload: Record<string, unknown> = {
+      slug: data.slug,
+      name_en: data.name_en,
+      name_th: data.name_th,
+      cuisine: data.cuisine || null,
+    };
+    if (typeof data.requires_subtype === "boolean") payload.requires_subtype = data.requires_subtype;
+    if (data.reference_photo_url !== undefined) {
+      payload.reference_photo_url = data.reference_photo_url || null;
+    }
+    const { error } = await context.supabase
+      .from("categories")
+      .upsert(payload as any, { onConflict: "slug" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const upsertArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { slug: string; name_en: string; name_th: string }) =>
+    z
+      .object({
+        slug: z
+          .string()
+          .min(1)
+          .max(60)
+          .regex(/^[a-z0-9-]+$/),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await context.supabase.from("areas").upsert(data, { onConflict: "slug" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const upsertCuisine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { slug: string; name_en: string; name_th: string }) =>
+    z
+      .object({
+        slug: slugSchema,
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await context.supabase.from("cuisines").upsert(data, { onConflict: "slug" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteCuisine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { slug: string }) => z.object({ slug: slugSchema }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { count, error: countError } = await context.supabase
+      .from("categories")
+      .select("id", { count: "exact", head: true })
+      .eq("cuisine", data.slug);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) throw new Error(`Cannot delete cuisine while ${count} categor${count === 1 ? "y" : "ies"} use it.`);
+    const { error } = await context.supabase.from("cuisines").delete().eq("slug", data.slug);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string }) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { count, error: countError } = await context.supabase
+      .from("dishes")
+      .select("id", { count: "exact", head: true })
+      .eq("category_id", data.id);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) throw new Error(`Cannot delete category while ${count} dish${count === 1 ? "" : "es"} use it.`);
+    const { error } = await context.supabase.from("categories").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string }) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { count, error: countError } = await context.supabase
+      .from("places")
+      .select("id", { count: "exact", head: true })
+      .eq("area_id", data.id);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) throw new Error(`Cannot delete area while ${count} place${count === 1 ? "" : "s"} use it.`);
+    const { error } = await context.supabase.from("areas").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const grantAdminSelf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    // Static email allowlist. ADMIN_EMAILS is a comma-separated list configured server-side.
+    const raw = process.env.ADMIN_EMAILS ?? "";
+    const allow = raw
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const email = (context.claims?.email as string | undefined)?.toLowerCase();
+    if (!email) throw new Error("No email on session");
+    if (!allow.includes(email)) throw new Error("This email is not in the admin allowlist");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .upsert({ user_id: context.userId, role: "admin" }, { onConflict: "user_id,role" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listPendingPlaces = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("places")
+      .select("id, name, address, status, created_at, area:areas(name_en)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const listCategoriesAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("categories")
+      .select("id, slug, name_en, name_th, cuisine, reference_photo_url, requires_subtype, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
+      .order("name_en", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const upsertSubtype = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: {
+    id?: string;
+    category_id: string;
+    slug?: string;
+    name_en: string;
+    name_th: string;
+    is_active?: boolean;
+    display_order?: number;
+  }) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        category_id: z.string().uuid(),
+        slug: z
+          .string()
+          .min(1)
+          .max(60)
+          .regex(/^[a-z0-9-]+$/)
+          .optional(),
+        name_en: z.string().min(1).max(80),
+        name_th: z.string().min(1).max(80),
+        is_active: z.boolean().optional(),
+        display_order: z.number().int().min(0).max(10000).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    if (data.id) {
+      const { error } = await context.supabase
+        .from("dish_subtypes")
+        .update({
+          name_en: data.name_en,
+          name_th: data.name_th,
+          is_active: data.is_active ?? true,
+          display_order: data.display_order ?? 0,
+        })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    if (!data.slug) throw new Error("Slug is required");
+    const { error } = await context.supabase.from("dish_subtypes").insert({
+      category_id: data.category_id,
+      slug: data.slug,
+      name_en: data.name_en,
+      name_th: data.name_th,
+      is_active: data.is_active ?? true,
+      display_order: data.display_order ?? 0,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listAreasAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { data, error } = await context.supabase
+      .from("areas")
+      .select("id, slug, name_en, name_th")
+      .order("name_en", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const listPlacesAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { query?: string }) =>
+    z.object({ query: z.string().max(120).optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    let query = (context.supabase as any)
+      .from("places")
+      .select("id, name, address, status, lat, lng, area:areas(id, name_en, name_th)")
+      .in("status", ["approved", "pending"]);
+
+    const term = data.query?.trim();
+    if (term) {
+      const escaped = term.replace(/[%_]/g, (match) => `\\${match}`);
+      query = query.or(`name.ilike.%${escaped}%,address.ilike.%${escaped}%`);
+    }
+
+    const { data: rows, error } = await query
+      .order("lat", { ascending: true, nullsFirst: true })
+      .order("lng", { ascending: true, nullsFirst: true })
+      .order("name", { ascending: true })
+      .limit(1000);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; lat?: number | null; lng?: number | null }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        lat: z.number().min(-90).max(90).nullable().optional(),
+        lng: z.number().min(-180).max(180).nullable().optional(),
+      })
+      .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), "Set both latitude and longitude, or clear both.")
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await (context.supabase as any)
+      .from("places")
+      .update({ lat: data.lat ?? null, lng: data.lng ?? null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updatePlaceAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; name: string; areaId: string; address?: string; status: "approved" | "pending" | "rejected"; lat?: number | null; lng?: number | null }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().trim().min(1).max(160),
+        areaId: z.string().uuid(),
+        address: z.string().trim().max(300).optional(),
+        status: z.enum(["approved", "pending", "rejected"]),
+        lat: z.number().min(-90).max(90).nullable().optional(),
+        lng: z.number().min(-180).max(180).nullable().optional(),
+      })
+      .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), "Set both latitude and longitude, or clear both.")
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await (context.supabase as any)
+      .from("places")
+      .update({
+        name: data.name,
+        area_id: data.areaId,
+        address: data.address || null,
+        status: data.status,
+        lat: data.lat ?? null,
+        lng: data.lng ?? null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const moderatePlace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; action: "approve" | "reject" }) =>
+    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject"]) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const status = data.action === "approve" ? "approved" : "rejected";
+    const { error } = await context.supabase.from("places").update({ status }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
