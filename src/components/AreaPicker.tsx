@@ -18,7 +18,7 @@ export function AreaPicker({
   value,
   onChange,
   lang,
-  tone = "default",
+  tone = "noir",
 }: {
   areas: any[];
   value?: string;

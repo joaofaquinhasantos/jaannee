@@ -42,7 +42,7 @@ export function DishCard({
 
   const card = (
     <div className="group block">
-      <article className="editorial-frame overflow-hidden transition-[box-shadow,transform] duration-200 group-hover:-translate-y-1 group-hover:shadow-[12px_12px_0_rgba(214,50,31,0.16)]">
+      <article className="editorial-frame overflow-hidden transition-colors duration-200 group-hover:border-primary/70">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
           {dish.photo_url ? (
             <img
@@ -61,7 +61,7 @@ export function DishCard({
           )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           {moderationStatus ? (
-            <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur">
+            <span className="absolute left-3 top-3 inline-flex items-center bg-black/75 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
               {moderationStatus}
             </span>
           ) : showRank ? (
@@ -79,7 +79,7 @@ export function DishCard({
             </span>
           )}
           {dish.price_thb != null && (
-            <span className="absolute right-3 top-3 inline-flex items-center border border-white/50 bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground shadow-sm backdrop-blur">
+            <span className="absolute right-3 top-3 inline-flex items-center border border-white/30 bg-black/75 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur">
               THB {Number(dish.price_thb).toFixed(0)}
             </span>
           )}

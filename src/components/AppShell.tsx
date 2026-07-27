@@ -60,7 +60,7 @@ export function AppShell({
         >
           <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md">
             <span
-              className={`font-display text-3xl leading-none tracking-[-0.04em] md:text-4xl ${noir ? "text-white" : "text-foreground"}`}
+              className={`brand-serif text-3xl leading-none md:text-4xl ${noir ? "text-white" : "text-foreground"}`}
             >
               {t("brand")}
             </span>
@@ -133,7 +133,7 @@ export function AppShell({
         <div
           className={`mx-auto flex items-center justify-between px-4 md:px-8 ${noir ? "max-w-[112rem]" : "max-w-[90rem]"}`}
         >
-          <p className="font-display text-2xl">JaanNee</p>
+          <p className="brand-serif text-2xl">JaanNee</p>
           <p className={noir ? "text-sm text-white/35" : "text-sm text-muted-foreground"}>
             © {new Date().getFullYear()} JaanNee
           </p>

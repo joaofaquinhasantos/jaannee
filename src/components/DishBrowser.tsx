@@ -23,7 +23,7 @@ export function DishBrowser({
   onCategoryChange,
   onSubtypeChange,
   onAreaChange,
-  tone = "default",
+  tone = "noir",
 }: DishBrowserProps) {
   const { t, lang } = useI18n();
   const selectedCategory = categories.find((item) => item.slug === category);

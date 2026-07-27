@@ -46,7 +46,7 @@ export function CategoryPicker({
   lang,
   placeholder = "Choose category",
   triggerLabel,
-  tone = "default",
+  tone = "noir",
 }: {
   categories: any[];
   value?: string;

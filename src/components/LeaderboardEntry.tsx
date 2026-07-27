@@ -20,7 +20,11 @@ export function LeaderboardEntry({
   const { t, lang } = useI18n();
   const primaryName = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
   const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
-  const areaName = dish.place?.area ? (lang === "th" ? dish.place.area.name_th : dish.place.area.name_en) : null;
+  const areaName = dish.place?.area
+    ? lang === "th"
+      ? dish.place.area.name_th
+      : dish.place.area.name_en
+    : null;
   const comparisons = dish.comparisons_count ?? 0;
   const tried = dish.tried_count ?? 0;
   const isRanked = comparisons >= PUBLIC_RANK_THRESHOLD;
@@ -40,9 +44,17 @@ export function LeaderboardEntry({
         </span>
       ) : null}
 
-      <div className={`relative z-10 ${showRank ? (featured ? "pl-10 pt-14 md:pl-24 md:pt-20" : "pl-8 pt-10 md:pl-16 md:pt-12") : ""}`}>
-        <Link to="/dish/$id" params={{ id: dish.id }} className="group block focus-visible:rounded-sm">
-          <div className={`relative w-full overflow-hidden border-2 border-foreground bg-muted ${featured ? "aspect-[4/3] md:aspect-[16/9]" : "aspect-[4/3]"}`}>
+      <div
+        className={`relative z-10 ${showRank ? (featured ? "pl-10 pt-14 md:pl-24 md:pt-20" : "pl-8 pt-10 md:pl-16 md:pt-12") : ""}`}
+      >
+        <Link
+          to="/dish/$id"
+          params={{ id: dish.id }}
+          className="group block focus-visible:rounded-sm"
+        >
+          <div
+            className={`relative w-full overflow-hidden border-2 border-foreground bg-muted ${featured ? "aspect-[4/3] md:aspect-[16/9]" : "aspect-[4/3]"}`}
+          >
             {dish.photo_url ? (
               <img
                 src={dish.photo_url}
@@ -64,17 +76,21 @@ export function LeaderboardEntry({
               </span>
             ) : null}
             {dish.price_thb != null ? (
-              <span className="label-caps absolute right-3 top-3 rounded-full bg-paper/90 px-3 py-1.5 text-ink backdrop-blur">
+              <span className="label-caps absolute right-3 top-3 border border-white/30 bg-black/75 px-3 py-1.5 text-white backdrop-blur">
                 THB {Number(dish.price_thb).toFixed(0)}
               </span>
             ) : null}
 
             <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
-              <h3 className={`font-display leading-[0.9] text-white drop-shadow-sm ${featured ? "text-4xl md:text-6xl" : "text-3xl md:text-4xl"}`}>
+              <h3
+                className={`font-display leading-[0.9] text-white drop-shadow-sm ${featured ? "text-4xl md:text-6xl" : "text-3xl md:text-4xl"}`}
+              >
                 {primaryName}
               </h3>
               {secondaryName ? (
-                <p className="mt-1 line-clamp-1 font-thai text-base font-medium text-white/85">{secondaryName}</p>
+                <p className="mt-1 line-clamp-1 font-thai text-base font-medium text-white/85">
+                  {secondaryName}
+                </p>
               ) : null}
               <p className="label-caps mt-2 text-white/80">
                 {dish.place?.name}
@@ -95,7 +111,9 @@ export function LeaderboardEntry({
           ) : null}
           <span className="ml-auto">
             <ShareButton
-              url={(typeof window !== "undefined" ? window.location.origin : "") + `/dish/${dish.id}`}
+              url={
+                (typeof window !== "undefined" ? window.location.origin : "") + `/dish/${dish.id}`
+              }
               title={dish.name_en ?? dish.name_th ?? "Dish"}
               text={`${dish.place?.name ?? ""}${dish.price_thb != null ? ` / THB ${Number(dish.price_thb).toFixed(0)}` : ""}${showRank ? ` / Currently ranked #${rank}` : ""}`}
               label={t("share")}

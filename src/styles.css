@@ -55,44 +55,44 @@
 }
 
 :root {
-  --radius: 0.125rem;
-  --background: #faf8f4;
-  --foreground: #1e1917;
-  --paper: #faf8f4;
-  --ink: #1e1917;
-  --gold: #c79a3e;
-  --gold-soft: #e4c98a;
-  --card: #ffffff;
-  --card-foreground: #1e1917;
-  --popover: #ffffff;
-  --popover-foreground: #1e1917;
-  --primary: #d6321f;
+  --radius: 0;
+  --background: #111111;
+  --foreground: #eeeae7;
+  --paper: #111111;
+  --ink: #eeeae7;
+  --gold: #caa251;
+  --gold-soft: #725d32;
+  --card: #181818;
+  --card-foreground: #eeeae7;
+  --popover: #181818;
+  --popover-foreground: #eeeae7;
+  --primary: #d94530;
   --primary-foreground: #ffffff;
-  --secondary: #f4eee6;
-  --secondary-foreground: #1e1917;
-  --muted: #f3eee7;
-  --muted-foreground: #6e6660;
-  --accent: #c79a3e;
-  --accent-foreground: #1e1917;
-  --destructive: #d6321f;
+  --secondary: #202020;
+  --secondary-foreground: #eeeae7;
+  --muted: #202020;
+  --muted-foreground: #9d9996;
+  --accent: #caa251;
+  --accent-foreground: #111111;
+  --destructive: #ef5540;
   --destructive-foreground: #ffffff;
-  --border: #d8d0c6;
-  --input: #d8d0c6;
-  --ring: #d6321f;
-  --chart-1: #d6321f;
-  --chart-2: #c79a3e;
-  --chart-3: #2a1e24;
-  --chart-4: #7a7069;
-  --chart-5: #ece6dd;
-  --sidebar: #faf8f4;
-  --sidebar-foreground: #2a1e24;
-  --sidebar-primary: #d6321f;
+  --border: #343231;
+  --input: #343231;
+  --ring: #d94530;
+  --chart-1: #d94530;
+  --chart-2: #caa251;
+  --chart-3: #eeeae7;
+  --chart-4: #9d9996;
+  --chart-5: #343231;
+  --sidebar: #111111;
+  --sidebar-foreground: #eeeae7;
+  --sidebar-primary: #d94530;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f4eee6;
-  --sidebar-accent-foreground: #2a1e24;
-  --sidebar-border: #ece6dd;
-  --sidebar-ring: #d6321f;
-  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --sidebar-accent: #202020;
+  --sidebar-accent-foreground: #eeeae7;
+  --sidebar-border: #343231;
+  --sidebar-ring: #d94530;
+  --font-display: "Archivo Narrow", "Hanken Grotesk", sans-serif;
   --font-sans: "Hanken Grotesk", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   --font-thai: "IBM Plex Sans Thai", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
@@ -215,8 +215,21 @@
   h3,
   .font-display {
     font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-transform: uppercase;
+  }
+
+  .brand-serif {
+    font-family: "Instrument Serif", ui-serif, Georgia, serif;
     font-weight: 400;
-    letter-spacing: 0;
+    letter-spacing: -0.04em;
+    text-transform: none;
   }
 
   :lang(th),
@@ -252,7 +265,7 @@
   .editorial-frame {
     border: 1px solid color-mix(in oklab, var(--ink) 16%, transparent);
     background: color-mix(in oklab, var(--paper) 96%, white);
-    box-shadow: 8px 8px 0 color-mix(in oklab, var(--ink) 8%, transparent);
+    box-shadow: none;
   }
 
   .editorial-rule {
