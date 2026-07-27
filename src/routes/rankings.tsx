@@ -95,16 +95,16 @@ function Rankings() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-3 md:pb-7">
-        <p className="text-xs font-bold uppercase text-primary">Live rankings</p>
-        <div className="mt-2 grid gap-5 md:mt-3 md:grid-cols-[1fr_auto] md:items-end">
+      <section className="border-b border-border pb-4 md:pb-8">
+        <p className="label-caps text-primary">Live leaderboard</p>
+        <div className="mt-3 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
           <div>
-            <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_rankings")}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">{t("rankings_intro")}</p>
+            <h1 className="font-display text-5xl leading-[0.88] md:text-8xl">{t("nav_rankings")}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base md:leading-7">{t("rankings_intro")}</p>
           </div>
-          <div className="hidden rounded-lg border border-border bg-card p-3 md:block md:p-4">
-            <span className="font-display text-5xl leading-none text-accent md:text-6xl">#</span>
-            <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">Rank is earned</p>
+          <div className="hidden items-end gap-3 md:flex">
+            <span className="rank-numeral text-[7rem]">01</span>
+            <p className="label-caps pb-2 text-muted-foreground">Rank is earned,<br />never sold</p>
           </div>
         </div>
       </section>
