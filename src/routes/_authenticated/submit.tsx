@@ -169,16 +169,16 @@ function Submit() {
       return;
     }
     if (!requestingCategory && categoryIncomplete) {
-      setSubtypeError(
-        "This category is not ready for submissions because it has no active dish types.",
-      );
-      toast.error(
-        "This category is not ready for submissions because it has no active dish types.",
-      );
+      const message =
+        lang === "th"
+          ? "หมวดนี้ยังไม่พร้อมรับรายการ เพราะยังไม่มีประเภทจานที่ใช้งานอยู่"
+          : "This category is not ready for submissions because it has no active dish types.";
+      setSubtypeError(message);
+      toast.error(message);
       return;
     }
     if (!requestingCategory && activeSubtypes.length > 0 && !subtype_id) {
-      setSubtypeError("Choose a dish type for this category.");
+      setSubtypeError(lang === "th" ? "เลือกประเภทจานสำหรับหมวดนี้" : "Choose a dish type for this category.");
       return;
     }
     setSubtypeError("");
@@ -197,7 +197,7 @@ function Submit() {
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) {
-        toast.error("Sign in to post this dish");
+        toast.error(lang === "th" ? "เข้าสู่ระบบเพื่อเพิ่มจานนี้" : "Sign in to post this dish");
         nav({ to: "/auth" });
         return;
       }
@@ -230,7 +230,8 @@ function Submit() {
       validatePhotoFile(f);
       const { data: u, error: userError } = await supabase.auth.getUser();
       if (userError) throw new Error(userError.message);
-      if (!u.user) throw new Error("Sign in before uploading photos");
+      if (!u.user)
+        throw new Error(lang === "th" ? "เข้าสู่ระบบก่อนอัปโหลดรูปภาพ" : "Sign in before uploading photos");
       const path = buildPhotoPath(u.user.id, f);
       const { error } = await supabase.storage
         .from("dish-photos")
@@ -292,7 +293,9 @@ function Submit() {
     return (
       <AppShell>
         <div className="mx-auto max-w-lg">
-          <p className="text-xs font-bold uppercase text-primary">Possible duplicate</p>
+          <p className="text-xs font-bold uppercase text-primary">
+            {lang === "th" ? "อาจเป็นรายการซ้ำ" : "Possible duplicate"}
+          </p>
           <h1 className="type-page-title mt-2">{t("duplicate_title")}</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("duplicate_body")}</p>
           <div className="mt-4 space-y-3">
@@ -305,10 +308,14 @@ function Submit() {
               .filter((p) => p?.id)
               .map((p) => (
                 <div key={p.id} className="rounded-lg border border-border bg-card p-4 text-sm">
-                  <p className="text-xs font-bold uppercase text-primary">Existing place</p>
+                  <p className="text-xs font-bold uppercase text-primary">
+                    {lang === "th" ? "ร้านที่มีอยู่แล้ว" : "Existing place"}
+                  </p>
                   <p className="mt-1 font-semibold">{p.name}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    This place exists - your dish may be new here.
+                    {lang === "th"
+                      ? "ร้านนี้มีอยู่แล้ว แต่จานของคุณอาจเป็นรายการใหม่ของร้านนี้"
+                      : "This place exists - your dish may be new here."}
                   </p>
                   <Button
                     className="mt-3"
@@ -319,7 +326,7 @@ function Submit() {
                       setStep("form");
                     }}
                   >
-                    Add my dish at this place
+                    {lang === "th" ? "เพิ่มจานของฉันที่ร้านนี้" : "Add my dish at this place"}
                   </Button>
                 </div>
               ))}
@@ -349,36 +356,40 @@ function Submit() {
       <AppShell>
         <div className="mx-auto max-w-xl space-y-5">
           <section className="rounded-lg border border-border bg-card p-6 md:p-8">
-            <p className="text-xs font-bold uppercase text-primary">Add a dish</p>
-            <h1 className="type-page-title mt-2">Sign in to post a plate.</h1>
+            <p className="text-xs font-bold uppercase text-primary">{t("cta_add")}</p>
+            <h1 className="type-page-title mt-2">
+              {lang === "th" ? "เข้าสู่ระบบเพื่อเพิ่มจาน" : "Sign in to post a plate."}
+            </h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-              Dishes are added by signed-in diners so the board stays useful and rankable. Magic
-              link or Google — no password.
+              {lang === "th"
+                ? "จานต่างๆ ถูกเพิ่มโดยนักชิมที่เข้าสู่ระบบ เพื่อให้กระดานมีประโยชน์และจัดอันดับได้ ใช้ลิงก์ทางอีเมลหรือ Google โดยไม่ต้องมีรหัสผ่าน"
+                : "Dishes are added by signed-in diners so the board stays useful and rankable. Magic link or Google — no password."}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button onClick={() => nav({ to: "/auth", search: { redirect: "/submit" } as any })}>
-                Sign in to continue
+                {lang === "th" ? "เข้าสู่ระบบเพื่อดำเนินการต่อ" : "Sign in to continue"}
               </Button>
               <Button variant="outline" onClick={() => nav({ to: "/" })}>
-                Back to discover
+                {lang === "th" ? "กลับไปหน้าค้นพบ" : "Back to discover"}
               </Button>
             </div>
           </section>
           <section className="rounded-lg border border-dashed border-border bg-secondary/50 p-6">
             <p className="text-xs font-bold uppercase text-muted-foreground">
-              Here's what you'll do
+              {lang === "th" ? "ขั้นตอนการเพิ่มจาน" : "Here's what you'll do"}
             </p>
             <ol className="mt-3 space-y-2 text-sm leading-6 text-foreground/80">
               <li>
-                <span className="font-semibold text-primary">1.</span> Snap a photo of the dish.
+                <span className="font-semibold text-primary">1.</span>{" "}
+                {lang === "th" ? "ถ่ายรูปจาน" : "Snap a photo of the dish."}
               </li>
               <li>
-                <span className="font-semibold text-primary">2.</span> Search or pin the stall or
-                restaurant.
+                <span className="font-semibold text-primary">2.</span>{" "}
+                {lang === "th" ? "ค้นหาหรือระบุร้านหรือแผงขาย" : "Search or pin the stall or restaurant."}
               </li>
               <li>
-                <span className="font-semibold text-primary">3.</span> Tag the category and price.
-                Done.
+                <span className="font-semibold text-primary">3.</span>{" "}
+                {lang === "th" ? "เลือกหมวดและราคา เสร็จแล้ว" : "Tag the category and price. Done."}
               </li>
             </ol>
           </section>
@@ -398,15 +409,17 @@ function Submit() {
             className="flex min-h-[70dvh] w-full flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center transition-colors hover:bg-secondary"
           >
             <Camera className="h-12 w-12 text-primary" />
-            <span className="type-page-title mt-5">Add a photo</span>
+            <span className="type-page-title mt-5">{lang === "th" ? "เพิ่มรูปภาพ" : "Add a photo"}</span>
             <span className="mt-2 text-sm font-semibold text-foreground/75">
-              Photo first, details after
+              {lang === "th" ? "เริ่มจากรูป แล้วค่อยใส่รายละเอียด" : "Photo first, details after"}
             </span>
             <span className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-              Start with the dish. Camera or gallery, then four taps to submit.
+              {lang === "th"
+                ? "เริ่มด้วยรูปจาน เลือกจากกล้องหรือแกลเลอรี แล้วแตะอีกไม่กี่ครั้งเพื่อส่ง"
+                : "Start with the dish. Camera or gallery, then four taps to submit."}
             </span>
             <span className="mt-6 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground">
-              Choose photo
+              {lang === "th" ? "เลือกรูปภาพ" : "Choose photo"}
             </span>
           </button>
           <input
@@ -436,13 +449,13 @@ function Submit() {
       <div className="mx-auto max-w-xl">
         <div className="overflow-hidden rounded-lg border border-border bg-card">
           <div className="relative aspect-[4/5] bg-muted">
-            <img src={photoUrl} className="h-full w-full object-cover" alt="Dish preview" />
+            <img src={photoUrl} className="h-full w-full object-cover" alt={lang === "th" ? "ตัวอย่างรูปจาน" : "Dish preview"} />
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               className="absolute right-3 top-3 rounded-full bg-background/90 px-3 py-1.5 text-xs font-bold shadow"
             >
-              Change
+              {lang === "th" ? "เปลี่ยน" : "Change"}
             </button>
           </div>
           <form
@@ -450,21 +463,25 @@ function Submit() {
             className="space-y-5 rounded-t-2xl bg-card p-4 shadow-[0_-18px_45px_rgba(42,30,36,0.08)]"
           >
             <div>
-              <p className="text-xs font-bold uppercase text-primary">Add to JaanNee</p>
-              <h1 className="type-page-title mt-1">Post this dish</h1>
+              <p className="text-xs font-bold uppercase text-primary">
+                {lang === "th" ? "เพิ่มลงใน JaanNee" : "Add to JaanNee"}
+              </p>
+              <h1 className="type-page-title mt-1">{lang === "th" ? "เพิ่มจานนี้" : "Post this dish"}</h1>
             </div>
 
             <section>
               <Label className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" /> Place *
+                <MapPin className="h-4 w-4" /> {lang === "th" ? "ร้าน" : "Place"} *
               </Label>
               {geoState === "asking" && (
-                <p className="mt-2 text-sm text-muted-foreground">Checking nearby places...</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {lang === "th" ? "กำลังตรวจสอบร้านใกล้เคียง..." : "Checking nearby places..."}
+                </p>
               )}
               {(nearby.data ?? []).length > 0 && !selectedPlace && (
                 <div className="mt-2">
                   <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">
-                    You're near:
+                    {lang === "th" ? "คุณอยู่ใกล้:" : "You're near:"}
                   </p>
                   <div className="grid gap-2">
                     {(nearby.data ?? []).map((p: any) => (
@@ -477,7 +494,7 @@ function Submit() {
                         <span className="block font-semibold">{p.name}</span>
                         <span className="text-xs text-muted-foreground">
                           {Math.round(p.distance_m)}m /{" "}
-                          {lang === "th" ? p.area?.name_th : p.area?.name_en}
+                          {lang === "th" ? p.area?.name_th || p.area?.name_en : p.area?.name_en}
                         </span>
                       </button>
                     ))}
@@ -488,7 +505,9 @@ function Submit() {
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-border bg-secondary p-3 text-sm">
                   <span>
                     <strong>{selectedPlace.name}</strong> /{" "}
-                    {lang === "th" ? selectedPlace.area?.name_th : selectedPlace.area?.name_en}
+                    {lang === "th"
+                      ? selectedPlace.area?.name_th || selectedPlace.area?.name_en
+                      : selectedPlace.area?.name_en}
                   </span>
                   <Button
                     type="button"
@@ -496,7 +515,7 @@ function Submit() {
                     variant="outline"
                     onClick={() => setSelectedPlace(null)}
                   >
-                    Change
+                    {lang === "th" ? "เปลี่ยน" : "Change"}
                   </Button>
                 </div>
               ) : (
@@ -509,7 +528,7 @@ function Submit() {
                       setAddingPlace(false);
                     }}
                     maxLength={160}
-                    placeholder="Search place or stall"
+                    placeholder={lang === "th" ? "ค้นหาร้านหรือแผงขาย" : "Search place or stall"}
                     className="h-12 text-base"
                   />
                   {place_name.trim().length >= 2 && (
@@ -523,7 +542,7 @@ function Submit() {
                         >
                           <span className="font-semibold">{p.name}</span>
                           <span className="ml-2 text-muted-foreground">
-                            {lang === "th" ? p.area?.name_th : p.area?.name_en}
+                            {lang === "th" ? p.area?.name_th || p.area?.name_en : p.area?.name_en}
                           </span>
                         </button>
                       ))}
@@ -544,7 +563,7 @@ function Submit() {
             </section>
 
             <section>
-              <Label>Category *</Label>
+              <Label>{lang === "th" ? "หมวด" : "Category"} *</Label>
               {requestingCategory ? (
                 <div className="mt-2 space-y-2">
                   <Input
@@ -553,7 +572,7 @@ function Submit() {
                       setRequestedCategoryEn(e.target.value);
                       if (!name_en.trim()) setNameEn(e.target.value);
                     }}
-                    placeholder="New category name (EN)"
+                    placeholder={lang === "th" ? "ชื่อหมวดใหม่ (อังกฤษ)" : "New category name (EN)"}
                     maxLength={80}
                   />
                   <Input
@@ -562,7 +581,7 @@ function Submit() {
                       setRequestedCategoryTh(e.target.value);
                       if (lang === "th" && !name_th.trim()) setNameTh(e.target.value);
                     }}
-                    placeholder="New category name (TH optional)"
+                    placeholder={lang === "th" ? "ชื่อหมวดใหม่ (ไทย ไม่บังคับ)" : "New category name (TH optional)"}
                     maxLength={80}
                   />
                   <Button
@@ -574,7 +593,7 @@ function Submit() {
                       setRequestedCategoryTh("");
                     }}
                   >
-                    Choose existing category
+                    {lang === "th" ? "เลือกหมวดที่มีอยู่" : "Choose existing category"}
                   </Button>
                 </div>
               ) : (
@@ -596,18 +615,18 @@ function Submit() {
                       setSubtypeError("");
                     }}
                   >
-                    Category not listed
+                    {lang === "th" ? "ไม่มีหมวดนี้ในรายการ" : "Category not listed"}
                   </Button>
                 </div>
               )}
             </section>
 
             <section>
-              <Label>Dish name *</Label>
+              <Label>{lang === "th" ? "ชื่อจาน" : "Dish name"} *</Label>
               <Input
                 value={name_en}
                 onChange={(e) => setNameEn(e.target.value)}
-                placeholder="Autofills from category"
+                placeholder={lang === "th" ? "กรอกอัตโนมัติจากหมวด" : "Autofills from category"}
                 required
                 maxLength={120}
                 className="mt-2 h-12 text-base"
@@ -616,12 +635,14 @@ function Submit() {
 
             {!requestingCategory && categoryIncomplete && (
               <p className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm font-medium text-primary">
-                This category is not ready for submissions because it has no active dish types.
+                {lang === "th"
+                  ? "หมวดนี้ยังไม่พร้อมรับรายการ เพราะยังไม่มีประเภทจานที่ใช้งานอยู่"
+                  : "This category is not ready for submissions because it has no active dish types."}
               </p>
             )}
             {!requestingCategory && activeSubtypes.length > 0 && (
               <section>
-                <Label>Dish type *</Label>
+                <Label>{t("dish_type")} *</Label>
                 <Select
                   value={subtype_id}
                   onValueChange={(v) => {
@@ -630,12 +651,12 @@ function Submit() {
                   }}
                 >
                   <SelectTrigger aria-invalid={!!subtypeError} className="mt-2">
-                    <SelectValue placeholder="Choose dish type" />
+                    <SelectValue placeholder={t("choose_dish_type")} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeSubtypes.map((s: any) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {lang === "th" ? s.name_th : s.name_en}
+                        {lang === "th" ? s.name_th || s.name_en : s.name_en}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -647,7 +668,7 @@ function Submit() {
             )}
 
             <section>
-              <Label>Price (THB)</Label>
+              <Label>{lang === "th" ? "ราคา (บาท)" : "Price (THB)"}</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 <PriceChip
                   active={!price_thb && !customPrice}
@@ -656,7 +677,7 @@ function Submit() {
                     setCustomPrice(false);
                   }}
                 >
-                  Skip
+                  {lang === "th" ? "ข้าม" : "Skip"}
                 </PriceChip>
                 {PRICE_CHIPS.map((p) => (
                   <PriceChip
@@ -671,7 +692,7 @@ function Submit() {
                   </PriceChip>
                 ))}
                 <PriceChip active={customPrice} onClick={() => setCustomPrice(true)}>
-                  Custom
+                  {lang === "th" ? "กำหนดเอง" : "Custom"}
                 </PriceChip>
               </div>
               {customPrice && (
@@ -682,7 +703,7 @@ function Submit() {
                   onChange={(e) => setPrice(e.target.value)}
                   min={0}
                   max={100000}
-                  placeholder="THB"
+                  placeholder={t("thb")}
                   className="mt-2 h-12 text-base"
                 />
               )}
@@ -691,7 +712,7 @@ function Submit() {
             <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
               <CollapsibleTrigger asChild>
                 <Button type="button" variant="outline" className="w-full justify-between">
-                  More details
+                  {lang === "th" ? "รายละเอียดเพิ่มเติม" : "More details"}
                   <ChevronDown
                     className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
                   />
@@ -699,7 +720,7 @@ function Submit() {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4 space-y-4">
                 <div>
-                  <Label>Dish name (TH)</Label>
+                  <Label>{lang === "th" ? "ชื่อจาน (ไทย)" : "Dish name (TH)"}</Label>
                   <Input
                     value={name_th}
                     onChange={(e) => setNameTh(e.target.value)}
@@ -709,7 +730,7 @@ function Submit() {
                 {addingPlace && !selectedPlace && (
                   <>
                     <div>
-                      <Label>Area *</Label>
+                      <Label>{lang === "th" ? "ย่าน" : "Area"} *</Label>
                       <Select value={area_id} onValueChange={setAreaId}>
                         <SelectTrigger>
                           <SelectValue placeholder={t("choose_area")} />
@@ -717,14 +738,14 @@ function Submit() {
                         <SelectContent>
                           {(areas.data ?? []).map((a: any) => (
                             <SelectItem key={a.id} value={a.id}>
-                              {lang === "th" ? a.name_th : a.name_en}
+                              {lang === "th" ? a.name_th || a.name_en : a.name_en}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>Address (optional)</Label>
+                      <Label>{lang === "th" ? "ที่อยู่ (ไม่บังคับ)" : "Address (optional)"}</Label>
                       <Input
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
@@ -734,7 +755,7 @@ function Submit() {
                   </>
                 )}
                 <div>
-                  <Label>Note (optional)</Label>
+                  <Label>{lang === "th" ? "หมายเหตุ (ไม่บังคับ)" : "Note (optional)"}</Label>
                   <Textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
@@ -749,7 +770,7 @@ function Submit() {
               className="h-12 w-full"
               disabled={!requestingCategory && categoryIncomplete}
             >
-              Submit
+              {lang === "th" ? "ส่งรายการ" : "Submit"}
             </Button>
           </form>
         </div>
@@ -805,7 +826,7 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
     setTryingDish(true);
     try {
       await toggleTried({ data: { dishId: dish.id, tried: true } });
-      toast.success("Marked as tried");
+      toast.success(lang === "th" ? "ทำเครื่องหมายว่าเคยกินแล้ว" : "Marked as tried");
       setTriedDone(true);
       if (dish.category?.slug) {
         try {
@@ -839,7 +860,9 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 text-sm">
-      <p className="text-xs font-bold uppercase text-primary">Existing dish</p>
+      <p className="text-xs font-bold uppercase text-primary">
+        {lang === "th" ? "จานที่มีอยู่แล้ว" : "Existing dish"}
+      </p>
       <p className="mt-1 font-semibold">{name}</p>
       <p className="mt-1 text-xs text-muted-foreground">{dish.place?.name}</p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -848,10 +871,10 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
           variant="outline"
           onClick={() => nav({ to: "/dish/$id", params: { id: dish.id } })}
         >
-          View dish
+          {lang === "th" ? "ดูจาน" : "View dish"}
         </Button>
         <Button size="sm" onClick={handleTried} disabled={tryingDish || triedDone}>
-          {triedDone ? "Tried" : t("tried_it")}
+          {triedDone ? t("profile_tried") : t("tried_it")}
         </Button>
       </div>
       {otherTried && <InlineTriedCompare dish={dish} other={otherTried} />}
