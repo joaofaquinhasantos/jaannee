@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
 type Props = {
@@ -9,31 +10,33 @@ type Props = {
   label?: string;
 };
 
-export function ShareButton({ url, title, text, className, label = "Share" }: Props) {
+export function ShareButton({ url, title, text, className, label }: Props) {
+  const { t, lang } = useI18n();
   const onClick = async () => {
-    try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try {
         await (navigator as any).share({ title, text, url });
         return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
       }
-    } catch {
-      // fall through to fallback
     }
+
     const fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    const popup = window.open(fb, "_blank", "noopener,noreferrer");
+    if (popup) return;
+
     try {
-      window.open(fb, "_blank", "noopener,noreferrer");
+      await navigator.clipboard.writeText(url);
+      toast.success(lang === "th" ? "คัดลอกลิงก์แล้ว" : "Link copied");
     } catch {
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
-      } catch {
-        toast.error("Could not share");
-      }
+      toast.error(lang === "th" ? "ไม่สามารถแชร์ได้" : "Could not share");
     }
   };
+
   return (
     <Button type="button" variant="outline" size="sm" onClick={onClick} className={className}>
-      {label}
+      {label ?? t("share")}
     </Button>
   );
 }
