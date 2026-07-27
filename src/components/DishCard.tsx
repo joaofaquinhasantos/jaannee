@@ -25,7 +25,7 @@ export function DishCard({
   const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
   const areaName = dish.place?.area
     ? lang === "th"
-      ? dish.place.area.name_th
+      ? dish.place.area.name_th || dish.place.area.name_en
       : dish.place.area.name_en
     : null;
   const toneCls = toneClass(s.tone);
@@ -35,10 +35,20 @@ export function DishCard({
   const showRank = isRanked && rank != null;
   const moderationStatus =
     dish.status === "pending"
-      ? "Pending review"
+      ? lang === "th"
+        ? "รอตรวจสอบ"
+        : "Pending review"
       : dish.status === "rejected"
-        ? "Not approved"
+        ? lang === "th"
+          ? "ไม่ได้รับอนุมัติ"
+          : "Not approved"
         : null;
+  const priceLabel =
+    dish.price_thb != null
+      ? lang === "th"
+        ? `${Number(dish.price_thb).toFixed(0)} ${t("thb")}`
+        : `${t("thb")} ${Number(dish.price_thb).toFixed(0)}`
+      : null;
 
   const card = (
     <div className="group block">
@@ -53,9 +63,9 @@ export function DishCard({
             />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center bg-secondary text-muted-foreground">
-              <span className="type-card-title opacity-70">Photo needed</span>
+              <span className="type-card-title opacity-70">{t("photo_needed")}</span>
               <span className="mt-2 text-xs font-semibold uppercase tracking-wide opacity-70">
-                Help this dish look alive
+                {t("help_dish_look_alive")}
               </span>
             </div>
           )}
@@ -78,9 +88,9 @@ export function DishCard({
                 : `${t("unranked_label")} · ${comparisonCount}/${PUBLIC_RANK_THRESHOLD}`}
             </span>
           )}
-          {dish.price_thb != null && (
+          {priceLabel && (
             <span className="absolute right-3 top-3 inline-flex items-center border border-white/30 bg-black/75 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur">
-              THB {Number(dish.price_thb).toFixed(0)}
+              {priceLabel}
             </span>
           )}
           <div className="absolute inset-x-0 bottom-0 p-4">
@@ -101,8 +111,12 @@ export function DishCard({
             {moderationStatus ? (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">
                 {dish.status === "pending"
-                  ? "Visible publicly after approval"
-                  : "This submission is not public"}
+                  ? lang === "th"
+                    ? "จะแสดงต่อสาธารณะหลังได้รับอนุมัติ"
+                    : "Visible publicly after approval"
+                  : lang === "th"
+                    ? "รายการนี้ไม่แสดงต่อสาธารณะ"
+                    : "This submission is not public"}
               </p>
             ) : (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">
@@ -116,7 +130,7 @@ export function DishCard({
             )}
           </div>
           <span className="text-[11px] font-semibold uppercase text-muted-foreground">
-            {t("added_ago")} {days}d
+            {lang === "th" ? `${days} วันก่อน` : `${t("added_ago")} ${days}d`}
           </span>
         </div>
       </article>
