@@ -45,6 +45,7 @@ export type Database = {
           id: string
           name_en: string
           name_th: string
+          reference_photo_url: string | null
           requires_subtype: boolean
           slug: string
         }
@@ -54,6 +55,7 @@ export type Database = {
           id?: string
           name_en: string
           name_th: string
+          reference_photo_url?: string | null
           requires_subtype?: boolean
           slug: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           id?: string
           name_en?: string
           name_th?: string
+          reference_photo_url?: string | null
           requires_subtype?: boolean
           slug?: string
         }

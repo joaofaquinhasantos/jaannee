@@ -193,6 +193,29 @@ function Index() {
             />
           </div>
         </div>
+        {selectedCategory?.reference_photo_url && (
+          <div className="relative mt-3 h-36 overflow-hidden rounded-lg border border-border bg-muted md:h-48">
+            <img
+              src={selectedCategory.reference_photo_url}
+              alt={lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/25 to-transparent" />
+            <div className="absolute inset-y-0 left-0 flex max-w-[75%] flex-col justify-end p-4 text-white md:p-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
+                Category reference
+              </p>
+              <h2 className="mt-1 font-display text-3xl leading-none md:text-5xl">
+                {lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
+              </h2>
+              {lang === "th" && selectedCategory.name_en ? (
+                <p className="mt-1 text-sm text-white/80">{selectedCategory.name_en}</p>
+              ) : selectedCategory.name_th ? (
+                <p className="mt-1 font-thai text-sm text-white/80">{selectedCategory.name_th}</p>
+              ) : null}
+            </div>
+          </div>
+        )}
         {cat && subtypeScoped && (
           <div className="mt-2">
             <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">

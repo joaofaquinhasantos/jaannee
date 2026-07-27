@@ -32,6 +32,10 @@ repeated.
   referenced by an approved dish.
 - `VERIFY_20260727_approved_photo_immutability.sql` — read-only checks for
   the approved-photo storage policies.
+- `20260727_category_reference_photos.sql` — adds the admin-managed visual
+  reference photo field to categories.
+- `VERIFY_20260727_category_reference_photos.sql` — read-only check for the
+  category reference photo field.
 
 ## Execution order
 
@@ -50,6 +54,9 @@ repeated.
 8. Paste `20260727_approved_photo_immutability.sql` into the SQL editor.
 9. Run `VERIFY_20260727_approved_photo_immutability.sql` and confirm every
    row reports `OK`.
+10. Paste `20260727_category_reference_photos.sql` into the SQL editor.
+11. Run `VERIFY_20260727_category_reference_photos.sql` and confirm the row
+    reports `OK`.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.
