@@ -71,7 +71,7 @@ export function DishBrowser({
                 : "px-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
             }
           >
-            Reset
+            {t("reset_filters")}
           </button>
         )}
       </div>
@@ -93,7 +93,7 @@ export function DishBrowser({
                     : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {lang === "th" ? item.name_th : item.name_en}
+              {lang === "th" ? item.name_th || item.name_en : item.name_en}
             </button>
           ))}
         </div>
