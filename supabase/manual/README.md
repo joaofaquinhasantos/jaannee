@@ -17,6 +17,25 @@ repeated.
 - `VERIFY_20260725_integrity_hardening.sql` — read-only checks. Runs
   inside the Supabase SQL editor (no `\psql` commands). Every row should
   report `OK`.
+- `20260727_atomic_immutable_comparisons.sql` — removes direct
+  authenticated comparison writes, makes comparison history immutable,
+  and installs the atomic comparison/Elo/count write path.
+- `VERIFY_20260727_atomic_immutable_comparisons.sql` — read-only checks
+  for privileges, immutability, atomic Elo application, and RPC access.
+- `20260727_prelaunch_privacy_taxonomy.sql` — restricts public profile
+  reads to claimed usernames, enforces approved-only tried marks, and
+  protects established ranking pools from taxonomy shape changes.
+- `VERIFY_20260727_prelaunch_privacy_taxonomy.sql` — read-only checks for
+  those policies and triggers.
+- `20260727_approved_photo_immutability.sql` — removes authenticated
+  storage-object updates and allows owners to delete only photos that are not
+  referenced by an approved dish.
+- `VERIFY_20260727_approved_photo_immutability.sql` — read-only checks for
+  the approved-photo storage policies.
+- `20260727_category_reference_photos.sql` — adds the admin-managed visual
+  reference photo field to categories.
+- `VERIFY_20260727_category_reference_photos.sql` — read-only check for the
+  category reference photo field.
 
 ## Execution order
 
@@ -25,6 +44,19 @@ repeated.
    (main transaction + trailing storage bucket update).
 3. Paste `VERIFY_20260725_integrity_hardening.sql` into the SQL editor
    and confirm every row reports `OK`.
+4. Paste `20260727_atomic_immutable_comparisons.sql` into the SQL editor
+   and execute it as one transaction.
+5. Paste `VERIFY_20260727_atomic_immutable_comparisons.sql` into the SQL
+   editor and confirm every row reports `OK`.
+6. Paste `20260727_prelaunch_privacy_taxonomy.sql` into the SQL editor.
+7. Run `VERIFY_20260727_prelaunch_privacy_taxonomy.sql` and confirm every
+   row reports `OK`.
+8. Paste `20260727_approved_photo_immutability.sql` into the SQL editor.
+9. Run `VERIFY_20260727_approved_photo_immutability.sql` and confirm every
+   row reports `OK`.
+10. Paste `20260727_category_reference_photos.sql` into the SQL editor.
+11. Run `VERIFY_20260727_category_reference_photos.sql` and confirm the row
+    reports `OK`.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

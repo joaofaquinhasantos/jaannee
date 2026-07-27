@@ -12,7 +12,11 @@ export function InlineTriedCompare({ dish, other }: { dish: any; other: any }) {
     onSuccess: () => {
       toast.success(t("comparison_saved"));
       qc.invalidateQueries({ queryKey: ["dish", dish.id] });
+      qc.invalidateQueries({ queryKey: ["dish", other.id] });
       qc.invalidateQueries({ queryKey: ["tried"] });
+      qc.invalidateQueries({ queryKey: ["dishes"] });
+      qc.invalidateQueries({ queryKey: ["leaderboard"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (e: any) => toast.error(e.message),
   });

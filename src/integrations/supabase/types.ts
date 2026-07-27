@@ -45,6 +45,7 @@ export type Database = {
           id: string
           name_en: string
           name_th: string
+          reference_photo_url: string | null
           requires_subtype: boolean
           slug: string
         }
@@ -54,6 +55,7 @@ export type Database = {
           id?: string
           name_en: string
           name_th: string
+          reference_photo_url?: string | null
           requires_subtype?: boolean
           slug: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           id?: string
           name_en?: string
           name_th?: string
+          reference_photo_url?: string | null
           requires_subtype?: boolean
           slug?: string
         }
@@ -471,16 +474,6 @@ export type Database = {
         Args: { _keep_id: string; _remove_id: string }
         Returns: Json
       }
-      apply_elo: {
-        Args: {
-          _a: string
-          _b: string
-          _is_update: boolean
-          _prev_winner: string
-          _winner: string
-        }
-        Returns: undefined
-      }
       category_has_active_subtypes: {
         Args: { _category_id: string }
         Returns: boolean
@@ -538,6 +531,15 @@ export type Database = {
           name: string
           similarity_score: number
         }[]
+      }
+      submit_comparison_atomic: {
+        Args: {
+          _dish_a_id: string
+          _dish_b_id: string
+          _user_id: string
+          _winner_id: string
+        }
+        Returns: string
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

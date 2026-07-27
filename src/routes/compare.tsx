@@ -186,6 +186,10 @@ function Compare() {
       setAId(undefined);
       setBId(undefined);
       qc.invalidateQueries({ queryKey: ["tried"] });
+      qc.invalidateQueries({ queryKey: ["dishes"] });
+      qc.invalidateQueries({ queryKey: ["leaderboard"] });
+      qc.invalidateQueries({ queryKey: ["dish"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (e: any) => toast.error(e.message),
   });

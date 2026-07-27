@@ -46,6 +46,7 @@ export const dict = {
   youve_tried_too: { en: "You've tried", th: "คุณเคยกิน" },
   which_was_better: { en: "too — which dish did you prefer?", th: "ด้วย — คุณชอบจานไหนมากกว่า" },
   status_top: { en: "Top Contender", th: "จานตัวเต็ง" },
+  status_ranked: { en: "Ranked", th: "จัดอันดับแล้ว" },
   status_needs_update: { en: "Needs an Update", th: "ต้องอัปเดต" },
   added_ago: { en: "Added", th: "เพิ่มเมื่อ" },
   days_ago: { en: "days ago", th: "วันที่แล้ว" },
