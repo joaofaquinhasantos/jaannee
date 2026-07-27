@@ -27,6 +27,11 @@ repeated.
   protects established ranking pools from taxonomy shape changes.
 - `VERIFY_20260727_prelaunch_privacy_taxonomy.sql` — read-only checks for
   those policies and triggers.
+- `20260727_approved_photo_immutability.sql` — removes authenticated
+  storage-object updates and allows owners to delete only photos that are not
+  referenced by an approved dish.
+- `VERIFY_20260727_approved_photo_immutability.sql` — read-only checks for
+  the approved-photo storage policies.
 
 ## Execution order
 
@@ -41,6 +46,9 @@ repeated.
    editor and confirm every row reports `OK`.
 6. Paste `20260727_prelaunch_privacy_taxonomy.sql` into the SQL editor.
 7. Run `VERIFY_20260727_prelaunch_privacy_taxonomy.sql` and confirm every
+   row reports `OK`.
+8. Paste `20260727_approved_photo_immutability.sql` into the SQL editor.
+9. Run `VERIFY_20260727_approved_photo_immutability.sql` and confirm every
    row reports `OK`.
 
 Do not commit or execute either file automatically. Do not use the
