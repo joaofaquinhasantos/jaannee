@@ -9,10 +9,12 @@ import { BarChart3, Home, PlusCircle, Swords, ShieldCheck, UserRound } from "luc
 
 export function AppShell({
   children,
-  tone = "default",
+  tone = "noir",
+  fullBleed = false,
 }: {
   children: React.ReactNode;
   tone?: "default" | "noir";
+  fullBleed?: boolean;
 }) {
   const { t, lang, setLang } = useI18n();
   const [email, setEmail] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function AppShell({
     <div
       className={
         noir
-          ? "min-h-screen bg-[#111111] text-[#f1eeeb]"
+          ? "noir-theme min-h-screen bg-background text-foreground"
           : "min-h-screen bg-background text-foreground"
       }
     >
@@ -114,9 +116,9 @@ export function AppShell({
       </header>
       <main
         className={
-          noir
+          fullBleed
             ? "mx-auto max-w-[112rem] pb-24 md:pb-0"
-            : "mx-auto max-w-[90rem] px-4 pb-24 pt-4 md:px-8 md:pt-8"
+            : `mx-auto max-w-[90rem] px-4 pb-24 pt-4 md:px-8 md:pt-8 ${noir ? "min-h-[calc(100vh-8rem)]" : ""}`
         }
       >
         {children}

@@ -136,6 +136,55 @@
   --sidebar-ring: #f0523d;
 }
 
+.noir-theme {
+  --background: #111111;
+  --foreground: #eeeae7;
+  --paper: #111111;
+  --ink: #eeeae7;
+  --gold: #caa251;
+  --gold-soft: #725d32;
+  --card: #181818;
+  --card-foreground: #eeeae7;
+  --popover: #181818;
+  --popover-foreground: #eeeae7;
+  --primary: #d94530;
+  --primary-foreground: #ffffff;
+  --secondary: #202020;
+  --secondary-foreground: #eeeae7;
+  --muted: #202020;
+  --muted-foreground: #9d9996;
+  --accent: #caa251;
+  --accent-foreground: #111111;
+  --destructive: #ef5540;
+  --destructive-foreground: #ffffff;
+  --border: #343231;
+  --input: #343231;
+  --ring: #d94530;
+  --chart-1: #d94530;
+  --chart-2: #caa251;
+  --chart-3: #eeeae7;
+  --chart-4: #9d9996;
+  --chart-5: #343231;
+  --sidebar: #111111;
+  --sidebar-foreground: #eeeae7;
+  --sidebar-primary: #d94530;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #202020;
+  --sidebar-accent-foreground: #eeeae7;
+  --sidebar-border: #343231;
+  --sidebar-ring: #d94530;
+}
+
+.noir-theme input,
+.noir-theme textarea,
+.noir-theme select {
+  color-scheme: dark;
+}
+
+.noir-theme .editorial-frame {
+  box-shadow: none;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

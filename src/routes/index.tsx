@@ -87,7 +87,7 @@ function Index() {
     : photoCategories[0];
 
   return (
-    <AppShell tone="noir">
+    <AppShell tone="noir" fullBleed>
       <div className="sticky top-[61px] z-30 border-b border-white/10 bg-[#111111]/95 px-4 py-3 backdrop-blur md:top-[65px] md:px-8">
         <div className="grid items-center gap-3 lg:grid-cols-[auto_1fr]">
           <p className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/40 lg:block">
