@@ -180,3 +180,53 @@
     }
   }
 }
+
+/* Editorial "arena" signature utilities */
+
+/* Huge outlined gold serif rank numeral that bleeds behind cards. */
+@utility rank-numeral {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.72;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--gold);
+  paint-order: stroke fill;
+  user-select: none;
+}
+
+/* Solid variant for small inline rank chips. */
+@utility rank-numeral-solid {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.72;
+  letter-spacing: -0.04em;
+  color: var(--gold);
+  user-select: none;
+}
+
+/* Uppercase tracked section label. */
+@utility label-caps {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Dark gradient scrim for dish names over food photography. */
+@utility photo-scrim {
+  background-image: linear-gradient(
+    to top,
+    rgba(14, 11, 10, 0.86) 0%,
+    rgba(14, 11, 10, 0.45) 38%,
+    rgba(14, 11, 10, 0.05) 72%,
+    rgba(14, 11, 10, 0) 100%
+  );
+}
+
+/* Thin editorial hairline rule used between leaderboard entries. */
+@utility hairline {
+  border-top: 1px solid color-mix(in oklab, var(--ink) 14%, transparent);
+}
