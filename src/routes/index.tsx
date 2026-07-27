@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
-import { listDishes, listCategories, listAreas, listCategoryCounts, listActivityFeed, listFollowingActivityFeed } from "@/lib/dishes.functions";
+import { listDishes, listCategories, listAreas, listActivityFeed, listFollowingActivityFeed } from "@/lib/dishes.functions";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -58,93 +58,37 @@ function Index() {
     );
   const subtypeScoped =
     Boolean((selectedCategory as any)?.requires_subtype) || activeSubtypes.length > 0;
-  const categoryCounts = useQuery({ queryKey: ["category-counts"], queryFn: () => listCategoryCounts() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
-  const allDishes = useQuery({ queryKey: ["dishes", "area-counts"], queryFn: () => listDishes({ data: {} }) });
   const activity = useQuery({
     queryKey: ["activity-feed", followingOnly],
     queryFn: () => followingOnly ? listFollowingActivityFeed() : listActivityFeed({ data: {} }),
     enabled: !followingOnly || authed,
   });
-  const topCategories = [...(categories.data ?? [])]
-    .sort(
-      (a: any, b: any) =>
-        (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) ||
-        Number(Boolean(b.reference_photo_url)) - Number(Boolean(a.reference_photo_url)) ||
-        a.name_en.localeCompare(b.name_en),
-    )
-    .slice(0, 8);
-  const heroCategory =
-    selectedCategory ??
-    topCategories.find((c: any) => c.reference_photo_url) ??
-    (categories.data ?? []).find((c: any) => c.reference_photo_url);
-  const heroDish = (allDishes.data ?? []).find((d: any) => d.photo_url);
-  const heroPhoto = (heroCategory as any)?.reference_photo_url ?? (heroDish as any)?.photo_url;
-  const heroTitle = heroCategory
-    ? lang === "th"
-      ? (heroCategory as any).name_th
-      : (heroCategory as any).name_en
-    : heroDish
-      ? lang === "th" && (heroDish as any).name_th
-        ? (heroDish as any).name_th
-        : (heroDish as any).name_en
-      : "Bangkok, one dish at a time";
-
   return (
     <AppShell>
       <section className="hidden md:block">
-        <div className="grid items-center gap-14 py-8 md:grid-cols-[1.2fr_0.8fr]">
-        <div>
-          <p className="editorial-kicker text-primary">Bangkok dish board</p>
-          <h1 className="mt-5 max-w-4xl font-display text-[5.4rem] leading-[0.84] tracking-[-0.045em] text-foreground">
+        <div className="max-w-5xl py-12 lg:py-16">
+          <p className="label-caps text-primary">Bangkok dish board</p>
+          <h1 className="mt-5 max-w-4xl font-display text-[4.6rem] leading-[0.9] tracking-[-0.04em] text-foreground lg:text-[5.2rem]">
             What should people eat in Bangkok?
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-7 text-muted-foreground">
-            Add plates, compare dish against dish, and find the bite worth crossing town for.
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+            Discover individual dishes, compare the ones you have tried, and help Bangkok decide what is worth eating.
           </p>
-          <p className="mt-3 font-thai text-lg font-medium text-foreground/80">
+          <p className="mt-2 font-thai text-base text-foreground/70">
             จานไหนดี ให้คนกินช่วยตัดสิน
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex items-center gap-6">
             <Link to="/compare">
               <Button className="ink-button">{t("cta_compare")}</Button>
             </Link>
-            <Link to="/submit">
-              <Button variant="outline">{t("cta_add")}</Button>
+            <Link
+              to="/submit"
+              className="text-sm font-semibold text-foreground underline decoration-foreground/30 underline-offset-4 transition-colors hover:text-primary"
+            >
+              {t("cta_add")}
             </Link>
           </div>
-        </div>
-        <div className="relative aspect-[4/3] overflow-hidden bg-ink">
-            {heroPhoto ? (
-              <img
-                src={heroPhoto}
-                alt={heroTitle}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(199,154,62,0.5),transparent_35%),linear-gradient(135deg,#2A1E24,#6B2018)]" />
-            )}
-            <div className="photo-scrim absolute inset-0" />
-            <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-              <p className="label-caps text-white/65">{heroPhoto ? "Featured dish" : "Bangkok dish guide"}</p>
-              <p className="mt-2 font-display text-4xl leading-none">{heroTitle}</p>
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 border-y border-foreground/20">
-          {[
-            { n: "01", label: "Add", body: "Share a dish you tried" },
-            { n: "02", label: "Compare", body: "Choose the better dish" },
-            { n: "03", label: "Rank", body: "Five comparisons unlock rank" },
-          ].map((step) => (
-            <div key={step.n} className="flex items-center gap-4 border-r border-foreground/20 px-4 py-4 last:border-r-0">
-              <span className="font-display text-3xl text-gold">{step.n}</span>
-              <p className="text-xs text-muted-foreground">
-                <strong className="mr-1 uppercase tracking-[0.08em] text-foreground">{step.label}</strong>
-                {step.body}
-              </p>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -160,12 +104,9 @@ function Index() {
         </div>
       </section>
 
-      <section className="mt-6 border-t border-foreground/25 pt-7 md:mt-12 md:pt-8">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <p className="label-caps text-primary">Explore Bangkok</p>
-            <h2 className="mt-2 font-display text-3xl leading-none tracking-[-0.025em] md:text-4xl">Discover dishes</h2>
-          </div>
+      <section className="mt-6 border-t border-foreground/20 pt-6 md:mt-2 md:pt-7">
+        <div className="flex items-center justify-between gap-6">
+          <p className="label-caps text-muted-foreground">Browse dishes</p>
           {(cat || area) && (
             <button
               onClick={() => {
@@ -180,7 +121,7 @@ function Index() {
           )}
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div>
               <CategoryPicker
                 categories={categories.data ?? []}
@@ -205,7 +146,7 @@ function Index() {
         </div>
 
         {selectedCategory?.reference_photo_url && (
-          <div className="relative mt-6 h-52 overflow-hidden border border-foreground/30 bg-muted md:h-80">
+          <div className="relative mt-6 h-52 overflow-hidden bg-muted md:h-72">
             <img
               src={selectedCategory.reference_photo_url}
               alt={lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
@@ -228,7 +169,7 @@ function Index() {
           </div>
         )}
         {cat && subtypeScoped && (
-          <div className="mt-5 border-l-2 border-primary pl-4">
+          <div className="mt-5">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
               Choose a dish type
             </p>
@@ -391,14 +332,6 @@ function Index() {
   );
 }
 
-function TrustSignal({ text }: { text: string }) {
-  return (
-    <div className="rounded-md border border-border bg-card px-3 py-2 font-semibold">
-      {text}
-    </div>
-  );
-}
-
 function EditorialEmpty({
   title,
   body,
@@ -445,10 +378,9 @@ function Pill({
   children: React.ReactNode;
   variant?: "primary" | "secondary";
 }) {
-  const base = "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors";
-  const on =
-    "border-primary bg-primary text-primary-foreground";
-  const off = "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
+  const base = "shrink-0 border-b px-1 py-2 text-sm font-semibold transition-colors";
+  const on = "border-primary text-primary";
+  const off = "border-transparent text-muted-foreground hover:text-foreground";
   return (
     <button onClick={onClick} className={`${base} ${active ? on : off}`}>
       {children}
