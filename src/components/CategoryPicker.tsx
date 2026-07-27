@@ -61,6 +61,15 @@ export function CategoryPicker({
   const [query, setQuery] = useState("");
   const selected = categories.find((c) => c.id === value || c.slug === value);
   const groups = useMemo(() => groupedCategories(categories, query), [categories, query]);
+  const categoryLabel = (category: any) =>
+    lang === "th" ? category.name_th || category.name_en : category.name_en;
+  const secondaryLabel = (category: any) =>
+    lang === "th"
+      ? category.name_en !== categoryLabel(category)
+        ? category.name_en
+        : null
+      : category.name_th;
+
   return (
     <>
       <Button
@@ -84,8 +93,7 @@ export function CategoryPicker({
                 : "text-muted-foreground"
           }
         >
-          {triggerLabel ||
-            (selected ? (lang === "th" ? selected.name_th : selected.name_en) : placeholder)}
+          {triggerLabel || (selected ? categoryLabel(selected) : placeholder)}
         </span>
         <Search
           className={tone === "noir" ? "h-4 w-4 text-white/40" : "h-4 w-4 text-muted-foreground"}
@@ -111,27 +119,26 @@ export function CategoryPicker({
                   {cuisineLabel(cuisine, t)}
                 </p>
                 <div className="mt-1 space-y-1">
-                  {items.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => {
-                        onChange(category.id, category);
-                        setOpen(false);
-                        setQuery("");
-                      }}
-                      className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <span className="font-semibold">
-                        {lang === "th" ? category.name_th : category.name_en}
-                      </span>
-                      {lang !== "th" && category.name_th ? (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {category.name_th}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
+                  {items.map((category) => {
+                    const secondary = secondaryLabel(category);
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => {
+                          onChange(category.id, category);
+                          setOpen(false);
+                          setQuery("");
+                        }}
+                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <span className="font-semibold">{categoryLabel(category)}</span>
+                        {secondary ? (
+                          <span className="ml-2 text-xs text-muted-foreground">{secondary}</span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
