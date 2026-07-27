@@ -22,7 +22,7 @@ export function LeaderboardEntry({
   const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
   const areaName = dish.place?.area
     ? lang === "th"
-      ? dish.place.area.name_th
+      ? dish.place.area.name_th || dish.place.area.name_en
       : dish.place.area.name_en
     : null;
   const comparisons = dish.comparisons_count ?? 0;
@@ -30,6 +30,15 @@ export function LeaderboardEntry({
   const isRanked = comparisons >= PUBLIC_RANK_THRESHOLD;
   const showRank = isRanked && rank != null;
   const numeral = rank != null ? String(rank).padStart(2, "0") : null;
+  const price = dish.price_thb != null ? Number(dish.price_thb).toFixed(0) : null;
+  const priceLabel = price ? (lang === "th" ? `${price} ${t("thb")}` : `${t("thb")} ${price}`) : null;
+  const shareText = [
+    dish.place?.name,
+    priceLabel,
+    showRank ? `${t("current_ranked")} #${rank}` : null,
+  ]
+    .filter(Boolean)
+    .join(" / ");
 
   return (
     <article className="relative">
@@ -64,8 +73,8 @@ export function LeaderboardEntry({
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center bg-secondary text-muted-foreground">
-                <span className="type-card-title opacity-70">Photo needed</span>
-                <span className="label-caps mt-2 opacity-70">Help this dish look alive</span>
+                <span className="type-card-title opacity-70">{t("photo_needed")}</span>
+                <span className="label-caps mt-2 opacity-70">{t("help_dish_look_alive")}</span>
               </div>
             )}
             <div className="photo-scrim pointer-events-none absolute inset-0" />
@@ -75,9 +84,9 @@ export function LeaderboardEntry({
                 {t("gathering_progress")} · {comparisons}/{PUBLIC_RANK_THRESHOLD}
               </span>
             ) : null}
-            {dish.price_thb != null ? (
+            {priceLabel ? (
               <span className="label-caps absolute right-3 top-3 border border-white/30 bg-black/75 px-3 py-1.5 text-white backdrop-blur">
-                THB {Number(dish.price_thb).toFixed(0)}
+                {priceLabel}
               </span>
             ) : null}
 
@@ -100,7 +109,6 @@ export function LeaderboardEntry({
           </div>
         </Link>
 
-        {/* Stats strip — real values only */}
         <div className="mt-0 flex flex-wrap items-center gap-x-6 gap-y-2 border-x-2 border-b-2 border-foreground bg-card px-4 py-3">
           <Stat value={String(comparisons)} label={t("comparisons_progress")} />
           {tried > 0 ? <Stat value={String(tried)} label={t("diners")} /> : null}
@@ -111,11 +119,9 @@ export function LeaderboardEntry({
           ) : null}
           <span className="ml-auto">
             <ShareButton
-              url={
-                (typeof window !== "undefined" ? window.location.origin : "") + `/dish/${dish.id}`
-              }
-              title={dish.name_en ?? dish.name_th ?? "Dish"}
-              text={`${dish.place?.name ?? ""}${dish.price_thb != null ? ` / THB ${Number(dish.price_thb).toFixed(0)}` : ""}${showRank ? ` / Currently ranked #${rank}` : ""}`}
+              url={(typeof window !== "undefined" ? window.location.origin : "") + `/dish/${dish.id}`}
+              title={primaryName ?? "JaanNee"}
+              text={shareText}
               label={t("share")}
             />
           </span>
