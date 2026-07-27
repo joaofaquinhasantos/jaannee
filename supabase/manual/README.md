@@ -36,6 +36,11 @@ repeated.
   reference photo field to categories.
 - `VERIFY_20260727_category_reference_photos.sql` — read-only check for the
   category reference photo field.
+- `20260727_atmospheric_category_photos.sql` — adds initial reference photos
+  to Pad Kra Pao, Khao Soi, and Tom Yum only when their photo field is empty.
+  Every image remains replaceable or removable in Admin > Taxonomy.
+- `VERIFY_20260727_atmospheric_category_photos.sql` — read-only check for the
+  three initial reference photos.
 
 ## Execution order
 
@@ -57,6 +62,9 @@ repeated.
 10. Paste `20260727_category_reference_photos.sql` into the SQL editor.
 11. Run `VERIFY_20260727_category_reference_photos.sql` and confirm the row
     reports `OK`.
+12. Paste `20260727_atmospheric_category_photos.sql` into the SQL editor.
+13. Run `VERIFY_20260727_atmospheric_category_photos.sql` and confirm all
+    three rows report `OK`.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

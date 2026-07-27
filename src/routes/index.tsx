@@ -58,6 +58,13 @@ function Index() {
   const subtypeScoped =
     Boolean((selectedCategory as any)?.requires_subtype) || activeSubtypes.length > 0;
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
+  const photoCategories = (categories.data ?? []).filter(
+    (category: any) => category.reference_photo_url,
+  );
+  const featuredCategory =
+    (selectedCategory as any)?.reference_photo_url
+      ? selectedCategory
+      : photoCategories[0];
   const activity = useQuery({
     queryKey: ["activity-feed", followingOnly],
     queryFn: () => followingOnly ? listFollowingActivityFeed() : listActivityFeed({ data: {} }),
@@ -66,39 +73,78 @@ function Index() {
   return (
     <AppShell>
       <section className="hidden md:block">
-        <div className="max-w-5xl py-12 lg:py-16">
-          <p className="label-caps text-primary">Bangkok dish board</p>
-          <h1 className="mt-5 max-w-4xl font-display text-[4.6rem] leading-[0.9] tracking-[-0.04em] text-foreground lg:text-[5.2rem]">
-            What should people eat in Bangkok?
-          </h1>
-          <p className="mt-6 text-lg text-muted-foreground">Dish by dish, diner by diner.</p>
-          <p className="mt-2 font-thai text-base text-foreground/70">
-            จานไหนดี ให้คนกินช่วยตัดสิน
-          </p>
-          <div className="mt-8 flex items-center gap-6">
-            <Link to="/compare">
-              <Button className="ink-button">{t("cta_compare")}</Button>
-            </Link>
-            <Link
-              to="/submit"
-              className="text-sm font-semibold text-foreground underline decoration-foreground/30 underline-offset-4 transition-colors hover:text-primary"
-            >
-              {t("cta_add")}
-            </Link>
+        {featuredCategory ? (
+          <div className="relative min-h-[620px] overflow-hidden bg-ink">
+            <img
+              src={(featuredCategory as any).reference_photo_url}
+              alt={lang === "th" ? (featuredCategory as any).name_th : (featuredCategory as any).name_en}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/5" />
+            <div className="relative flex min-h-[620px] max-w-4xl flex-col justify-end p-10 text-white lg:p-14">
+              <p className="label-caps text-white/65">Bangkok dish board</p>
+              <h1 className="mt-4 max-w-3xl font-display text-[5.2rem] leading-[0.86] tracking-[-0.045em]">
+                What should people eat in Bangkok?
+              </h1>
+              <p className="mt-5 font-thai text-base text-white/70">
+                จานไหนดี ให้คนกินช่วยตัดสิน
+              </p>
+              <div className="mt-7 flex items-center gap-6">
+                <Link to="/compare">
+                  <Button>{t("cta_compare")}</Button>
+                </Link>
+                <Link to="/submit" className="text-sm font-semibold text-white">
+                  {t("cta_add")}
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="max-w-5xl py-12 lg:py-16">
+            <p className="label-caps text-primary">Bangkok dish board</p>
+            <h1 className="mt-5 max-w-4xl font-display text-[4.6rem] leading-[0.9] tracking-[-0.04em] text-foreground lg:text-[5.2rem]">
+              What should people eat in Bangkok?
+            </h1>
+            <p className="mt-6 text-lg text-muted-foreground">Dish by dish, diner by diner.</p>
+            <div className="mt-8 flex items-center gap-6">
+              <Link to="/compare">
+                <Button className="ink-button">{t("cta_compare")}</Button>
+              </Link>
+              <Link to="/submit" className="text-sm font-semibold text-foreground">
+                {t("cta_add")}
+              </Link>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="md:hidden">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
-            <p className="mt-1 font-display text-3xl leading-none">What should we eat?</p>
+        {featuredCategory ? (
+          <div className="relative min-h-[470px] overflow-hidden bg-ink">
+            <img
+              src={(featuredCategory as any).reference_photo_url}
+              alt={lang === "th" ? (featuredCategory as any).name_th : (featuredCategory as any).name_en}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+            <div className="relative flex min-h-[470px] flex-col justify-end p-5 text-white">
+              <p className="label-caps text-white/65">Bangkok dish board</p>
+              <h1 className="mt-3 font-display text-5xl leading-[0.88]">
+                What should we eat?
+              </h1>
+            </div>
           </div>
-          <Link to="/submit">
-            <Button size="sm">Post</Button>
-          </Link>
-        </div>
+        ) : (
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
+              <p className="mt-1 font-display text-3xl leading-none">What should we eat?</p>
+            </div>
+            <Link to="/submit">
+              <Button size="sm">Post</Button>
+            </Link>
+          </div>
+        )}
       </section>
 
       <section className="mt-6 border-t border-foreground/20 pt-6 md:mt-2 md:pt-7">
@@ -114,29 +160,32 @@ function Index() {
           onAreaChange={setArea}
         />
 
-        {selectedCategory?.reference_photo_url && (
-          <div className="relative mt-6 h-52 overflow-hidden bg-muted md:h-72">
-            <img
-              src={selectedCategory.reference_photo_url}
-              alt={lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/25 to-transparent" />
-            <div className="absolute inset-y-0 left-0 flex max-w-[75%] flex-col justify-end p-4 text-white md:p-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
-                Category reference
-              </p>
-              <h2 className="mt-1 font-display text-3xl leading-none md:text-5xl">
-                {lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
-              </h2>
-              {lang === "th" && selectedCategory.name_en ? (
-                <p className="mt-1 text-sm text-white/80">{selectedCategory.name_en}</p>
-              ) : selectedCategory.name_th ? (
-                <p className="mt-1 font-thai text-sm text-white/80">{selectedCategory.name_th}</p>
-              ) : null}
-            </div>
+        {!cat && photoCategories.length > 1 && (
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {photoCategories.slice(0, 3).map((category: any) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => {
+                  setCat(category.slug);
+                  setSubtype(undefined);
+                }}
+                className="group relative aspect-[4/5] overflow-hidden bg-ink text-left"
+              >
+                <img
+                  src={category.reference_photo_url}
+                  alt={lang === "th" ? category.name_th : category.name_en}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+                <p className="absolute inset-x-0 bottom-0 p-4 font-display text-3xl leading-none text-white">
+                  {lang === "th" ? category.name_th : category.name_en}
+                </p>
+              </button>
+            ))}
           </div>
         )}
+
       </section>
 
       <section className="mt-6">
