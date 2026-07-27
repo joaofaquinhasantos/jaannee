@@ -28,6 +28,7 @@ export function AreaPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const matches = useMemo(() => areas.filter((area) => matchesArea(area, query)), [areas, query]);
+  const selected = areas.find((area) => area.slug === value);
 
   return (
     <>
@@ -35,10 +36,12 @@ export function AreaPicker({
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="h-auto min-h-9 w-full justify-between rounded-md border-border bg-card px-3 py-1.5 text-left text-xs font-semibold"
+        className="h-auto min-h-11 w-full justify-between rounded-md border-border bg-card px-3 py-2 text-left font-normal"
       >
-        <span className="text-muted-foreground">{t("more_areas")}</span>
-        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className={selected ? "text-foreground" : "text-muted-foreground"}>
+          {selected ? (lang === "th" ? selected.name_th : selected.name_en) : t("filter_all_areas")}
+        </span>
+        <Search className="h-4 w-4 text-muted-foreground" />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-w-lg">

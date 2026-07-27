@@ -7,8 +7,7 @@ import { listDishes, listCategories, listAreas, listActivityFeed, listFollowingA
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { CategoryPicker } from "@/components/CategoryPicker";
-import { AreaPicker } from "@/components/AreaPicker";
+import { DishBrowser } from "@/components/DishBrowser";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 
@@ -72,9 +71,7 @@ function Index() {
           <h1 className="mt-5 max-w-4xl font-display text-[4.6rem] leading-[0.9] tracking-[-0.04em] text-foreground lg:text-[5.2rem]">
             What should people eat in Bangkok?
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-            Discover individual dishes, compare the ones you have tried, and help Bangkok decide what is worth eating.
-          </p>
+          <p className="mt-6 text-lg text-muted-foreground">Dish by dish, diner by diner.</p>
           <p className="mt-2 font-thai text-base text-foreground/70">
             จานไหนดี ให้คนกินช่วยตัดสิน
           </p>
@@ -105,45 +102,17 @@ function Index() {
       </section>
 
       <section className="mt-6 border-t border-foreground/20 pt-6 md:mt-2 md:pt-7">
-        <div className="flex items-center justify-between gap-6">
-          <p className="label-caps text-muted-foreground">Browse dishes</p>
-          {(cat || area) && (
-            <button
-              onClick={() => {
-                setCat(undefined);
-                setSubtype(undefined);
-                setArea(undefined);
-              }}
-              className="text-xs font-bold uppercase tracking-[0.1em] text-primary underline-offset-4 hover:underline"
-            >
-              Reset filters
-            </button>
-          )}
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div>
-              <CategoryPicker
-                categories={categories.data ?? []}
-                value={cat}
-                lang={lang}
-                placeholder={t("filter_all_categories")}
-                triggerLabel={cat ? t("change_category") : t("more_categories")}
-                onChange={(_, category) => {
-                  setCat(category.slug);
-                  setSubtype(undefined);
-                }}
-              />
-            </div>
-            <div>
-              <AreaPicker
-                areas={areas.data ?? []}
-                value={area}
-                lang={lang}
-                onChange={(slug) => setArea(slug)}
-              />
-            </div>
-        </div>
+        <p className="mb-4 label-caps text-muted-foreground">Browse dishes</p>
+        <DishBrowser
+          categories={categories.data ?? []}
+          areas={areas.data ?? []}
+          category={cat}
+          subtype={subtype}
+          area={area}
+          onCategoryChange={setCat}
+          onSubtypeChange={setSubtype}
+          onAreaChange={setArea}
+        />
 
         {selectedCategory?.reference_photo_url && (
           <div className="relative mt-6 h-52 overflow-hidden bg-muted md:h-72">
@@ -168,47 +137,17 @@ function Index() {
             </div>
           </div>
         )}
-        {cat && subtypeScoped && (
-          <div className="mt-5">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-              Choose a dish type
-            </p>
-            {activeSubtypes.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {activeSubtypes.map((s: any) => (
-                  <Pill
-                    key={s.id}
-                    active={subtype === s.slug}
-                    onClick={() => setSubtype(s.slug)}
-                    variant="secondary"
-                  >
-                    {lang === "th" ? s.name_th : s.name_en}
-                  </Pill>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                This category is not ready because it has no active dish types.
-              </p>
-            )}
-          </div>
-        )}
       </section>
 
       <section className="mt-6">
         {cat && subtypeScoped && !subtype ? (
-          <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="font-display text-3xl">Choose a dish type</h2>
-            <p className="mt-2 text-muted-foreground">
-              Rankings compare the same actual dish type, so select one to continue.
-            </p>
-          </div>
+          <p className="py-8 text-sm text-muted-foreground">Choose a dish type.</p>
         ) : dishes.isLoading ? (
           <p className="text-muted-foreground">{t("loading")}</p>
         ) : (dishes.data ?? []).length === 0 ? (
           <EditorialEmpty
-            title="The board is hungry."
-            body="No dishes match this view yet. Add the first plate, then let comparisons sort out the legend from the tourist trap."
+            title="No dishes yet."
+            body="Add the first one."
             primary={t("cta_add")}
             secondary={t("filter_all_categories")}
             onSecondary={() => {
@@ -234,7 +173,6 @@ function Index() {
                   <section>
                     <div className="mb-4">
                       <h2 className="font-display text-3xl leading-tight">{t("ranked_dishes")}</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">{t("ranked_dishes_body")}</p>
                     </div>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {ranked.map((d: any, i: number) => (
@@ -249,12 +187,10 @@ function Index() {
                       {ranked.length === 0 ? (
                         <>
                           <h2 className="font-display text-3xl leading-tight">{t("no_ranked_yet_title")}</h2>
-                          <p className="mt-1 text-sm text-muted-foreground">{t("no_ranked_yet_body")}</p>
                         </>
                       ) : (
                         <>
                           <h2 className="font-display text-3xl leading-tight">{t("new_contenders")}</h2>
-                          <p className="mt-1 text-sm text-muted-foreground">{t("new_contenders_body")}</p>
                         </>
                       )}
                     </div>
@@ -331,7 +267,6 @@ function Index() {
     </AppShell>
   );
 }
-
 function EditorialEmpty({
   title,
   body,
@@ -346,44 +281,21 @@ function EditorialEmpty({
   onSecondary: () => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="grid md:grid-cols-[0.9fr_1.1fr]">
-        <div className="border-b border-border bg-secondary p-6 md:border-b-0 md:border-r">
-          <span className="font-display text-7xl leading-none text-accent">00</span>
-          <p className="mt-3 text-xs font-bold uppercase text-muted-foreground">No verdict yet</p>
-        </div>
-        <div className="p-6 md:p-8">
-          <h2 className="font-display text-4xl leading-tight">{title}</h2>
-          <p className="mt-3 max-w-lg leading-7 text-muted-foreground">{body}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link to="/submit">
-              <Button>{primary}</Button>
-            </Link>
-            <Button variant="outline" onClick={onSecondary}>{secondary}</Button>
-          </div>
-        </div>
+    <div className="border-t border-border py-10">
+      <h2 className="font-display text-3xl">{title}</h2>
+      <p className="mt-2 max-w-lg text-sm text-muted-foreground">{body}</p>
+      <div className="mt-5 flex items-center gap-5">
+        <Link to="/submit" className="text-sm font-semibold text-primary">
+          {primary}
+        </Link>
+        <button
+          type="button"
+          onClick={onSecondary}
+          className="text-sm font-semibold text-foreground"
+        >
+          {secondary}
+        </button>
       </div>
     </div>
-  );
-}
-
-function Pill({
-  active,
-  onClick,
-  children,
-  variant = "primary",
-}: {
-  active?: boolean;
-  onClick?: () => void;
-  children: React.ReactNode;
-  variant?: "primary" | "secondary";
-}) {
-  const base = "shrink-0 border-b px-1 py-2 text-sm font-semibold transition-colors";
-  const on = "border-primary text-primary";
-  const off = "border-transparent text-muted-foreground hover:text-foreground";
-  return (
-    <button onClick={onClick} className={`${base} ${active ? on : off}`}>
-      {children}
-    </button>
   );
 }
