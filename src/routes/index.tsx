@@ -92,13 +92,14 @@ function Index() {
 
   return (
     <AppShell>
-      <section className="hidden min-h-[34rem] border-b-2 border-foreground pb-8 md:grid md:grid-cols-[1.25fr_0.75fr] md:gap-12 md:pb-12">
+      <section className="hidden md:block">
+        <div className="grid items-center gap-14 py-8 md:grid-cols-[1.2fr_0.8fr]">
         <div>
-          <p className="editorial-kicker mt-8 text-primary">Bangkok dish board</p>
-          <h1 className="mt-5 max-w-4xl font-display text-4xl leading-[0.84] tracking-[-0.045em] text-foreground md:text-[6.1rem]">
+          <p className="editorial-kicker text-primary">Bangkok dish board</p>
+          <h1 className="mt-5 max-w-4xl font-display text-[5.4rem] leading-[0.84] tracking-[-0.045em] text-foreground">
             What should people eat in Bangkok?
           </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
+          <p className="mt-5 max-w-xl text-lg leading-7 text-muted-foreground">
             Add plates, compare dish against dish, and find the bite worth crossing town for.
           </p>
           <p className="mt-3 font-thai text-lg font-medium text-foreground/80">
@@ -112,14 +113,8 @@ function Index() {
               <Button variant="outline">{t("cta_add")}</Button>
             </Link>
           </div>
-          <div className="mt-8 grid gap-0 border-y border-foreground/25 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground sm:grid-cols-3">
-            <TrustSignal text="No restaurant ads" />
-            <TrustSignal text="Dish vs dish only" />
-            <TrustSignal text="Ranked by local comparisons" />
-          </div>
         </div>
-        <div className="mt-5 flex flex-col border-x border-foreground/30 md:mt-0">
-          <div className="relative min-h-52 flex-1 overflow-hidden border-b border-foreground/30 bg-ink">
+        <div className="relative aspect-[4/3] overflow-hidden bg-ink">
             {heroPhoto ? (
               <img
                 src={heroPhoto}
@@ -131,27 +126,25 @@ function Index() {
             )}
             <div className="photo-scrim absolute inset-0" />
             <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-              <p className="label-caps text-white/65">
-                {heroPhoto ? "Featured on the board" : "Bangkok dish guide"}
-              </p>
-              <p className="mt-2 font-display text-3xl leading-none md:text-4xl">{heroTitle}</p>
+              <p className="label-caps text-white/65">{heroPhoto ? "Featured dish" : "Bangkok dish guide"}</p>
+              <p className="mt-2 font-display text-4xl leading-none">{heroTitle}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1">
+        </div>
+        <div className="grid grid-cols-3 border-y border-foreground/20">
           {[
-            { n: "01", label: "Nominate", body: "Snap a plate, tag the stall, add a price. New dishes start pending." },
-            { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in diners only." },
-            { n: "03", label: "Rank", body: "After five diner comparisons a dish earns a rank on its board. No stars, no scores." },
-          ].map((step, i) => (
-            <div key={step.n} className="grid grid-cols-[4.5rem_1fr] border-b border-foreground/30 bg-card p-4 last:border-b-0">
-              <span className="rank-numeral-solid font-display text-5xl">{step.n}</span>
-              <div>
-              <p className="mt-2 text-xs font-bold uppercase text-muted-foreground md:mt-3">{step.label}</p>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground md:text-sm md:leading-6">{step.body}</p>
-              </div>
+            { n: "01", label: "Add", body: "Share a dish you tried" },
+            { n: "02", label: "Compare", body: "Choose the better dish" },
+            { n: "03", label: "Rank", body: "Five comparisons unlock rank" },
+          ].map((step) => (
+            <div key={step.n} className="flex items-center gap-4 border-r border-foreground/20 px-4 py-4 last:border-r-0">
+              <span className="font-display text-3xl text-gold">{step.n}</span>
+              <p className="text-xs text-muted-foreground">
+                <strong className="mr-1 uppercase tracking-[0.08em] text-foreground">{step.label}</strong>
+                {step.body}
+              </p>
             </div>
           ))}
-          </div>
         </div>
       </section>
 
@@ -167,23 +160,28 @@ function Index() {
         </div>
       </section>
 
-      <section className="mt-6 border-t-2 border-foreground pt-7 md:mt-12 md:pt-10">
-        <div className="grid gap-6 md:grid-cols-[0.7fr_1.3fr] md:items-end">
+      <section className="mt-6 border-t border-foreground/25 pt-7 md:mt-12 md:pt-8">
+        <div className="flex items-end justify-between gap-6">
           <div>
-            <p className="editorial-kicker text-primary">Explore Bangkok</p>
-            <h2 className="mt-3 font-display text-4xl leading-[0.9] tracking-[-0.035em] md:text-6xl">
-              Find your next dish.
-            </h2>
+            <p className="label-caps text-primary">Explore Bangkok</p>
+            <h2 className="mt-2 font-display text-3xl leading-none tracking-[-0.025em] md:text-4xl">Discover dishes</h2>
           </div>
-          <p className="max-w-xl text-sm leading-6 text-muted-foreground md:justify-self-end md:text-right">
-            Choose a dish, narrow it to the right type, then explore where Bangkok diners have tried it.
-          </p>
+          {(cat || area) && (
+            <button
+              onClick={() => {
+                setCat(undefined);
+                setSubtype(undefined);
+                setArea(undefined);
+              }}
+              className="text-xs font-bold uppercase tracking-[0.1em] text-primary underline-offset-4 hover:underline"
+            >
+              Reset filters
+            </button>
+          )}
         </div>
 
-        <div className="mt-7 border border-foreground/25 bg-card shadow-[0_12px_35px_rgba(42,30,36,0.05)]">
-          <div className="grid md:grid-cols-[1fr_0.75fr_auto]">
-            <div className="border-b border-foreground/20 p-4 md:border-b-0 md:border-r">
-              <p className="label-caps mb-2 text-muted-foreground">Dish category</p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div>
               <CategoryPicker
                 categories={categories.data ?? []}
                 value={cat}
@@ -196,8 +194,7 @@ function Index() {
                 }}
               />
             </div>
-            <div className="border-b border-foreground/20 p-4 md:border-b-0 md:border-r">
-              <p className="label-caps mb-2 text-muted-foreground">Bangkok area</p>
+            <div>
               <AreaPicker
                 areas={areas.data ?? []}
                 value={area}
@@ -205,50 +202,6 @@ function Index() {
                 onChange={(slug) => setArea(slug)}
               />
             </div>
-            <div className="flex items-center justify-between gap-4 p-4 md:flex-col md:justify-center md:px-6">
-              <p className="text-xs font-semibold text-muted-foreground">
-                {cat || area ? "Filtered view" : "Showing everything"}
-              </p>
-              {(cat || area) && (
-                <button
-                  onClick={() => {
-                    setCat(undefined);
-                    setSubtype(undefined);
-                    setArea(undefined);
-                  }}
-                  className="text-xs font-bold uppercase tracking-[0.1em] text-primary underline-offset-4 hover:underline"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4 overflow-x-auto border-t border-foreground/20 px-4 py-3">
-            <span className="label-caps shrink-0 text-muted-foreground">Popular now</span>
-            <button
-              type="button"
-              onClick={() => {
-                setCat(undefined);
-                setSubtype(undefined);
-              }}
-              className={`shrink-0 text-sm font-semibold transition-colors ${!cat ? "text-primary underline underline-offset-4" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Everything
-            </button>
-            {topCategories.slice(0, 6).map((c: any) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => {
-                  setCat(c.slug);
-                  setSubtype(undefined);
-                }}
-                className={`shrink-0 text-sm font-semibold transition-colors ${cat === c.slug ? "text-primary underline underline-offset-4" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {lang === "th" ? c.name_th : c.name_en}
-              </button>
-            ))}
-          </div>
         </div>
 
         {selectedCategory?.reference_photo_url && (
