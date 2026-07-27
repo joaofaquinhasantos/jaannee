@@ -46,6 +46,7 @@ type CategoryRow = {
     display_order?: number | null;
   }>;
 };
+
 type DishRow = {
   id: string;
   name_en: string;
@@ -55,11 +56,14 @@ type DishRow = {
   elo?: number | null;
   comparisons_count?: number | null;
   tried_count?: number | null;
-  place?: { name?: string | null; area?: { name_en?: string | null } | null } | null;
+  place?: {
+    name?: string | null;
+    area?: { name_en?: string | null; name_th?: string | null } | null;
+  } | null;
 };
 
 function Index() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [cat, setCat] = useState<string | undefined>();
   const [subtype, setSubtype] = useState<string | undefined>();
   const [area, setArea] = useState<string | undefined>();
@@ -91,7 +95,7 @@ function Index() {
       <div className="sticky top-[61px] z-30 border-b border-white/10 bg-[#111111]/95 px-4 py-3 backdrop-blur md:top-[65px] md:px-8">
         <div className="grid items-center gap-3 lg:grid-cols-[auto_1fr]">
           <p className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/40 lg:block">
-            Discover Bangkok
+            {t("discover_bangkok")}
           </p>
           <DishBrowser
             categories={categoryRows}
@@ -111,15 +115,15 @@ function Index() {
         <section className="flex min-h-[70vh] items-center justify-center px-6 text-center">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-              Dish type
+              {t("dish_type")}
             </p>
             <h1 className="mt-4 font-noir-display text-5xl uppercase text-white md:text-7xl">
-              Choose a dish type
+              {t("choose_dish_type")}
             </h1>
           </div>
         </section>
       ) : dishes.isLoading ? (
-        <div className="min-h-[70vh] px-6 py-16 text-sm text-white/45">Loading…</div>
+        <div className="min-h-[70vh] px-6 py-16 text-sm text-white/45">{t("loading")}</div>
       ) : heroDish ? (
         <DishFeed dishes={dishRows} singlePool={Boolean(cat)} />
       ) : heroCategory ? (
@@ -144,7 +148,7 @@ function Index() {
 
       <Link
         to="/submit"
-        aria-label="Add a dish"
+        aria-label={t("cta_add")}
         className="fixed bottom-24 right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-2xl md:bottom-7 md:right-7"
       >
         <Plus className="h-5 w-5" />
@@ -162,6 +166,7 @@ function CategoryFeed({
   lang: string;
   onSelect: (slug: string) => void;
 }) {
+  const { t } = useI18n();
   const [first, ...rest] = categories;
   if (!first) return <EmptyNoir />;
   return (
@@ -174,7 +179,7 @@ function CategoryFeed({
         <NoirPhoto src={first.reference_photo_url ?? ""} />
         <div className="absolute inset-x-0 bottom-0 z-10 max-w-4xl p-6 md:p-12 lg:p-16">
           <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-            Featured category
+            {t("featured_category")}
           </p>
           <h1 className="mt-3 font-noir-display text-6xl uppercase leading-[0.82] text-white md:text-8xl lg:text-[8.5rem]">
             {lang === "th" ? first.name_th || first.name_en : first.name_en}
@@ -183,7 +188,7 @@ function CategoryFeed({
             <p className="mt-3 font-thai text-base text-white/65">{first.name_th}</p>
           ) : null}
           <span className="mt-7 inline-flex items-center gap-2 border border-white/30 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white transition-colors group-hover:border-primary group-hover:bg-primary">
-            Explore category <ArrowUpRight className="h-3.5 w-3.5" />
+            {t("explore_category")} <ArrowUpRight className="h-3.5 w-3.5" />
           </span>
         </div>
       </button>
@@ -199,7 +204,7 @@ function CategoryFeed({
               <NoirPhoto src={category.reference_photo_url ?? ""} />
               <div className="absolute inset-x-0 bottom-0 z-10 p-6 md:p-10">
                 <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-primary">
-                  Browse the board
+                  {t("browse_board")}
                 </p>
                 <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] text-white md:text-7xl">
                   {lang === "th" ? category.name_th || category.name_en : category.name_en}
@@ -212,13 +217,13 @@ function CategoryFeed({
       ) : null}
       <div className="border-t border-white/10 px-6 py-16 text-center md:py-24">
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/35">
-          Rank the dish, not the restaurant.
+          {t("tagline")}
         </p>
         <Link
           to="/submit"
           className="mt-5 inline-block border-b border-primary pb-1 text-xs font-bold uppercase tracking-[0.18em] text-white"
         >
-          Add the first dish
+          {t("add_first_dish")}
         </Link>
       </div>
     </div>
@@ -226,6 +231,7 @@ function CategoryFeed({
 }
 
 function DishFeed({ dishes, singlePool }: { dishes: DishRow[]; singlePool: boolean }) {
+  const { lang, t } = useI18n();
   const withPhotos = dishes.filter((dish) => dish.photo_url);
   const withoutPhotos = dishes.filter((dish) => !dish.photo_url);
   return (
@@ -254,10 +260,10 @@ function DishFeed({ dishes, singlePool }: { dishes: DishRow[]; singlePool: boole
               className="border-b border-r border-white/10 p-7 transition-colors hover:bg-white/[0.04]"
             >
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
-                Photo needed
+                {t("photo_needed")}
               </p>
               <h2 className="mt-3 font-noir-display text-4xl uppercase text-white">
-                {dish.name_en}
+                {lang === "th" && dish.name_th ? dish.name_th : dish.name_en}
               </h2>
               <p className="mt-3 text-xs text-white/45">{dish.place?.name}</p>
             </Link>
@@ -269,7 +275,14 @@ function DishFeed({ dishes, singlePool }: { dishes: DishRow[]; singlePool: boole
 }
 
 function NoirDish({ dish, rank, featured }: { dish: DishRow; rank?: number; featured?: boolean }) {
+  const { lang, t } = useI18n();
   const ranked = (dish.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD;
+  const dishName = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+  const areaName = dish.place?.area
+    ? lang === "th"
+      ? dish.place.area.name_th || dish.place.area.name_en
+      : dish.place.area.name_en
+    : null;
   return (
     <Link
       to="/dish/$id"
@@ -282,16 +295,16 @@ function NoirDish({ dish, rank, featured }: { dish: DishRow; rank?: number; feat
           <div>
             <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-primary">
               {ranked
-                ? `${dish.comparisons_count} diner comparisons`
-                : `New contender · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`}
+                ? `${dish.comparisons_count} ${t("diner_comparisons")}`
+                : `${t("unranked_label")} · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`}
             </p>
             <h2
               className={`mt-2 font-noir-display uppercase leading-[0.84] text-white ${featured ? "text-6xl md:text-8xl lg:text-[8rem]" : "text-5xl md:text-7xl"}`}
             >
-              {dish.name_en}
+              {dishName}
             </h2>
             <p className="mt-4 text-xs text-white/55">
-              {[dish.place?.name, dish.place?.area?.name_en].filter(Boolean).join(" · ")}
+              {[dish.place?.name, areaName].filter(Boolean).join(" · ")}
             </p>
           </div>
           {rank ? (
@@ -322,20 +335,21 @@ function NoirPhoto({ src }: { src: string }) {
 }
 
 function EmptyNoir() {
+  const { t } = useI18n();
   return (
     <section className="flex min-h-[74vh] items-end bg-[#111111] px-6 py-16 md:px-12 md:py-24">
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-          Bangkok dish board
+          {t("bangkok_dish_board")}
         </p>
         <h1 className="mt-4 max-w-4xl font-noir-display text-6xl uppercase leading-[0.84] text-white md:text-8xl">
-          What should Bangkok eat?
+          {t("what_should_bangkok_eat")}
         </h1>
         <Link
           to="/submit"
           className="mt-8 inline-flex items-center gap-2 border border-white/25 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white hover:border-primary hover:bg-primary"
         >
-          Add the first dish <ArrowUpRight className="h-3.5 w-3.5" />
+          {t("add_first_dish")} <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </section>
