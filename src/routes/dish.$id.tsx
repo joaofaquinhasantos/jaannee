@@ -151,7 +151,15 @@ function DishPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tried"] });
       qc.invalidateQueries({ queryKey: ["dishes"] });
-      toast.success(isTried ? "Removed from tried" : "Marked as tried");
+      toast.success(
+        isTried
+          ? lang === "th"
+            ? "นำออกจากจานที่เคยกินแล้ว"
+            : "Removed from tried"
+          : lang === "th"
+            ? "ทำเครื่องหมายว่าเคยกินแล้ว"
+            : "Marked as tried",
+      );
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -160,7 +168,15 @@ function DishPage() {
       followUser({ data: { userId: targetId, follow } }),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["following"] });
-      toast.success(vars.follow ? "Following" : "Unfollowed");
+      toast.success(
+        vars.follow
+          ? lang === "th"
+            ? "กำลังติดตาม"
+            : "Following"
+          : lang === "th"
+            ? "เลิกติดตามแล้ว"
+            : "Unfollowed",
+      );
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -174,7 +190,7 @@ function DishPage() {
   if (!dish.data)
     return (
       <AppShell>
-        <p>Not found.</p>
+        <p>{lang === "th" ? "ไม่พบจานนี้" : "Not found."}</p>
       </AppShell>
     );
 
@@ -183,12 +199,18 @@ function DishPage() {
   const secondaryName = lang === "th" && d.name_th ? d.name_en : d.name_th;
   const areaName = d.place?.area
     ? lang === "th"
-      ? d.place.area.name_th
+      ? d.place.area.name_th || d.place.area.name_en
       : d.place.area.name_en
     : null;
   const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
   const s = statusLabel(d, t);
   const triedCount = d.tried_count ?? 0;
+  const priceLabel =
+    d.price_thb != null
+      ? lang === "th"
+        ? `${Number(d.price_thb).toFixed(0)} ${t("thb")}`
+        : `${t("thb")} ${Number(d.price_thb).toFixed(0)}`
+      : null;
   const shareUrl = origin
     ? `${origin}/dish/${id}`
     : typeof window !== "undefined"
@@ -201,7 +223,8 @@ function DishPage() {
       (d.subtype_id ? candidate.subtype_id === d.subtype_id : !candidate.subtype_id),
   );
   const submitter = d.submitter_profile;
-  const submitterName = submitter?.display_name || submitter?.username || "A JaanNee eater";
+  const submitterName =
+    submitter?.display_name || submitter?.username || (lang === "th" ? "นักชิม JaanNee" : "A JaanNee eater");
   const isFollowingSubmitter = d.submitted_by
     ? (following.data ?? []).includes(d.submitted_by)
     : false;
@@ -215,7 +238,7 @@ function DishPage() {
               <img src={d.photo_url} alt={name} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center bg-secondary font-display text-5xl italic text-muted-foreground">
-                JaanNee
+                {t("brand")}
               </div>
             )}
           </div>
@@ -223,7 +246,7 @@ function DishPage() {
           <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
             <div>
               <p className="editorial-kicker text-white/75">
-                {lang === "th" ? d.category?.name_th : d.category?.name_en}
+                {lang === "th" ? d.category?.name_th || d.category?.name_en : d.category?.name_en}
               </p>
               <h1 className="type-page-title mt-4 max-w-5xl">{name}</h1>
               {secondaryName ? (
@@ -240,9 +263,9 @@ function DishPage() {
               >
                 {s.text}
               </span>
-              {d.price_thb != null && (
+              {priceLabel && (
                 <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">
-                  THB {Number(d.price_thb).toFixed(0)}
+                  {priceLabel}
                 </span>
               )}
             </div>
@@ -257,11 +280,19 @@ function DishPage() {
               </p>
             )}
 
-            <h2 className="editorial-kicker mt-8 text-primary">Dish stats</h2>
+            <h2 className="editorial-kicker mt-8 text-primary">
+              {lang === "th" ? "สถิติจาน" : "Dish stats"}
+            </h2>
             <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
-              <Metric label="Status" value={s.text} />
-              <Metric label="Added" value={`${days} ${t("days_ago")}`} />
-              <Metric label="Comparisons" value={`${d.comparisons_count ?? 0}`} />
+              <Metric label={lang === "th" ? "สถานะ" : "Status"} value={s.text} />
+              <Metric
+                label={lang === "th" ? "เพิ่มเมื่อ" : "Added"}
+                value={lang === "th" ? `${days} วันก่อน` : `${days} ${t("days_ago")}`}
+              />
+              <Metric
+                label={t("profile_comparisons")}
+                value={`${d.comparisons_count ?? 0}`}
+              />
             </div>
             {triedCount > 0 && (
               <p className="mt-3 text-sm font-semibold text-muted-foreground">
@@ -282,7 +313,9 @@ function DishPage() {
                 </Button>
               ) : (
                 <Link to="/auth">
-                  <Button>{t("sign_in")} to mark tried</Button>
+                  <Button>
+                    {lang === "th" ? "เข้าสู่ระบบเพื่อทำเครื่องหมายว่าเคยกิน" : "Sign in to mark tried"}
+                  </Button>
                 </Link>
               )}
               <Link to="/compare" search={{ dish: id } as any}>
@@ -291,13 +324,13 @@ function DishPage() {
               <ShareButton
                 url={shareUrl}
                 title={name}
-                text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / ${s.text}`}
-                label={t("share") || "Share"}
+                text={[d.place?.name, priceLabel, s.text].filter(Boolean).join(" / ")}
+                label={t("share")}
               />
               {d.place && (
                 <a href={mapsDirectionsUrl(d.place)} target="_blank" rel="noreferrer">
                   <Button variant="outline" type="button">
-                    Directions
+                    {lang === "th" ? "เส้นทาง" : "Directions"}
                   </Button>
                 </a>
               )}
@@ -308,14 +341,12 @@ function DishPage() {
             {d.submitted_by && (
               <div className="border-y border-foreground/25 py-4">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  Submitted by
+                  {lang === "th" ? "เพิ่มโดย" : "Submitted by"}
                 </h2>
                 <div className="flex items-center justify-between gap-3">
                   <Link
                     to={submitter?.username ? "/u/$username" : "."}
-                    params={
-                      submitter?.username ? { username: submitter.username } : (undefined as any)
-                    }
+                    params={submitter?.username ? { username: submitter.username } : (undefined as any)}
                     className="flex min-w-0 items-center gap-3"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
@@ -330,9 +361,13 @@ function DishPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">Posted by {submitterName}</p>
+                      <p className="text-sm font-semibold">
+                        {lang === "th" ? `เพิ่มโดย ${submitterName}` : `Posted by ${submitterName}`}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Follow to see what they eat next.
+                        {lang === "th"
+                          ? "ติดตามเพื่อดูว่าพวกเขาจะกินอะไรต่อ"
+                          : "Follow to see what they eat next."}
                       </p>
                     </div>
                   </Link>
@@ -348,7 +383,13 @@ function DishPage() {
                       }
                       disabled={followMut.isPending}
                     >
-                      {isFollowingSubmitter ? "Following" : "Follow"}
+                      {isFollowingSubmitter
+                        ? lang === "th"
+                          ? "กำลังติดตาม"
+                          : "Following"
+                        : lang === "th"
+                          ? "ติดตาม"
+                          : "Follow"}
                     </Button>
                   ) : null}
                 </div>
@@ -377,14 +418,14 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 function ReportDialog({ dishId }: { dishId: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [reason, setReason] = useState("wrong_info");
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
   const mut = useMutation({
     mutationFn: () => submitReport({ data: { dishId, reason, note: note || undefined } }),
     onSuccess: () => {
-      toast.success("Thanks. We'll review this.");
+      toast.success(lang === "th" ? "ขอบคุณ เราจะตรวจสอบรายงานนี้" : "Thanks. We'll review this.");
       setOpen(false);
       setNote("");
     },
@@ -405,20 +446,20 @@ function ReportDialog({ dishId }: { dishId: string }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="wrong_info">Wrong info</SelectItem>
-              <SelectItem value="duplicate">Duplicate</SelectItem>
-              <SelectItem value="place_closed">Place closed</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="wrong_info">{lang === "th" ? "ข้อมูลไม่ถูกต้อง" : "Wrong info"}</SelectItem>
+              <SelectItem value="duplicate">{lang === "th" ? "รายการซ้ำ" : "Duplicate"}</SelectItem>
+              <SelectItem value="place_closed">{lang === "th" ? "ร้านปิดแล้ว" : "Place closed"}</SelectItem>
+              <SelectItem value="other">{lang === "th" ? "อื่นๆ" : "Other"}</SelectItem>
             </SelectContent>
           </Select>
           <Textarea
-            placeholder="Optional details"
+            placeholder={lang === "th" ? "รายละเอียดเพิ่มเติม (ไม่บังคับ)" : "Optional details"}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={500}
           />
           <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
-            Submit report
+            {lang === "th" ? "ส่งรายงาน" : "Submit report"}
           </Button>
         </div>
       </DialogContent>
