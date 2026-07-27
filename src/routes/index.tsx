@@ -74,15 +74,6 @@ function Index() {
         a.name_en.localeCompare(b.name_en),
     )
     .slice(0, 8);
-  const areaCounts = new Map<string, number>();
-  for (const dish of allDishes.data ?? []) {
-    const areaId = (dish as any).place?.area?.id;
-    if (areaId) areaCounts.set(areaId, (areaCounts.get(areaId) ?? 0) + 1);
-  }
-  const topAreas = [...(areas.data ?? [])]
-    .filter((a: any) => (areaCounts.get(a.id) ?? 0) > 0)
-    .sort((a: any, b: any) => (areaCounts.get(b.id) ?? 0) - (areaCounts.get(a.id) ?? 0) || a.name_en.localeCompare(b.name_en))
-    .slice(0, 6);
   const heroCategory =
     selectedCategory ??
     topCategories.find((c: any) => c.reference_photo_url) ??
@@ -141,7 +132,7 @@ function Index() {
             <div className="photo-scrim absolute inset-0" />
             <div className="absolute inset-x-0 bottom-0 p-5 text-white">
               <p className="label-caps text-white/65">
-                {heroPhoto ? "Featured on the board" : "Add category photos in Admin"}
+                {heroPhoto ? "Featured on the board" : "Bangkok dish guide"}
               </p>
               <p className="mt-2 font-display text-3xl leading-none md:text-4xl">{heroTitle}</p>
             </div>
@@ -176,67 +167,92 @@ function Index() {
         </div>
       </section>
 
-      <section className="mt-5 md:mt-10">
-        <div className="flex items-end justify-between gap-4">
+      <section className="mt-6 border-t-2 border-foreground pt-7 md:mt-12 md:pt-10">
+        <div className="grid gap-6 md:grid-cols-[0.7fr_1.3fr] md:items-end">
           <div>
-            <p className="editorial-kicker hidden text-primary md:inline-flex">Browse the board</p>
-            <h2 className="hidden font-display text-5xl tracking-[-0.03em] md:mt-3 md:block">Discover</h2>
-            <p className="hidden text-sm text-muted-foreground md:mt-1 md:block">
-              Start here: pick a category, add a missing dish, or compare two plates.
-            </p>
+            <p className="editorial-kicker text-primary">Explore Bangkok</p>
+            <h2 className="mt-3 font-display text-4xl leading-[0.9] tracking-[-0.035em] md:text-6xl">
+              Find your next dish.
+            </h2>
           </div>
-          {(cat || area) && (
+          <p className="max-w-xl text-sm leading-6 text-muted-foreground md:justify-self-end md:text-right">
+            Choose a dish, narrow it to the right type, then explore where Bangkok diners have tried it.
+          </p>
+        </div>
+
+        <div className="mt-7 border border-foreground/25 bg-card shadow-[0_12px_35px_rgba(42,30,36,0.05)]">
+          <div className="grid md:grid-cols-[1fr_0.75fr_auto]">
+            <div className="border-b border-foreground/20 p-4 md:border-b-0 md:border-r">
+              <p className="label-caps mb-2 text-muted-foreground">Dish category</p>
+              <CategoryPicker
+                categories={categories.data ?? []}
+                value={cat}
+                lang={lang}
+                placeholder={t("filter_all_categories")}
+                triggerLabel={cat ? t("change_category") : t("more_categories")}
+                onChange={(_, category) => {
+                  setCat(category.slug);
+                  setSubtype(undefined);
+                }}
+              />
+            </div>
+            <div className="border-b border-foreground/20 p-4 md:border-b-0 md:border-r">
+              <p className="label-caps mb-2 text-muted-foreground">Bangkok area</p>
+              <AreaPicker
+                areas={areas.data ?? []}
+                value={area}
+                lang={lang}
+                onChange={(slug) => setArea(slug)}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 p-4 md:flex-col md:justify-center md:px-6">
+              <p className="text-xs font-semibold text-muted-foreground">
+                {cat || area ? "Filtered view" : "Showing everything"}
+              </p>
+              {(cat || area) && (
+                <button
+                  onClick={() => {
+                    setCat(undefined);
+                    setSubtype(undefined);
+                    setArea(undefined);
+                  }}
+                  className="text-xs font-bold uppercase tracking-[0.1em] text-primary underline-offset-4 hover:underline"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-4 overflow-x-auto border-t border-foreground/20 px-4 py-3">
+            <span className="label-caps shrink-0 text-muted-foreground">Popular now</span>
             <button
+              type="button"
               onClick={() => {
                 setCat(undefined);
                 setSubtype(undefined);
-                setArea(undefined);
               }}
-              className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+              className={`shrink-0 text-sm font-semibold transition-colors ${!cat ? "text-primary underline underline-offset-4" : "text-muted-foreground hover:text-foreground"}`}
             >
-              Clear filters
+              Everything
             </button>
-          )}
-        </div>
-
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-2 md:mt-5">
-          <Pill
-            active={!cat}
-            onClick={() => {
-              setCat(undefined);
-              setSubtype(undefined);
-            }}
-          >
-            {t("filter_all_categories")}
-          </Pill>
-          {topCategories.map((c: any) => (
-            <Pill
-              key={c.id}
-              active={cat === c.slug}
-              onClick={() => {
-                setCat(c.slug);
-                setSubtype(undefined);
-              }}
-            >
-              {lang === "th" ? c.name_th : c.name_en}
-            </Pill>
-          ))}
-          <div className="min-w-48">
-            <CategoryPicker
-              categories={categories.data ?? []}
-              value={cat}
-              lang={lang}
-              placeholder={t("filter_all_categories")}
-              triggerLabel={cat ? t("change_category") : t("more_categories")}
-              onChange={(_, category) => {
-                setCat(category.slug);
-                setSubtype(undefined);
-              }}
-            />
+            {topCategories.slice(0, 6).map((c: any) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setCat(c.slug);
+                  setSubtype(undefined);
+                }}
+                className={`shrink-0 text-sm font-semibold transition-colors ${cat === c.slug ? "text-primary underline underline-offset-4" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {lang === "th" ? c.name_th : c.name_en}
+              </button>
+            ))}
           </div>
         </div>
+
         {selectedCategory?.reference_photo_url && (
-          <div className="relative mt-4 h-48 overflow-hidden border-y-2 border-foreground bg-muted md:h-80">
+          <div className="relative mt-6 h-52 overflow-hidden border border-foreground/30 bg-muted md:h-80">
             <img
               src={selectedCategory.reference_photo_url}
               alt={lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
@@ -259,8 +275,8 @@ function Index() {
           </div>
         )}
         {cat && subtypeScoped && (
-          <div className="mt-2">
-            <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">
+          <div className="mt-5 border-l-2 border-primary pl-4">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
               Choose a dish type
             </p>
             {activeSubtypes.length > 0 ? (
@@ -283,19 +299,6 @@ function Index() {
             )}
           </div>
         )}
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
-          <Pill active={!area} onClick={() => setArea(undefined)} variant="secondary">
-            {t("filter_all_areas")}
-          </Pill>
-          {topAreas.map((a: any) => (
-            <Pill key={a.id} active={area === a.slug} onClick={() => setArea(a.slug)} variant="secondary">
-              {lang === "th" ? a.name_th : a.name_en}
-            </Pill>
-          ))}
-          <div className="min-w-36">
-            <AreaPicker areas={areas.data ?? []} value={area} lang={lang} onChange={(slug) => setArea(slug)} />
-          </div>
-        </div>
       </section>
 
       <section className="mt-6">
