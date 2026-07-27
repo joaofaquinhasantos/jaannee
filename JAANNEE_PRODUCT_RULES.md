@@ -6,8 +6,11 @@ These rules are load-bearing product invariants. Every change to code, schema, o
 
 ## 1. Ranking is diner-generated, only
 - Elo movement comes exclusively from pairwise comparisons submitted by authenticated diners.
-- Admins cannot boost, seed, or hand-edit Elo. There is no admin "rank" UI and no server function that writes to `dishes.elo` outside the `apply_elo` RPC invoked by `submitComparison`.
-- `apply_elo` and `admin_merge_dishes` are `service_role`-only.
+- Admins cannot boost, seed, or hand-edit Elo. There is no admin "rank" UI.
+- Comparisons are immutable. `submitComparison` calls the service-role-only
+  `submit_comparison_atomic` RPC, and an insert trigger updates Elo and both
+  comparison counts in the same database transaction.
+- Direct authenticated comparison inserts, updates, and deletes are prohibited.
 
 ## 2. Tried before voting
 - A user can only vote in a pairwise comparison when they have marked **both** dishes as tried.

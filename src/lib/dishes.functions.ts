@@ -736,49 +736,22 @@ export const submitComparison = createServerFn({ method: "POST" })
     const lo = data.dishAId < data.dishBId ? data.dishAId : data.dishBId;
     const hi = data.dishAId < data.dishBId ? data.dishBId : data.dishAId;
 
-    const { data: existing } = await context.supabase
-      .from("comparisons")
-      .select("id, winner_id")
-      .eq("user_id", context.userId)
-      .eq("dish_lo_id", lo)
-      .eq("dish_hi_id", hi)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await context.supabase
-        .from("comparisons")
-        .update({ winner_id: data.winnerId })
-        .eq("id", existing.id);
-      if (error) throw new Error(error.message);
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error: re } = await supabaseAdmin.rpc("apply_elo", {
-        _a: lo,
-        _b: hi,
-        _winner: data.winnerId,
-        _prev_winner: existing.winner_id,
-        _is_update: true,
-      });
-      if (re) throw new Error(re.message);
-    } else {
-      const { error } = await context.supabase.from("comparisons").insert({
-        user_id: context.userId,
-        category_id: dishes[0].category_id!,
-        dish_lo_id: lo,
-        dish_hi_id: hi,
-        winner_id: data.winnerId,
-      });
-      if (error) throw new Error(error.message);
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error: re } = await supabaseAdmin.rpc("apply_elo", {
-        _a: lo,
-        _b: hi,
-        _winner: data.winnerId,
-        _prev_winner: data.winnerId,
-        _is_update: false,
-      });
-      if (re) throw new Error(re.message);
+    // The service-role-only RPC inserts the immutable comparison. A database
+    // trigger applies Elo and count updates in the same transaction.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: comparisonId, error } = await supabaseAdmin.rpc("submit_comparison_atomic", {
+      _user_id: context.userId,
+      _dish_a_id: lo,
+      _dish_b_id: hi,
+      _winner_id: data.winnerId,
+    });
+    if (error) {
+      if (error.code === "23505" || error.message.includes("already compared")) {
+        throw new Error("You have already compared these two dishes.");
+      }
+      throw new Error(error.message);
     }
-    return { ok: true };
+    return { ok: true, comparisonId };
   });
 
 export const myProfile = createServerFn({ method: "GET" })
