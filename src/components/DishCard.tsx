@@ -42,7 +42,7 @@ export function DishCard({
 
   const card = (
     <div className="group block">
-      <article className="overflow-hidden rounded-lg border border-border bg-card shadow-[0_18px_45px_rgba(42,30,36,0.06)] transition-[border-color,box-shadow,transform] duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:shadow-[0_22px_60px_rgba(42,30,36,0.1)]">
+      <article className="editorial-frame overflow-hidden transition-[box-shadow,transform] duration-200 group-hover:-translate-y-1 group-hover:shadow-[12px_12px_0_rgba(214,50,31,0.16)]">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
           {dish.photo_url ? (
             <img
@@ -79,7 +79,7 @@ export function DishCard({
             </span>
           )}
           {dish.price_thb != null && (
-            <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
+            <span className="absolute right-3 top-3 inline-flex items-center border border-white/50 bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground shadow-sm backdrop-blur">
               THB {Number(dish.price_thb).toFixed(0)}
             </span>
           )}
@@ -98,7 +98,7 @@ export function DishCard({
             </p>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 px-4 py-3.5">
+        <div className="flex items-center justify-between gap-2 border-t-2 border-foreground px-4 py-3.5">
           <div className="space-y-1">
             {moderationStatus ? (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">

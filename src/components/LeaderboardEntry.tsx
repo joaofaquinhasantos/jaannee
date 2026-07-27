@@ -42,7 +42,7 @@ export function LeaderboardEntry({
 
       <div className={`relative z-10 ${showRank ? (featured ? "pl-10 pt-14 md:pl-24 md:pt-20" : "pl-8 pt-10 md:pl-16 md:pt-12") : ""}`}>
         <Link to="/dish/$id" params={{ id: dish.id }} className="group block focus-visible:rounded-sm">
-          <div className={`relative w-full overflow-hidden bg-muted ${featured ? "aspect-[4/3] md:aspect-[16/10]" : "aspect-[4/3]"}`}>
+          <div className={`relative w-full overflow-hidden border-2 border-foreground bg-muted ${featured ? "aspect-[4/3] md:aspect-[16/9]" : "aspect-[4/3]"}`}>
             {dish.photo_url ? (
               <img
                 src={dish.photo_url}
@@ -85,7 +85,7 @@ export function LeaderboardEntry({
         </Link>
 
         {/* Stats strip — real values only */}
-        <div className="hairline mt-0 flex flex-wrap items-center gap-x-6 gap-y-2 border-x-0 border-b border-b-border bg-card px-4 py-3">
+        <div className="mt-0 flex flex-wrap items-center gap-x-6 gap-y-2 border-x-2 border-b-2 border-foreground bg-card px-4 py-3">
           <Stat value={String(comparisons)} label={t("comparisons_progress")} />
           {tried > 0 ? <Stat value={String(tried)} label={t("diners")} /> : null}
           {showRank ? (

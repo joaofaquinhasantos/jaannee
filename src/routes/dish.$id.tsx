@@ -174,9 +174,9 @@ function DishPage() {
 
   return (
     <AppShell>
-      <div className="grid gap-8 md:grid-cols-[1.05fr_0.95fr]">
-        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-[0_18px_45px_rgba(42,30,36,0.06)]">
-          <div className="aspect-[4/3] w-full bg-muted">
+      <article>
+        <div className="relative min-h-[32rem] overflow-hidden border-2 border-foreground bg-ink md:min-h-[43rem]">
+          <div className="absolute inset-0 bg-muted">
             {d.photo_url ? (
               <img src={d.photo_url} alt={name} className="h-full w-full object-cover" />
             ) : (
@@ -185,24 +185,31 @@ function DishPage() {
               </div>
             )}
           </div>
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase text-primary">{lang === "th" ? d.category?.name_th : d.category?.name_en}</p>
-          <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{name}</h1>
+          <div className="photo-scrim absolute inset-0" />
+          <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
+            <div>
+          <p className="editorial-kicker text-white/75">{lang === "th" ? d.category?.name_th : d.category?.name_en}</p>
+          <h1 className="mt-4 max-w-5xl font-display text-5xl leading-[0.82] tracking-[-0.045em] md:text-8xl">{name}</h1>
           {secondaryName ? (
-            <p className="mt-2 font-thai text-xl font-medium text-foreground/75">{secondaryName}</p>
+            <p className="mt-3 font-thai text-xl font-medium text-white/75">{secondaryName}</p>
           ) : null}
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-5 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
             {d.place?.name}{areaName ? ` / ${areaName}` : ""}
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+            </div>
+          <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(s.tone)}`}>{s.text}</span>
-            {d.price_thb != null && <span className="text-sm font-semibold text-foreground/80">THB {Number(d.price_thb).toFixed(0)}</span>}
+            {d.price_thb != null && <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">THB {Number(d.price_thb).toFixed(0)}</span>}
           </div>
-          {d.note && <p className="mt-5 rounded-lg border border-border bg-card p-4 text-sm leading-6">{d.note}</p>}
+          </div>
+        </div>
 
-          <h2 className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">Dish stats</h2>
-          <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center text-xs text-muted-foreground">
+        <div className="grid border-x-2 border-b-2 border-foreground bg-card md:grid-cols-[1.15fr_0.85fr]">
+          <div className="p-5 md:border-r-2 md:border-foreground md:p-8">
+          {d.note && <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">{d.note}</p>}
+
+          <h2 className="editorial-kicker mt-8 text-primary">Dish stats</h2>
+          <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
             <Metric label="Status" value={s.text} />
             <Metric label="Added" value={`${days} ${t("days_ago")}`} />
             <Metric label="Comparisons" value={`${d.comparisons_count ?? 0}`} />
@@ -217,7 +224,7 @@ function DishPage() {
             <InlineTriedCompare dish={d} other={otherTried} />
           )}
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-7 flex flex-wrap gap-2">
             {authed ? (
               <Button variant={isTried ? "secondary" : "default"} onClick={() => tryMut.mutate()} disabled={tryMut.isPending}>
                 {isTried ? t("tried_marked") : t("tried_it")}
@@ -242,8 +249,10 @@ function DishPage() {
             {authed && <ReportDialog dishId={id} />}
           </div>
 
+          </div>
+          <aside className="border-t-2 border-foreground p-5 md:border-t-0 md:p-8">
           {d.submitted_by && (
-            <div className="mt-6 rounded-lg border border-border bg-card p-4">
+            <div className="border-y border-foreground/25 py-4">
               <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Submitted by</h2>
               <div className="flex items-center justify-between gap-3">
                 <Link
@@ -276,8 +285,9 @@ function DishPage() {
               </div>
             </div>
           )}
+          </aside>
         </div>
-      </div>
+      </article>
     </AppShell>
   );
 }
@@ -288,9 +298,9 @@ function dKey(dish: any) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="font-semibold text-foreground">{value}</div>
-      <div className="mt-1 text-[11px] font-bold uppercase text-muted-foreground">{label}</div>
+    <div className="border-r border-foreground/20 px-2 py-4 last:border-r-0">
+      <div className="font-display text-xl text-foreground">{value}</div>
+      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{label}</div>
     </div>
   );
 }

@@ -81,10 +81,10 @@ function Index() {
 
   return (
     <AppShell>
-      <section className="hidden border-b border-border pb-6 md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:pb-12">
+      <section className="hidden min-h-[34rem] border-b-2 border-foreground pb-8 md:grid md:grid-cols-[1.25fr_0.75fr] md:gap-12 md:pb-12">
         <div>
-          <p className="text-xs font-bold uppercase text-primary">Bangkok dish board</p>
-          <h1 className="mt-2 max-w-3xl font-display text-4xl leading-[0.95] text-foreground md:text-7xl">
+          <p className="editorial-kicker mt-8 text-primary">Bangkok dish board</p>
+          <h1 className="mt-5 max-w-4xl font-display text-4xl leading-[0.82] tracking-[-0.045em] text-foreground md:text-[6.8rem]">
             What should people eat in Bangkok?
           </h1>
           <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
@@ -93,30 +93,32 @@ function Index() {
           <p className="mt-3 font-thai text-lg font-medium text-foreground/80">
             จานไหนดี ให้คนกินช่วยตัดสิน
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/compare">
-              <Button>{t("cta_compare")}</Button>
+              <Button className="ink-button">{t("cta_compare")}</Button>
             </Link>
             <Link to="/submit">
               <Button variant="outline">{t("cta_add")}</Button>
             </Link>
           </div>
-          <div className="mt-5 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+          <div className="mt-8 grid gap-0 border-y border-foreground/25 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground sm:grid-cols-3">
             <TrustSignal text="No restaurant ads" />
             <TrustSignal text="Dish vs dish only" />
             <TrustSignal text="Ranked by local comparisons" />
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-2 md:mt-0 md:gap-3">
+        <div className="mt-5 grid grid-cols-1 content-center gap-0 border-x border-foreground/20 md:mt-0">
           {[
             { n: "01", label: "Nominate", body: "Snap a plate, tag the stall, add a price. New dishes start pending." },
             { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in diners only." },
             { n: "03", label: "Rank", body: "After five diner comparisons a dish earns a rank on its board. No stars, no scores." },
           ].map((step, i) => (
-            <div key={step.n} className={`flex flex-col rounded-lg border border-border bg-card p-3 md:p-4 ${i === 1 ? "md:mt-8" : ""}`}>
-              <span className="font-display text-4xl leading-none text-accent md:text-5xl">{step.n}</span>
+            <div key={step.n} className="grid grid-cols-[5rem_1fr] border-y border-foreground/20 bg-card p-5">
+              <span className="rank-numeral-solid font-display text-6xl">{step.n}</span>
+              <div>
               <p className="mt-2 text-xs font-bold uppercase text-muted-foreground md:mt-3">{step.label}</p>
               <p className="mt-2 text-xs leading-5 text-muted-foreground md:text-sm md:leading-6">{step.body}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -134,11 +136,11 @@ function Index() {
         </div>
       </section>
 
-      <section className="mt-4 md:mt-7">
+      <section className="mt-5 md:mt-10">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="hidden text-xs font-bold uppercase text-muted-foreground md:block">Browse the board</p>
-            <h2 className="hidden font-display text-3xl md:mt-1 md:block">Discover</h2>
+            <p className="editorial-kicker hidden text-primary md:inline-flex">Browse the board</p>
+            <h2 className="hidden font-display text-5xl tracking-[-0.03em] md:mt-3 md:block">Discover</h2>
             <p className="hidden text-sm text-muted-foreground md:mt-1 md:block">
               Start here: pick a category, add a missing dish, or compare two plates.
             </p>
@@ -194,7 +196,7 @@ function Index() {
           </div>
         </div>
         {selectedCategory?.reference_photo_url && (
-          <div className="relative mt-3 h-36 overflow-hidden rounded-lg border border-border bg-muted md:h-48">
+          <div className="relative mt-4 h-48 overflow-hidden border-y-2 border-foreground bg-muted md:h-80">
             <img
               src={selectedCategory.reference_photo_url}
               alt={lang === "th" ? selectedCategory.name_th : selectedCategory.name_en}
@@ -297,7 +299,7 @@ function Index() {
                       <h2 className="font-display text-3xl leading-tight">{t("ranked_dishes")}</h2>
                       <p className="mt-1 text-sm text-muted-foreground">{t("ranked_dishes_body")}</p>
                     </div>
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {ranked.map((d: any, i: number) => (
                         <DishCard key={d.id} dish={d} rank={singlePool ? i + 1 : undefined} />
                       ))}

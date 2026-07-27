@@ -223,11 +223,11 @@ function Compare() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-4 md:pb-7">
-        <p className="text-xs font-bold uppercase text-primary">{t("head_to_head")}</p>
+      <section className="editorial-rule pb-5 pt-4 md:pb-7">
+        <p className="editorial-kicker text-primary">{t("head_to_head")}</p>
         <div className="mt-2 flex items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-4xl leading-none md:text-7xl">{t("nav_compare")}</h1>
+            <h1 className="mt-3 font-display text-5xl leading-[0.85] tracking-[-0.04em] md:text-8xl">{t("nav_compare")}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
               {t("compare_page_intro")}
             </p>
@@ -307,7 +307,7 @@ function Compare() {
               to="/"
             />
           ) : cat ? (
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <div className="mt-6 grid gap-0 border-2 border-foreground md:grid-cols-2">
               <DishPicker
                 label={t("dish_a")}
                 value={aId}
@@ -328,11 +328,18 @@ function Compare() {
       )}
 
       {a && b && (
-        <div className="mt-8">
-          <p className="text-center text-sm font-semibold uppercase text-muted-foreground">{t("which_better")}</p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-10">
+          <div className="flex items-center gap-4">
+            <span className="h-px flex-1 bg-foreground/35" />
+            <p className="label-caps text-center text-primary">{t("which_better")}</p>
+            <span className="h-px flex-1 bg-foreground/35" />
+          </div>
+          <div className="relative mt-5 grid overflow-hidden border-2 border-foreground bg-ink md:grid-cols-2">
             <PickCard dish={a} onPick={() => mut.mutate(a.id)} disabled={mut.isPending} />
             <PickCard dish={b} onPick={() => mut.mutate(b.id)} disabled={mut.isPending} />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-paper bg-primary font-display text-3xl italic text-white shadow-xl">
+              VS
+            </div>
           </div>
         </div>
       )}
@@ -377,7 +384,7 @@ function DishPicker({
 }) {
   const { t } = useI18n();
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="border-b-2 border-foreground bg-card p-4 last:border-b-0 md:border-b-0 md:border-r-2 md:last:border-r-0">
       <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{label}</p>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
@@ -408,19 +415,21 @@ function PickCard({
     <button
       onClick={onPick}
       disabled={disabled}
-      className="group overflow-hidden rounded-lg border border-border bg-card text-left shadow-[0_18px_45px_rgba(42,30,36,0.06)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_22px_60px_rgba(42,30,36,0.1)] disabled:opacity-60"
+      className="group relative min-h-[24rem] overflow-hidden bg-ink text-left transition-[filter,transform] hover:z-10 hover:scale-[1.01] hover:brightness-110 disabled:opacity-60 md:min-h-[34rem]"
     >
-      <div className="aspect-[4/3] bg-muted">
+      <div className="absolute inset-0 bg-muted">
         {dish.photo_url ? (
           <img src={dish.photo_url} alt={dish.name_en} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center bg-secondary font-display text-4xl italic text-muted-foreground">JaanNee</div>
         )}
       </div>
-      <div className="p-4">
-        <h3 className="font-display text-2xl leading-none">{dish.name_en}</h3>
-        {dish.name_th ? <p className="mt-1 font-thai text-sm font-medium text-muted-foreground">{dish.name_th}</p> : null}
-        <p className="mt-2 text-sm text-muted-foreground">{dish.place?.name}</p>
+      <div className="photo-scrim absolute inset-0" />
+      <div className="absolute inset-x-0 bottom-0 p-6 text-white md:p-8">
+        <p className="label-caps mb-3 text-white/65">Choose this dish</p>
+        <h3 className="font-display text-4xl leading-[0.85] md:text-6xl">{dish.name_en}</h3>
+        {dish.name_th ? <p className="mt-2 font-thai text-base font-medium text-white/80">{dish.name_th}</p> : null}
+        <p className="mt-3 border-t border-white/35 pt-3 text-sm font-bold uppercase tracking-[0.08em] text-white/80">{dish.place?.name}</p>
       </div>
     </button>
   );

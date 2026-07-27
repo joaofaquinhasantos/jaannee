@@ -94,11 +94,11 @@ function Rankings() {
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-4 md:pb-8">
-        <p className="label-caps text-primary">Live leaderboard</p>
+      <section className="editorial-rule pb-5 pt-4 md:pb-8">
+        <p className="editorial-kicker text-primary">Live leaderboard</p>
         <div className="mt-3 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
           <div>
-            <h1 className="font-display text-5xl leading-[0.88] md:text-8xl">{t("nav_rankings")}</h1>
+            <h1 className="mt-3 font-display text-6xl leading-[0.8] tracking-[-0.05em] md:text-[8.5rem]">{t("nav_rankings")}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base md:leading-7">{t("rankings_intro")}</p>
           </div>
           <div className="hidden items-end gap-3 md:flex">
@@ -182,7 +182,7 @@ function Rankings() {
               <button
                 key={s.id}
                 onClick={() => setSubtype(s.slug)}
-                className="rounded-lg border border-border bg-card p-5 text-left transition-colors hover:border-primary/40"
+              className="editorial-frame p-5 text-left transition-[box-shadow,transform] hover:-translate-y-1 hover:shadow-[10px_10px_0_rgba(214,50,31,0.14)]"
               >
                 <span className="font-display text-5xl leading-none text-accent">{String(i + 1).padStart(2, "0")}</span>
                 <h2 className="mt-4 font-display text-3xl leading-tight">{lang === "th" ? s.name_th : s.name_en}</h2>
@@ -191,7 +191,7 @@ function Rankings() {
             ))}
           </div>
         ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
-          <div className="rounded-lg border border-border bg-card p-4 md:overflow-hidden md:p-0">
+          <div className="editorial-frame p-4 md:overflow-hidden md:p-0">
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
               <div className="hidden border-b border-border bg-secondary p-4 md:block md:border-b-0 md:border-r md:p-6">
                 <span className="font-display text-6xl leading-none text-accent md:text-8xl">--</span>
