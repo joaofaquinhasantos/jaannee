@@ -48,24 +48,32 @@
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-thai: var(--font-thai);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
 }
 
 :root {
   --radius: 0.5rem;
   --background: #FAF8F4;
-  --foreground: #2A1E24;
+  --foreground: #1E1917;
+  --paper: #FAF8F4;
+  --ink: #1E1917;
+  --gold: #C79A3E;
+  --gold-soft: #E4C98A;
   --card: #FFFFFF;
-  --card-foreground: #2A1E24;
+  --card-foreground: #1E1917;
   --popover: #FFFFFF;
-  --popover-foreground: #2A1E24;
+  --popover-foreground: #1E1917;
   --primary: #D6321F;
   --primary-foreground: #FFFFFF;
   --secondary: #F4EEE6;
-  --secondary-foreground: #2A1E24;
+  --secondary-foreground: #1E1917;
   --muted: #F3EEE7;
-  --muted-foreground: #7A7069;
+  --muted-foreground: #6E6660;
   --accent: #C79A3E;
-  --accent-foreground: #2A1E24;
+  --accent-foreground: #1E1917;
   --destructive: #D6321F;
   --destructive-foreground: #FFFFFF;
   --border: #ECE6DD;
