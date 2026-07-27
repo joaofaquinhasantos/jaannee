@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
-import { BarChart3, Home, PlusCircle, Swords, ShieldCheck } from "lucide-react";
+import { BarChart3, Home, PlusCircle, Swords, ShieldCheck, UserRound } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
@@ -70,7 +70,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             {email ? (
               <Link to="/profile">
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm" className="gap-2 rounded-none border-foreground/25 bg-card text-xs font-bold uppercase tracking-[0.08em]">
+                  <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("nav_profile")}
                 </Button>
               </Link>

@@ -151,7 +151,7 @@ function Rankings() {
       <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
         <button
           onClick={() => setArea(undefined)}
-          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${!area ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${!area ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
         >
           {t("filter_all_areas")}
         </button>
@@ -159,7 +159,7 @@ function Rankings() {
           <button
             key={a.id}
             onClick={() => setArea(a.slug)}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${area === a.slug ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${area === a.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
           >
             {lang === "th" ? a.name_th : a.name_en}
           </button>

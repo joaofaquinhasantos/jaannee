@@ -67,7 +67,12 @@ function Index() {
     enabled: !followingOnly || authed,
   });
   const topCategories = [...(categories.data ?? [])]
-    .sort((a: any, b: any) => (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) || a.name_en.localeCompare(b.name_en))
+    .sort(
+      (a: any, b: any) =>
+        (categoryCounts.data?.[b.id] ?? 0) - (categoryCounts.data?.[a.id] ?? 0) ||
+        Number(Boolean(b.reference_photo_url)) - Number(Boolean(a.reference_photo_url)) ||
+        a.name_en.localeCompare(b.name_en),
+    )
     .slice(0, 8);
   const areaCounts = new Map<string, number>();
   for (const dish of allDishes.data ?? []) {
@@ -78,13 +83,28 @@ function Index() {
     .filter((a: any) => (areaCounts.get(a.id) ?? 0) > 0)
     .sort((a: any, b: any) => (areaCounts.get(b.id) ?? 0) - (areaCounts.get(a.id) ?? 0) || a.name_en.localeCompare(b.name_en))
     .slice(0, 6);
+  const heroCategory =
+    selectedCategory ??
+    topCategories.find((c: any) => c.reference_photo_url) ??
+    (categories.data ?? []).find((c: any) => c.reference_photo_url);
+  const heroDish = (allDishes.data ?? []).find((d: any) => d.photo_url);
+  const heroPhoto = (heroCategory as any)?.reference_photo_url ?? (heroDish as any)?.photo_url;
+  const heroTitle = heroCategory
+    ? lang === "th"
+      ? (heroCategory as any).name_th
+      : (heroCategory as any).name_en
+    : heroDish
+      ? lang === "th" && (heroDish as any).name_th
+        ? (heroDish as any).name_th
+        : (heroDish as any).name_en
+      : "Bangkok, one dish at a time";
 
   return (
     <AppShell>
       <section className="hidden min-h-[34rem] border-b-2 border-foreground pb-8 md:grid md:grid-cols-[1.25fr_0.75fr] md:gap-12 md:pb-12">
         <div>
           <p className="editorial-kicker mt-8 text-primary">Bangkok dish board</p>
-          <h1 className="mt-5 max-w-4xl font-display text-4xl leading-[0.82] tracking-[-0.045em] text-foreground md:text-[6.8rem]">
+          <h1 className="mt-5 max-w-4xl font-display text-4xl leading-[0.84] tracking-[-0.045em] text-foreground md:text-[6.1rem]">
             What should people eat in Bangkok?
           </h1>
           <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
@@ -107,20 +127,40 @@ function Index() {
             <TrustSignal text="Ranked by local comparisons" />
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-1 content-center gap-0 border-x border-foreground/20 md:mt-0">
+        <div className="mt-5 flex flex-col border-x border-foreground/30 md:mt-0">
+          <div className="relative min-h-52 flex-1 overflow-hidden border-b border-foreground/30 bg-ink">
+            {heroPhoto ? (
+              <img
+                src={heroPhoto}
+                alt={heroTitle}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(199,154,62,0.5),transparent_35%),linear-gradient(135deg,#2A1E24,#6B2018)]" />
+            )}
+            <div className="photo-scrim absolute inset-0" />
+            <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+              <p className="label-caps text-white/65">
+                {heroPhoto ? "Featured on the board" : "Add category photos in Admin"}
+              </p>
+              <p className="mt-2 font-display text-3xl leading-none md:text-4xl">{heroTitle}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1">
           {[
             { n: "01", label: "Nominate", body: "Snap a plate, tag the stall, add a price. New dishes start pending." },
             { n: "02", label: "Compare", body: "Two dishes, same category. Tap the better bite. Signed-in diners only." },
             { n: "03", label: "Rank", body: "After five diner comparisons a dish earns a rank on its board. No stars, no scores." },
           ].map((step, i) => (
-            <div key={step.n} className="grid grid-cols-[5rem_1fr] border-y border-foreground/20 bg-card p-5">
-              <span className="rank-numeral-solid font-display text-6xl">{step.n}</span>
+            <div key={step.n} className="grid grid-cols-[4.5rem_1fr] border-b border-foreground/30 bg-card p-4 last:border-b-0">
+              <span className="rank-numeral-solid font-display text-5xl">{step.n}</span>
               <div>
               <p className="mt-2 text-xs font-bold uppercase text-muted-foreground md:mt-3">{step.label}</p>
               <p className="mt-2 text-xs leading-5 text-muted-foreground md:text-sm md:leading-6">{step.body}</p>
               </div>
             </div>
           ))}
+          </div>
         </div>
       </section>
 
@@ -451,9 +491,7 @@ function Pill({
 }) {
   const base = "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors";
   const on =
-    variant === "primary"
-      ? "border-primary bg-primary text-primary-foreground"
-      : "border-accent bg-accent text-accent-foreground";
+    "border-primary bg-primary text-primary-foreground";
   const off = "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
   return (
     <button onClick={onClick} className={`${base} ${active ? on : off}`}>
