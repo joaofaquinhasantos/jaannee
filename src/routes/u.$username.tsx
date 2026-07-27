@@ -7,6 +7,7 @@ import { DishCard } from "@/components/DishCard";
 import { followUser, myFollowingIds, publicProfile } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/u/$username")({
   head: ({ params }) => {
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/u/$username")({
 
 function PublicProfilePage() {
   const { username } = Route.useParams();
+  const { t, lang } = useI18n();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["public-profile", username],
@@ -79,7 +81,15 @@ function PublicProfilePage() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["following"] });
       qc.invalidateQueries({ queryKey: ["public-profile", username] });
-      toast.success(vars.follow ? "Following" : "Unfollowed");
+      toast.success(
+        vars.follow
+          ? lang === "th"
+            ? "กำลังติดตาม"
+            : "Following"
+          : lang === "th"
+            ? "เลิกติดตามแล้ว"
+            : "Unfollowed",
+      );
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -87,16 +97,18 @@ function PublicProfilePage() {
   if (q.isLoading)
     return (
       <AppShell>
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{t("loading")}</p>
       </AppShell>
     );
   if (!q.data) {
     return (
       <AppShell>
         <div className="rounded-lg border border-border bg-card p-6">
-          <h1 className="type-page-title">Profile not found</h1>
+          <h1 className="type-page-title">{lang === "th" ? "ไม่พบโปรไฟล์" : "Profile not found"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This eater has not claimed a public username.
+            {lang === "th"
+              ? "นักชิมคนนี้ยังไม่ได้ตั้งชื่อผู้ใช้สาธารณะ"
+              : "This eater has not claimed a public username."}
           </p>
         </div>
       </AppShell>
@@ -135,7 +147,7 @@ function PublicProfilePage() {
           </div>
           {isSelf ? (
             <Link to="/profile">
-              <Button variant="outline">Edit</Button>
+              <Button variant="outline">{lang === "th" ? "แก้ไข" : "Edit"}</Button>
             </Link>
           ) : authed ? (
             <Button
@@ -143,27 +155,43 @@ function PublicProfilePage() {
               onClick={() => followMut.mutate({ targetId: profile.id, follow: !isFollowing })}
               disabled={followMut.isPending}
             >
-              {isFollowing ? "Following" : "Follow"}
+              {isFollowing
+                ? lang === "th"
+                  ? "กำลังติดตาม"
+                  : "Following"
+                : lang === "th"
+                  ? "ติดตาม"
+                  : "Follow"}
             </Button>
           ) : (
             <Link to="/auth">
-              <Button>Sign in to follow</Button>
+              <Button>{lang === "th" ? "เข้าสู่ระบบเพื่อติดตาม" : "Sign in to follow"}</Button>
             </Link>
           )}
         </div>
         <div className="mt-5 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center">
-          <Stat label="Tried" value={tried.length} />
-          <Stat label="Comparisons" value={q.data.comparisons_count ?? 0} />
-          <Stat label="Followers" value={q.data.followers_count ?? 0} />
+          <Stat label={t("profile_tried")} value={tried.length} />
+          <Stat label={t("profile_comparisons")} value={q.data.comparisons_count ?? 0} />
+          <Stat label={lang === "th" ? "ผู้ติดตาม" : "Followers"} value={q.data.followers_count ?? 0} />
         </div>
       </section>
 
       <section className="mt-8">
-        <h2 className="type-section-title mb-4">Tried dishes</h2>
+        <h2 className="type-section-title mb-4">
+          {lang === "th" ? "จานที่เคยกิน" : "Tried dishes"}
+        </h2>
         {!profile.tried_public ? (
-          <Empty text="This eater keeps tried dishes private." />
+          <Empty
+            text={
+              lang === "th"
+                ? "นักชิมคนนี้เก็บรายการจานที่เคยกินไว้เป็นส่วนตัว"
+                : "This eater keeps tried dishes private."
+            }
+          />
         ) : tried.length === 0 ? (
-          <Empty text="No public tried dishes yet." />
+          <Empty
+            text={lang === "th" ? "ยังไม่มีจานที่เคยกินแบบสาธารณะ" : "No public tried dishes yet."}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {tried.map((d: any) => (
