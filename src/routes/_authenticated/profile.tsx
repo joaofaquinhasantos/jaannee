@@ -6,10 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
+import { InlineTriedCompare } from "@/components/InlineTriedCompare";
 import { useNavigate } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -39,17 +40,47 @@ function Profile() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["profile"], queryFn: () => myProfile() });
-  const tried = (q.data?.tried ?? []).map((r: any) => r.dish).filter(Boolean);
-  const compared = q.data?.compared ?? [];
+  const tried = useMemo(
+    () => (q.data?.tried ?? []).map((r: any) => r.dish).filter(Boolean),
+    [q.data?.tried],
+  );
+  const compared = useMemo(() => q.data?.compared ?? [], [q.data?.compared]);
   const posted = q.data?.posted ?? [];
   const profile = q.data?.profile;
-  const displayName =
-    profile?.display_name || profile?.username || (lang === "th" ? "โปรไฟล์ของคุณ" : "Your profile");
+  const displayName = profile?.display_name || profile?.username || t("your_profile");
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [triedPublic, setTriedPublic] = useState(true);
+
+  const readyPair = useMemo(() => {
+    const comparedKeys = new Set(
+      compared
+        .map((comparison: any) => {
+          const loId = comparison.lo?.id;
+          const hiId = comparison.hi?.id;
+          if (!loId || !hiId) return null;
+          return [loId, hiId].sort().join(":");
+        })
+        .filter(Boolean),
+    );
+
+    for (let i = 0; i < tried.length; i += 1) {
+      for (let j = i + 1; j < tried.length; j += 1) {
+        const a = tried[i];
+        const b = tried[j];
+        if (!a?.id || !b?.id || a.category?.id !== b.category?.id) continue;
+        const aSubtype = a.subtype_id ?? a.subtype?.id ?? null;
+        const bSubtype = b.subtype_id ?? b.subtype?.id ?? null;
+        if (aSubtype !== bSubtype) continue;
+        const key = [a.id, b.id].sort().join(":");
+        if (comparedKeys.has(key)) continue;
+        return [a, b] as const;
+      }
+    }
+    return null;
+  }, [tried, compared]);
 
   useEffect(() => {
     if (!profile) return;
@@ -73,7 +104,7 @@ function Profile() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profile"] });
-      toast.success(lang === "th" ? "บันทึกโปรไฟล์แล้ว" : "Profile saved");
+      toast.success(t("profile_saved"));
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -88,9 +119,7 @@ function Profile() {
     <AppShell>
       <div className="flex items-start justify-between gap-4 border-b border-border pb-5 md:pb-7">
         <div>
-          <p className="text-xs font-bold uppercase text-primary">
-            {lang === "th" ? "เส้นทางรสชาติของคุณ" : "Your taste trail"}
-          </p>
+          <p className="text-xs font-bold uppercase text-primary">{t("your_taste_trail")}</p>
           <h1 className="type-page-title mt-2">{displayName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
         </div>
@@ -103,20 +132,30 @@ function Profile() {
         <Stat label={t("profile_posts")} value={posted.length} />
         <Stat label={t("profile_tried")} value={tried.length} />
         <Stat label={t("profile_comparisons")} value={compared.length} />
-        <Stat label={lang === "th" ? "ผู้ติดตาม" : "Followers"} value={q.data?.followers_count ?? 0} />
+        <Stat label={t("followers")} value={q.data?.followers_count ?? 0} />
       </div>
+
+      {readyPair ? (
+        <section className="mt-6 rounded-lg border-2 border-primary/40 bg-primary/5 p-4 md:p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
+            {t("which_better")}
+          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {t("compare_page_intro")}
+          </p>
+          <InlineTriedCompare dish={readyPair[0]} other={readyPair[1]} />
+        </section>
+      ) : null}
 
       <section className="mt-6 rounded-lg border border-border bg-card p-4 md:p-5">
         {!profile?.username ? (
           <div className="mb-4 rounded-md bg-secondary p-3 text-sm">
-            {lang === "th"
-              ? "ตั้งชื่อผู้ใช้เพื่อเปิดโปรไฟล์สาธารณะ ก่อนหน้านั้นโปรไฟล์ของคุณจะเป็นส่วนตัว"
-              : "Claim a username to make your public profile visible. Until then, your profile stays private."}
+            {t("claim_username_body")}
           </div>
         ) : null}
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 text-sm font-semibold">
-            <span>{lang === "th" ? "ชื่อผู้ใช้" : "Username"}</span>
+            <span>{t("username")}</span>
             <Input
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase())}
@@ -124,11 +163,11 @@ function Profile() {
             />
           </label>
           <label className="space-y-1 text-sm font-semibold">
-            <span>{lang === "th" ? "ชื่อ" : "Name"}</span>
+            <span>{t("name")}</span>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Joao" />
           </label>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
-            <span>{lang === "th" ? "ลิงก์รูปโปรไฟล์" : "Avatar URL"}</span>
+            <span>{t("avatar_url")}</span>
             <Input
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
@@ -136,20 +175,16 @@ function Profile() {
             />
           </label>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
-            <span>{lang === "th" ? "แนะนำตัว" : "Bio"}</span>
+            <span>{t("bio")}</span>
             <Textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               maxLength={160}
-              placeholder={lang === "th" ? "คุณเป็นนักชิมแบบไหน?" : "What kind of eater are you?"}
+              placeholder={t("bio_placeholder")}
             />
           </label>
           <label className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm font-semibold md:col-span-2">
-            <span>
-              {lang === "th"
-                ? "แสดงจานที่ฉันเคยกินบนโปรไฟล์สาธารณะ"
-                : "Show dishes I tried on my public profile"}
-            </span>
+            <span>{t("show_tried_public")}</span>
             <input
               type="checkbox"
               checked={triedPublic}
@@ -163,22 +198,20 @@ function Profile() {
             onClick={() => saveProfile.mutate()}
             disabled={saveProfile.isPending || username.trim().length < 3}
           >
-            {lang === "th" ? "บันทึกโปรไฟล์" : "Save profile"}
+            {t("save_profile")}
           </Button>
           {profile?.username ? (
             <Link to="/u/$username" params={{ username: profile.username }}>
-              <Button variant="outline">
-                {lang === "th" ? "ดูโปรไฟล์สาธารณะ" : "View public profile"}
-              </Button>
+              <Button variant="outline">{t("view_public_profile")}</Button>
             </Link>
           ) : null}
         </div>
       </section>
 
       <section className="mt-8">
-        <h2 className="type-section-title mb-4">{lang === "th" ? "จานที่เพิ่ม" : "Posted"}</h2>
+        <h2 className="type-section-title mb-4">{t("profile_posts")}</h2>
         {posted.length === 0 ? (
-          <EmptyNote text={lang === "th" ? "ยังไม่มีจานที่เพิ่ม" : "No posts yet."} />
+          <EmptyNote text={t("no_posts_yet")} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {posted.map((d: any) => (
@@ -191,7 +224,7 @@ function Profile() {
       <section className="mt-10">
         <h2 className="type-section-title mb-4">{t("profile_tried")}</h2>
         {tried.length === 0 ? (
-          <EmptyNote text={lang === "th" ? "ยังไม่มีจานที่ทำเครื่องหมายว่าเคยกิน" : "No dishes marked tried yet."} />
+          <EmptyNote text={t("no_tried_marked")} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {tried.map((d: any) => (
@@ -204,26 +237,30 @@ function Profile() {
       <section className="mt-10">
         <h2 className="type-section-title mb-4">{t("profile_comparisons")}</h2>
         {compared.length === 0 ? (
-          <EmptyNote text={lang === "th" ? "ยังไม่มีการเปรียบเทียบ" : "No comparisons yet."} link />
+          <EmptyNote text={t("no_comparisons_yet")} />
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-            {compared.map((c: any) => (
-              <li key={c.id} className="flex items-center justify-between gap-4 p-4 text-sm">
-                <span
-                  className={c.winner_id === c.lo?.id ? "font-medium" : "text-muted-foreground"}
-                >
-                  {(lang === "th" && c.lo?.name_th) || c.lo?.name_en}{" "}
-                  <span className="text-xs text-muted-foreground">({c.lo?.place?.name})</span>
-                </span>
-                <span className="text-muted-foreground">VS</span>
-                <span
-                  className={c.winner_id === c.hi?.id ? "font-medium" : "text-muted-foreground"}
-                >
-                  {(lang === "th" && c.hi?.name_th) || c.hi?.name_en}{" "}
-                  <span className="text-xs text-muted-foreground">({c.hi?.place?.name})</span>
-                </span>
-              </li>
-            ))}
+            {compared.map((c: any) => {
+              const loName = lang === "th" && c.lo?.name_th ? c.lo.name_th : c.lo?.name_en;
+              const hiName = lang === "th" && c.hi?.name_th ? c.hi.name_th : c.hi?.name_en;
+              return (
+                <li key={c.id} className="flex items-center justify-between gap-4 p-4 text-sm">
+                  <span
+                    className={c.winner_id === c.lo?.id ? "font-medium" : "text-muted-foreground"}
+                  >
+                    {loName}{" "}
+                    <span className="text-xs text-muted-foreground">({c.lo?.place?.name})</span>
+                  </span>
+                  <span className="text-muted-foreground">{t("versus")}</span>
+                  <span
+                    className={c.winner_id === c.hi?.id ? "font-medium" : "text-muted-foreground"}
+                  >
+                    {hiName}{" "}
+                    <span className="text-xs text-muted-foreground">({c.hi?.place?.name})</span>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -240,19 +277,10 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function EmptyNote({ text, link }: { text: string; link?: boolean }) {
-  const { t } = useI18n();
+function EmptyNote({ text }: { text: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
-      {text}{" "}
-      {link ? (
-        <Link
-          to="/compare"
-          className="font-semibold text-primary underline-offset-4 hover:underline"
-        >
-          {t("cta_compare")}
-        </Link>
-      ) : null}
+      {text}
     </div>
   );
 }
