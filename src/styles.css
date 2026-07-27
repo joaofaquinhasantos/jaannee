@@ -48,24 +48,32 @@
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-thai: var(--font-thai);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
 }
 
 :root {
   --radius: 0.5rem;
   --background: #FAF8F4;
-  --foreground: #2A1E24;
+  --foreground: #1E1917;
+  --paper: #FAF8F4;
+  --ink: #1E1917;
+  --gold: #C79A3E;
+  --gold-soft: #E4C98A;
   --card: #FFFFFF;
-  --card-foreground: #2A1E24;
+  --card-foreground: #1E1917;
   --popover: #FFFFFF;
-  --popover-foreground: #2A1E24;
+  --popover-foreground: #1E1917;
   --primary: #D6321F;
   --primary-foreground: #FFFFFF;
   --secondary: #F4EEE6;
-  --secondary-foreground: #2A1E24;
+  --secondary-foreground: #1E1917;
   --muted: #F3EEE7;
-  --muted-foreground: #7A7069;
+  --muted-foreground: #6E6660;
   --accent: #C79A3E;
-  --accent-foreground: #2A1E24;
+  --accent-foreground: #1E1917;
   --destructive: #D6321F;
   --destructive-foreground: #FFFFFF;
   --border: #ECE6DD;
@@ -92,6 +100,10 @@
 .dark {
   --background: #2A1E24;
   --foreground: #FAF8F4;
+  --paper: #2A1E24;
+  --ink: #FAF8F4;
+  --gold: #D3AC5A;
+  --gold-soft: #8A6F30;
   --card: #34272D;
   --card-foreground: #FAF8F4;
   --popover: #34272D;
@@ -167,4 +179,54 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+/* Editorial "arena" signature utilities */
+
+/* Huge outlined gold serif rank numeral that bleeds behind cards. */
+@utility rank-numeral {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.72;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--gold);
+  paint-order: stroke fill;
+  user-select: none;
+}
+
+/* Solid variant for small inline rank chips. */
+@utility rank-numeral-solid {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.72;
+  letter-spacing: -0.04em;
+  color: var(--gold);
+  user-select: none;
+}
+
+/* Uppercase tracked section label. */
+@utility label-caps {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Dark gradient scrim for dish names over food photography. */
+@utility photo-scrim {
+  background-image: linear-gradient(
+    to top,
+    rgba(14, 11, 10, 0.86) 0%,
+    rgba(14, 11, 10, 0.45) 38%,
+    rgba(14, 11, 10, 0.05) 72%,
+    rgba(14, 11, 10, 0) 100%
+  );
+}
+
+/* Thin editorial hairline rule used between leaderboard entries. */
+@utility hairline {
+  border-top: 1px solid color-mix(in oklab, var(--ink) 14%, transparent);
 }
