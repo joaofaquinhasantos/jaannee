@@ -6,7 +6,6 @@ import { listAreas, listCategories, listCategoryCounts, listDishes, leaderboard 
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
 import { LeaderboardEntry } from "@/components/LeaderboardEntry";
-import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/CategoryPicker";
 import { AreaPicker } from "@/components/AreaPicker";
