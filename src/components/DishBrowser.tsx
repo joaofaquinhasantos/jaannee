@@ -11,6 +11,7 @@ type DishBrowserProps = {
   onCategoryChange: (slug: string | undefined) => void;
   onSubtypeChange: (slug: string | undefined) => void;
   onAreaChange: (slug: string | undefined) => void;
+  tone?: "default" | "noir";
 };
 
 export function DishBrowser({
@@ -22,6 +23,7 @@ export function DishBrowser({
   onCategoryChange,
   onSubtypeChange,
   onAreaChange,
+  tone = "default",
 }: DishBrowserProps) {
   const { t, lang } = useI18n();
   const selectedCategory = categories.find((item) => item.slug === category);
@@ -29,16 +31,14 @@ export function DishBrowser({
     .filter((item) => item.is_active)
     .sort(
       (a, b) =>
-        (a.display_order ?? 0) - (b.display_order ?? 0) ||
-        a.name_en.localeCompare(b.name_en),
+        (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
     );
-  const scoped =
-    Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
+  const scoped = Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
   const hasFilters = Boolean(category || area);
 
   return (
     <div>
-      <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+      <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
         <CategoryPicker
           categories={categories}
           value={category}
@@ -48,12 +48,14 @@ export function DishBrowser({
             onCategoryChange(item.slug);
             onSubtypeChange(undefined);
           }}
+          tone={tone}
         />
         <AreaPicker
           areas={areas}
           value={area}
           lang={lang}
           onChange={(slug) => onAreaChange(slug)}
+          tone={tone}
         />
         {hasFilters && (
           <button
@@ -63,7 +65,11 @@ export function DishBrowser({
               onSubtypeChange(undefined);
               onAreaChange(undefined);
             }}
-            className="px-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
+            className={
+              tone === "noir"
+                ? "px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45 transition-colors hover:text-primary"
+                : "px-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
+            }
           >
             Reset
           </button>
@@ -71,7 +77,9 @@ export function DishBrowser({
       </div>
 
       {category && scoped && activeSubtypes.length > 0 && (
-        <div className="mt-3 flex gap-5 overflow-x-auto">
+        <div
+          className={`mt-3 flex gap-5 overflow-x-auto ${tone === "noir" ? "border-t border-white/10" : ""}`}
+        >
           {activeSubtypes.map((item) => (
             <button
               key={item.id}
@@ -80,7 +88,9 @@ export function DishBrowser({
               className={`shrink-0 border-b py-2 text-sm font-semibold transition-colors ${
                 subtype === item.slug
                   ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : tone === "noir"
+                    ? "border-transparent text-white/45 hover:text-white"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {lang === "th" ? item.name_th : item.name_en}

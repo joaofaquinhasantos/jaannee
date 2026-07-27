@@ -30,10 +30,12 @@ function matchesCategory(category: any, query: string) {
 
 export function groupedCategories(categories: any[], query = "") {
   const groups = new Map<string, any[]>();
-  categories.filter((c) => matchesCategory(c, query)).forEach((category) => {
-    const key = category.cuisine_ref?.name_en || category.cuisine || "other";
-    groups.set(key, [...(groups.get(key) ?? []), category]);
-  });
+  categories
+    .filter((c) => matchesCategory(c, query))
+    .forEach((category) => {
+      const key = category.cuisine_ref?.name_en || category.cuisine || "other";
+      groups.set(key, [...(groups.get(key) ?? []), category]);
+    });
   return [...groups.entries()].sort(([a], [b]) => cuisineLabel(a).localeCompare(cuisineLabel(b)));
 }
 
@@ -44,6 +46,7 @@ export function CategoryPicker({
   lang,
   placeholder = "Choose category",
   triggerLabel,
+  tone = "default",
 }: {
   categories: any[];
   value?: string;
@@ -51,6 +54,7 @@ export function CategoryPicker({
   lang: string;
   placeholder?: string;
   triggerLabel?: string;
+  tone?: "default" | "noir";
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -63,12 +67,29 @@ export function CategoryPicker({
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="h-auto min-h-11 w-full justify-between rounded-md border-border bg-card px-3 py-2 text-left font-normal"
+        className={
+          tone === "noir"
+            ? "h-auto min-h-10 w-full justify-between rounded-none border-white/15 bg-white/[0.04] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-white hover:bg-white/[0.08]"
+            : "h-auto min-h-11 w-full justify-between rounded-md border-border bg-card px-3 py-2 text-left font-normal"
+        }
       >
-        <span className={selected && !triggerLabel ? "text-foreground" : "text-muted-foreground"}>
-          {triggerLabel || (selected ? (lang === "th" ? selected.name_th : selected.name_en) : placeholder)}
+        <span
+          className={
+            tone === "noir"
+              ? selected && !triggerLabel
+                ? "text-white"
+                : "text-white/55"
+              : selected && !triggerLabel
+                ? "text-foreground"
+                : "text-muted-foreground"
+          }
+        >
+          {triggerLabel ||
+            (selected ? (lang === "th" ? selected.name_th : selected.name_en) : placeholder)}
         </span>
-        <Search className="h-4 w-4 text-muted-foreground" />
+        <Search
+          className={tone === "noir" ? "h-4 w-4 text-white/40" : "h-4 w-4 text-muted-foreground"}
+        />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-w-lg">
@@ -86,7 +107,9 @@ export function CategoryPicker({
           <div className="max-h-[60dvh] overflow-y-auto p-2">
             {groups.map(([cuisine, items]) => (
               <div key={cuisine} className="py-2">
-                <p className="px-2 text-xs font-bold uppercase text-muted-foreground">{cuisineLabel(cuisine, t)}</p>
+                <p className="px-2 text-xs font-bold uppercase text-muted-foreground">
+                  {cuisineLabel(cuisine, t)}
+                </p>
                 <div className="mt-1 space-y-1">
                   {items.map((category) => (
                     <button
@@ -99,16 +122,22 @@ export function CategoryPicker({
                       }}
                       className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                      <span className="font-semibold">{lang === "th" ? category.name_th : category.name_en}</span>
+                      <span className="font-semibold">
+                        {lang === "th" ? category.name_th : category.name_en}
+                      </span>
                       {lang !== "th" && category.name_th ? (
-                        <span className="ml-2 text-xs text-muted-foreground">{category.name_th}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {category.name_th}
+                        </span>
                       ) : null}
                     </button>
                   ))}
                 </div>
               </div>
             ))}
-            {groups.length === 0 && <p className="p-4 text-sm text-muted-foreground">{t("no_matching_categories")}</p>}
+            {groups.length === 0 && (
+              <p className="p-4 text-sm text-muted-foreground">{t("no_matching_categories")}</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

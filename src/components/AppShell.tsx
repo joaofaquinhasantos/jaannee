@@ -7,7 +7,13 @@ import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
 import { BarChart3, Home, PlusCircle, Swords, ShieldCheck, UserRound } from "lucide-react";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "noir";
+}) {
   const { t, lang, setLang } = useI18n();
   const [email, setEmail] = useState<string | null>(null);
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -26,6 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     enabled: !!email,
   });
   const isAdmin = !!adminQ.data?.admin;
+  const noir = tone === "noir";
 
   const nav = [
     { to: "/", label: t("nav_feed"), Icon: Home },
@@ -36,14 +43,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b-2 border-foreground bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 py-2.5 md:px-8 md:py-3">
+    <div
+      className={
+        noir
+          ? "min-h-screen bg-[#111111] text-[#f1eeeb]"
+          : "min-h-screen bg-background text-foreground"
+      }
+    >
+      <header
+        className={`sticky top-0 z-40 backdrop-blur ${noir ? "border-b border-white/10 bg-[#111111]/95" : "border-b-2 border-foreground bg-background/95"}`}
+      >
+        <div
+          className={`mx-auto flex items-center justify-between ${noir ? "max-w-[112rem] px-5 py-3 md:px-8" : "max-w-[90rem] px-4 py-2.5 md:px-8 md:py-3"}`}
+        >
           <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md">
-            <span className="font-display text-3xl leading-none tracking-[-0.04em] text-foreground md:text-4xl">
+            <span
+              className={`font-display text-3xl leading-none tracking-[-0.04em] md:text-4xl ${noir ? "text-white" : "text-foreground"}`}
+            >
               {t("brand")}
             </span>
-            <span className="hidden max-w-44 border-l border-foreground/25 pl-3 text-[10px] font-bold uppercase leading-tight tracking-[0.12em] text-muted-foreground sm:inline">{t("tagline")}</span>
+            <span
+              className={`hidden max-w-44 border-l pl-3 text-[10px] font-bold uppercase leading-tight tracking-[0.12em] sm:inline ${noir ? "border-white/20 text-white/45" : "border-foreground/25 text-muted-foreground"}`}
+            >
+              {t("tagline")}
+            </span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((n) => (
@@ -53,7 +76,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={`border-b-2 px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors ${
                   path === n.to
                     ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:border-foreground/25 hover:text-foreground"
+                    : noir
+                      ? "border-transparent text-white/50 hover:border-white/25 hover:text-white"
+                      : "border-transparent text-muted-foreground hover:border-foreground/25 hover:text-foreground"
                 }`}
               >
                 {n.label}
@@ -63,14 +88,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setLang(lang === "en" ? "th" : "en")}
-              className="rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
+              className={`rounded-none border px-2.5 py-1.5 text-xs font-bold shadow-sm transition-colors ${noir ? "border-white/20 bg-transparent text-white hover:border-primary hover:text-primary" : "border-border bg-card text-foreground hover:border-primary/30 hover:text-primary"}`}
               aria-label="Toggle language"
             >
               {lang === "en" ? "TH" : "EN"}
             </button>
             {email ? (
               <Link to="/profile">
-                <Button variant="outline" size="sm" className="gap-2 rounded-none border-foreground/25 bg-card text-xs font-bold uppercase tracking-[0.08em]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`gap-2 rounded-none text-xs font-bold uppercase tracking-[0.08em] ${noir ? "border-white/20 bg-transparent text-white hover:bg-white hover:text-black" : "border-foreground/25 bg-card"}`}
+                >
                   <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("nav_profile")}
                 </Button>
@@ -83,23 +112,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[90rem] px-4 pb-24 pt-4 md:px-8 md:pt-8">{children}</main>
-      <footer className="border-t-2 border-foreground bg-card py-8 pb-28 md:py-10 md:pb-8">
-        <div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 md:px-8">
+      <main
+        className={
+          noir
+            ? "mx-auto max-w-[112rem] pb-24 md:pb-0"
+            : "mx-auto max-w-[90rem] px-4 pb-24 pt-4 md:px-8 md:pt-8"
+        }
+      >
+        {children}
+      </main>
+      <footer
+        className={
+          noir
+            ? "border-t border-white/10 bg-[#111111] py-8 pb-28 md:py-10 md:pb-8"
+            : "border-t-2 border-foreground bg-card py-8 pb-28 md:py-10 md:pb-8"
+        }
+      >
+        <div
+          className={`mx-auto flex items-center justify-between px-4 md:px-8 ${noir ? "max-w-[112rem]" : "max-w-[90rem]"}`}
+        >
           <p className="font-display text-2xl">JaanNee</p>
-          <p className="text-sm text-muted-foreground">
+          <p className={noir ? "text-sm text-white/35" : "text-sm text-muted-foreground"}>
             © {new Date().getFullYear()} JaanNee
           </p>
         </div>
       </footer>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden">
+      <nav
+        className={`fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden ${noir ? "border-white/10 bg-[#111111]/95" : "border-border bg-background/95"}`}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-around px-2 py-2">
           {nav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
               className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-center text-[11px] font-semibold transition-colors ${
-                path === n.to ? "bg-secondary text-primary" : "text-muted-foreground"
+                path === n.to
+                  ? noir
+                    ? "bg-white/10 text-primary"
+                    : "bg-secondary text-primary"
+                  : noir
+                    ? "text-white/45"
+                    : "text-muted-foreground"
               }`}
             >
               <n.Icon className="h-5 w-5" aria-hidden="true" />

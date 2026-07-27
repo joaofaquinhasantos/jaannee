@@ -18,11 +18,13 @@ export function AreaPicker({
   value,
   onChange,
   lang,
+  tone = "default",
 }: {
   areas: any[];
   value?: string;
   onChange: (value: string, area: any) => void;
   lang: string;
+  tone?: "default" | "noir";
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -36,12 +38,28 @@ export function AreaPicker({
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="h-auto min-h-11 w-full justify-between rounded-md border-border bg-card px-3 py-2 text-left font-normal"
+        className={
+          tone === "noir"
+            ? "h-auto min-h-10 w-full justify-between rounded-none border-white/15 bg-white/[0.04] px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-white hover:bg-white/[0.08]"
+            : "h-auto min-h-11 w-full justify-between rounded-md border-border bg-card px-3 py-2 text-left font-normal"
+        }
       >
-        <span className={selected ? "text-foreground" : "text-muted-foreground"}>
+        <span
+          className={
+            tone === "noir"
+              ? selected
+                ? "text-white"
+                : "text-white/55"
+              : selected
+                ? "text-foreground"
+                : "text-muted-foreground"
+          }
+        >
           {selected ? (lang === "th" ? selected.name_th : selected.name_en) : t("filter_all_areas")}
         </span>
-        <Search className="h-4 w-4 text-muted-foreground" />
+        <Search
+          className={tone === "noir" ? "h-4 w-4 text-white/40" : "h-4 w-4 text-muted-foreground"}
+        />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-w-lg">
@@ -71,14 +89,18 @@ export function AreaPicker({
                     value === area.slug ? "bg-secondary" : ""
                   }`}
                 >
-                  <span className="font-semibold">{lang === "th" ? area.name_th : area.name_en}</span>
+                  <span className="font-semibold">
+                    {lang === "th" ? area.name_th : area.name_en}
+                  </span>
                   {area.name_th ? (
                     <span className="ml-2 text-xs text-muted-foreground">{area.name_th}</span>
                   ) : null}
                 </button>
               ))}
             </div>
-            {matches.length === 0 && <p className="p-4 text-sm text-muted-foreground">{t("no_matching_areas")}</p>}
+            {matches.length === 0 && (
+              <p className="p-4 text-sm text-muted-foreground">{t("no_matching_areas")}</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
