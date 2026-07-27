@@ -111,14 +111,14 @@ function Rankings() {
 
       <div className="mt-7">
         {categories.isSuccess && (categories.data ?? []).length === 0 ? (
-          <EmptyBoard title="No rankings yet." />
+          <EmptyBoard title={t("no_rankings_yet")} />
         ) : !cat ? (
-          <p className="py-10 text-sm text-muted-foreground">Choose a dish category.</p>
+          <p className="py-10 text-sm text-muted-foreground">{t("choose_dish_category")}</p>
         ) : subtypeScoped && !subtype ? (
-          <p className="py-10 text-sm text-muted-foreground">Choose a dish type.</p>
+          <p className="py-10 text-sm text-muted-foreground">{t("choose_dish_type")}</p>
         ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
           <div className="border-t border-border py-10">
-            <h2 className="type-section-title">No ranking yet.</h2>
+            <h2 className="type-section-title">{t("no_ranking_yet")}</h2>
             <div className="mt-5 flex gap-5">
               <Link to="/submit" className="text-sm font-semibold text-primary">
                 {t("cta_add")}
@@ -170,15 +170,16 @@ function Rankings() {
 }
 
 function EmptyBoard({ title }: { title: string }) {
+  const { t } = useI18n();
   return (
     <div className="border-t border-border py-10">
       <h2 className="type-section-title">{title}</h2>
       <div className="mt-5 flex gap-5">
         <Link to="/submit" className="text-sm font-semibold text-primary">
-          Add a dish
+          {t("cta_add")}
         </Link>
         <Link to="/" className="text-sm font-semibold text-foreground">
-          Discover
+          {t("nav_feed")}
         </Link>
       </div>
     </div>
