@@ -47,7 +47,8 @@ function Profile() {
   const compared = useMemo(() => q.data?.compared ?? [], [q.data?.compared]);
   const posted = q.data?.posted ?? [];
   const profile = q.data?.profile;
-  const displayName = profile?.display_name || profile?.username || t("your_profile");
+  const displayName =
+    profile?.display_name || profile?.username || (lang === "th" ? "โปรไฟล์ของคุณ" : "Your profile");
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -104,7 +105,7 @@ function Profile() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profile"] });
-      toast.success(t("profile_saved"));
+      toast.success(lang === "th" ? "บันทึกโปรไฟล์แล้ว" : "Profile saved");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -119,7 +120,9 @@ function Profile() {
     <AppShell>
       <div className="flex items-start justify-between gap-4 border-b border-border pb-5 md:pb-7">
         <div>
-          <p className="text-xs font-bold uppercase text-primary">{t("your_taste_trail")}</p>
+          <p className="text-xs font-bold uppercase text-primary">
+            {lang === "th" ? "เส้นทางรสนิยมของคุณ" : "Your taste trail"}
+          </p>
           <h1 className="type-page-title mt-2">{displayName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
         </div>
@@ -132,7 +135,7 @@ function Profile() {
         <Stat label={t("profile_posts")} value={posted.length} />
         <Stat label={t("profile_tried")} value={tried.length} />
         <Stat label={t("profile_comparisons")} value={compared.length} />
-        <Stat label={t("followers")} value={q.data?.followers_count ?? 0} />
+        <Stat label={lang === "th" ? "ผู้ติดตาม" : "Followers"} value={q.data?.followers_count ?? 0} />
       </div>
 
       {readyPair ? (
@@ -150,12 +153,14 @@ function Profile() {
       <section className="mt-6 rounded-lg border border-border bg-card p-4 md:p-5">
         {!profile?.username ? (
           <div className="mb-4 rounded-md bg-secondary p-3 text-sm">
-            {t("claim_username_body")}
+            {lang === "th"
+              ? "ตั้งชื่อผู้ใช้เพื่อเปิดโปรไฟล์สาธารณะ ก่อนหน้านั้นโปรไฟล์ของคุณจะเป็นส่วนตัว"
+              : "Claim a username to make your public profile visible. Until then, your profile stays private."}
           </div>
         ) : null}
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 text-sm font-semibold">
-            <span>{t("username")}</span>
+            <span>{lang === "th" ? "ชื่อผู้ใช้" : "Username"}</span>
             <Input
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase())}
@@ -163,11 +168,11 @@ function Profile() {
             />
           </label>
           <label className="space-y-1 text-sm font-semibold">
-            <span>{t("name")}</span>
+            <span>{lang === "th" ? "ชื่อ" : "Name"}</span>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Joao" />
           </label>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
-            <span>{t("avatar_url")}</span>
+            <span>{lang === "th" ? "ลิงก์รูปโปรไฟล์" : "Avatar URL"}</span>
             <Input
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
@@ -175,16 +180,20 @@ function Profile() {
             />
           </label>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
-            <span>{t("bio")}</span>
+            <span>{lang === "th" ? "แนะนำตัว" : "Bio"}</span>
             <Textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               maxLength={160}
-              placeholder={t("bio_placeholder")}
+              placeholder={lang === "th" ? "คุณเป็นนักชิมแบบไหน?" : "What kind of eater are you?"}
             />
           </label>
           <label className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm font-semibold md:col-span-2">
-            <span>{t("show_tried_public")}</span>
+            <span>
+              {lang === "th"
+                ? "แสดงจานที่ฉันเคยกินในโปรไฟล์สาธารณะ"
+                : "Show dishes I tried on my public profile"}
+            </span>
             <input
               type="checkbox"
               checked={triedPublic}
@@ -198,11 +207,13 @@ function Profile() {
             onClick={() => saveProfile.mutate()}
             disabled={saveProfile.isPending || username.trim().length < 3}
           >
-            {t("save_profile")}
+            {lang === "th" ? "บันทึกโปรไฟล์" : "Save profile"}
           </Button>
           {profile?.username ? (
             <Link to="/u/$username" params={{ username: profile.username }}>
-              <Button variant="outline">{t("view_public_profile")}</Button>
+              <Button variant="outline">
+                {lang === "th" ? "ดูโปรไฟล์สาธารณะ" : "View public profile"}
+              </Button>
             </Link>
           ) : null}
         </div>
@@ -211,7 +222,7 @@ function Profile() {
       <section className="mt-8">
         <h2 className="type-section-title mb-4">{t("profile_posts")}</h2>
         {posted.length === 0 ? (
-          <EmptyNote text={t("no_posts_yet")} />
+          <EmptyNote text={lang === "th" ? "ยังไม่มีโพสต์" : "No posts yet."} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {posted.map((d: any) => (
@@ -224,7 +235,9 @@ function Profile() {
       <section className="mt-10">
         <h2 className="type-section-title mb-4">{t("profile_tried")}</h2>
         {tried.length === 0 ? (
-          <EmptyNote text={t("no_tried_marked")} />
+          <EmptyNote
+            text={lang === "th" ? "ยังไม่มีจานที่ทำเครื่องหมายว่าเคยกิน" : "No dishes marked tried yet."}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {tried.map((d: any) => (
@@ -237,7 +250,7 @@ function Profile() {
       <section className="mt-10">
         <h2 className="type-section-title mb-4">{t("profile_comparisons")}</h2>
         {compared.length === 0 ? (
-          <EmptyNote text={t("no_comparisons_yet")} />
+          <EmptyNote text={lang === "th" ? "ยังไม่มีการเปรียบเทียบ" : "No comparisons yet."} />
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {compared.map((c: any) => {
@@ -251,7 +264,7 @@ function Profile() {
                     {loName}{" "}
                     <span className="text-xs text-muted-foreground">({c.lo?.place?.name})</span>
                   </span>
-                  <span className="text-muted-foreground">{t("versus")}</span>
+                  <span className="text-muted-foreground">{lang === "th" ? "เทียบกับ" : "vs"}</span>
                   <span
                     className={c.winner_id === c.hi?.id ? "font-medium" : "text-muted-foreground"}
                   >
