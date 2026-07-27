@@ -43,6 +43,8 @@ export function AppShell({
     { to: "/submit", label: t("nav_submit"), Icon: PlusCircle },
     ...(isAdmin ? [{ to: "/admin", label: t("nav_admin"), Icon: ShieldCheck }] : []),
   ];
+  const languageLabel =
+    lang === "en" ? "เปลี่ยนเป็นภาษาไทย" : "Switch to English";
 
   return (
     <div
@@ -89,9 +91,11 @@ export function AppShell({
           </nav>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setLang(lang === "en" ? "th" : "en")}
               className={`rounded-none border px-2.5 py-1.5 text-xs font-bold shadow-sm transition-colors ${noir ? "border-white/20 bg-transparent text-white hover:border-primary hover:text-primary" : "border-border bg-card text-foreground hover:border-primary/30 hover:text-primary"}`}
-              aria-label="Toggle language"
+              aria-label={languageLabel}
+              title={languageLabel}
             >
               {lang === "en" ? "TH" : "EN"}
             </button>
@@ -133,9 +137,9 @@ export function AppShell({
         <div
           className={`mx-auto flex items-center justify-between px-4 md:px-8 ${noir ? "max-w-[112rem]" : "max-w-[90rem]"}`}
         >
-          <p className="brand-serif text-2xl">JaanNee</p>
+          <p className="brand-serif text-2xl">{t("brand")}</p>
           <p className={noir ? "text-sm text-white/35" : "text-sm text-muted-foreground"}>
-            © {new Date().getFullYear()} JaanNee
+            © {new Date().getFullYear()} {t("brand")}
           </p>
         </div>
       </footer>
