@@ -100,6 +100,10 @@
 .dark {
   --background: #2A1E24;
   --foreground: #FAF8F4;
+  --paper: #2A1E24;
+  --ink: #FAF8F4;
+  --gold: #D3AC5A;
+  --gold-soft: #8A6F30;
   --card: #34272D;
   --card-foreground: #FAF8F4;
   --popover: #34272D;
