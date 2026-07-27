@@ -6,7 +6,6 @@ import { listAreas, listCategories, listDishes, leaderboard } from "@/lib/dishes
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
 import { LeaderboardEntry } from "@/components/LeaderboardEntry";
-import { Button } from "@/components/ui/button";
 import { DishBrowser } from "@/components/DishBrowser";
 
 export const Route = createFileRoute("/rankings")({
@@ -117,17 +116,7 @@ function Rankings() {
         ) : subtypeScoped && !subtype ? (
           <p className="py-10 text-sm text-muted-foreground">{t("choose_dish_type")}</p>
         ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
-          <div className="border-t border-border py-10">
-            <h2 className="type-section-title">{t("no_ranking_yet")}</h2>
-            <div className="mt-5 flex gap-5">
-              <Link to="/submit" className="text-sm font-semibold text-primary">
-                {t("cta_add")}
-              </Link>
-              <Link to="/compare" className="text-sm font-semibold text-foreground">
-                {t("cta_compare")}
-              </Link>
-            </div>
-          </div>
+          <EmptyBoard title={t("no_ranking_yet")} />
         ) : (
           <div className="space-y-10">
             {(board.data ?? []).length > 0 && (
@@ -146,14 +135,9 @@ function Rankings() {
             )}
             {gatheringDishes.length > 0 && (
               <section className="border-t border-border pt-6">
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="label-caps text-primary">{t("gathering_progress")}</p>
-                    <h2 className="type-section-title mt-2">{t("not_ranked_yet")}</h2>
-                  </div>
-                  <Link to="/compare" search={{ category: cat } as any}>
-                    <Button variant="outline">{t("cta_compare")}</Button>
-                  </Link>
+                <div className="mb-5">
+                  <p className="label-caps text-primary">{t("gathering_progress")}</p>
+                  <h2 className="type-section-title mt-2">{t("not_ranked_yet")}</h2>
                 </div>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {gatheringDishes.map((d: any) => (
