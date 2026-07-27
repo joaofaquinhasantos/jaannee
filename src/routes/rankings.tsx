@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { listAreas, listCategories, listCategoryCounts, listDishes, leaderboard } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { DishCard } from "@/components/DishCard";
+import { LeaderboardEntry } from "@/components/LeaderboardEntry";
 import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/CategoryPicker";
