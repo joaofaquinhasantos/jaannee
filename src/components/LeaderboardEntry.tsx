@@ -64,7 +64,7 @@ export function LeaderboardEntry({
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center bg-secondary text-muted-foreground">
-                <span className="font-display text-3xl italic opacity-70">Photo needed</span>
+                <span className="type-card-title opacity-70">Photo needed</span>
                 <span className="label-caps mt-2 opacity-70">Help this dish look alive</span>
               </div>
             )}
@@ -83,7 +83,7 @@ export function LeaderboardEntry({
 
             <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
               <h3
-                className={`font-display leading-[0.9] text-white drop-shadow-sm ${featured ? "text-4xl md:text-6xl" : "text-3xl md:text-4xl"}`}
+                className={`text-white drop-shadow-sm ${featured ? "type-page-title" : "type-card-title"}`}
               >
                 {primaryName}
               </h3>
@@ -128,7 +128,7 @@ export function LeaderboardEntry({
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className="font-display text-2xl leading-none text-ink">{value}</span>
+      <span className="type-stat text-ink">{value}</span>
       <span className="label-caps text-muted-foreground">{label}</span>
     </span>
   );

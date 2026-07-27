@@ -24,12 +24,24 @@ export const Route = createFileRoute("/compare")({
   head: () => ({
     meta: [
       { title: "Compare two dishes — JaanNee" },
-      { name: "description", content: "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the JaanNee ranking for that plate." },
+      {
+        name: "description",
+        content:
+          "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the JaanNee ranking for that plate.",
+      },
       { property: "og:title", content: "Compare two dishes — JaanNee" },
-      { property: "og:description", content: "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking." },
+      {
+        property: "og:description",
+        content:
+          "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking.",
+      },
       { property: "og:url", content: "https://jaannee.lovable.app/compare" },
       { name: "twitter:title", content: "Compare two dishes — JaanNee" },
-      { name: "twitter:description", content: "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking." },
+      {
+        name: "twitter:description",
+        content:
+          "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking.",
+      },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
   }),
@@ -97,17 +109,14 @@ function Compare() {
   // subtype. This is a property of the category, not of the user's
   // tried dishes.
   const activeCategorySubtypes = useMemo(() => {
-    const subs = ((selectedCat?.subtypes ?? []) as any[]).filter(
-      (s) => s.is_active === true,
-    );
+    const subs = ((selectedCat?.subtypes ?? []) as any[]).filter((s) => s.is_active === true);
     return subs.sort(
       (a: any, b: any) =>
         (a.display_order ?? 0) - (b.display_order ?? 0) ||
         String(a.name_en).localeCompare(String(b.name_en)),
     );
   }, [selectedCat]);
-  const scoped =
-    !!selectedCat?.requires_subtype || activeCategorySubtypes.length > 0;
+  const scoped = !!selectedCat?.requires_subtype || activeCategorySubtypes.length > 0;
   // Only offer subtypes the user has tried dishes in, restricted to
   // active subtypes that belong to the selected category. Legacy
   // subtype-less or inactive-subtype dishes are excluded.
@@ -133,9 +142,7 @@ function Compare() {
     if (!cat) return [] as any[];
     if (scoped && !subtype) return [];
     if (scoped) {
-      const activeSlugs = new Set(
-        activeCategorySubtypes.map((s: any) => s.slug),
-      );
+      const activeSlugs = new Set(activeCategorySubtypes.map((s: any) => s.slug));
       return triedInCat.filter(
         (d) => d.subtype?.slug === subtype && activeSlugs.has(d.subtype?.slug),
       );
@@ -174,8 +181,7 @@ function Compare() {
     mutationFn: async (winnerId: string) => {
       if (!a || !b) throw new Error("Choose both dishes");
       if (a.id === b.id) throw new Error("Choose two different dishes");
-      if (a.category?.id !== b.category?.id)
-        throw new Error("Dishes must be in the same category");
+      if (a.category?.id !== b.category?.id) throw new Error("Dishes must be in the same category");
       if (scoped && a.subtype?.id !== b.subtype?.id)
         throw new Error("Dishes must be the same dish type");
       return submitComparison({ data: { dishAId: a.id, dishBId: b.id, winnerId } });
@@ -206,10 +212,8 @@ function Compare() {
     return (
       <AppShell>
         <section className="mt-10 max-w-lg rounded-lg border border-border bg-card p-6">
-          <h1 className="font-display text-4xl leading-none">{t("sign_in_to_compare")}</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("sign_in_compare_body")}
-          </p>
+          <h1 className="type-page-title">{t("sign_in_to_compare")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("sign_in_compare_body")}</p>
           <Link to="/auth" search={{ redirect: "/compare" }}>
             <Button className="mt-5">{t("sign_in")}</Button>
           </Link>
@@ -227,7 +231,7 @@ function Compare() {
         <p className="editorial-kicker text-primary">{t("head_to_head")}</p>
         <div className="mt-2 flex items-end justify-between gap-3">
           <div>
-            <h1 className="mt-3 font-display text-5xl leading-[0.85] tracking-[-0.04em] md:text-8xl">{t("nav_compare")}</h1>
+            <h1 className="type-page-title mt-3">{t("nav_compare")}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
               {t("compare_page_intro")}
             </p>
@@ -245,7 +249,7 @@ function Compare() {
         <div className="mt-6 text-sm text-muted-foreground">{t("loading_tried")}</div>
       ) : triedError ? (
         <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-6">
-          <h2 className="font-display text-3xl">{t("tried_load_error")}</h2>
+          <h2 className="type-section-title">{t("tried_load_error")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{triedError.message}</p>
           <Button className="mt-4" variant="outline" onClick={() => triedQ.refetch()}>
             {t("try_again")}
@@ -294,10 +298,8 @@ function Compare() {
 
           {cat && scoped && !subtype ? (
             <div className="mt-6 rounded-lg border border-border bg-card p-6">
-              <h2 className="font-display text-3xl">{t("choose_dish_type_first")}</h2>
-              <p className="mt-2 text-muted-foreground">
-                {t("same_dish_type_only")}
-              </p>
+              <h2 className="type-section-title">{t("choose_dish_type_first")}</h2>
+              <p className="mt-2 text-muted-foreground">{t("same_dish_type_only")}</p>
             </div>
           ) : cat && list.length < 2 ? (
             <EmptyCta
@@ -360,7 +362,7 @@ function EmptyCta({
 }) {
   return (
     <div className="mt-6 rounded-lg border border-border bg-card p-6">
-      <h2 className="font-display text-3xl">{title}</h2>
+      <h2 className="type-section-title">{title}</h2>
       <p className="mt-2 max-w-lg text-muted-foreground">{description}</p>
       <Link to={to}>
         <Button className="mt-5">{ctaLabel}</Button>
@@ -421,15 +423,21 @@ function PickCard({
         {dish.photo_url ? (
           <img src={dish.photo_url} alt={dish.name_en} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center bg-secondary font-display text-4xl italic text-muted-foreground">JaanNee</div>
+          <div className="flex h-full items-center justify-center bg-secondary font-display text-4xl italic text-muted-foreground">
+            JaanNee
+          </div>
         )}
       </div>
       <div className="photo-scrim absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 p-6 text-white md:p-8">
         <p className="label-caps mb-3 text-white/65">Choose this dish</p>
-        <h3 className="font-display text-4xl leading-[0.85] md:text-6xl">{dish.name_en}</h3>
-        {dish.name_th ? <p className="mt-2 font-thai text-base font-medium text-white/80">{dish.name_th}</p> : null}
-        <p className="mt-3 border-t border-white/35 pt-3 text-sm font-bold uppercase tracking-[0.08em] text-white/80">{dish.place?.name}</p>
+        <h3 className="type-card-title">{dish.name_en}</h3>
+        {dish.name_th ? (
+          <p className="mt-2 font-thai text-base font-medium text-white/80">{dish.name_th}</p>
+        ) : null}
+        <p className="mt-3 border-t border-white/35 pt-3 text-sm font-bold uppercase tracking-[0.08em] text-white/80">
+          {dish.place?.name}
+        </p>
       </div>
     </button>
   );

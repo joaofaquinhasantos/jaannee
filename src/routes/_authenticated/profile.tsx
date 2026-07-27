@@ -88,7 +88,7 @@ function Profile() {
       <div className="flex items-start justify-between gap-4 border-b border-border pb-5 md:pb-7">
         <div>
           <p className="text-xs font-bold uppercase text-primary">Your taste trail</p>
-          <h1 className="mt-2 font-display text-4xl leading-none md:text-5xl">{displayName}</h1>
+          <h1 className="type-page-title mt-2">{displayName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
         </div>
         <Button variant="ghost" onClick={signOut}>
@@ -166,7 +166,7 @@ function Profile() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-4 font-display text-3xl">Posted</h2>
+        <h2 className="type-section-title mb-4">Posted</h2>
         {posted.length === 0 ? (
           <EmptyNote text="No posts yet." />
         ) : (
@@ -179,7 +179,7 @@ function Profile() {
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-4 font-display text-3xl">Tried</h2>
+        <h2 className="type-section-title mb-4">Tried</h2>
         {tried.length === 0 ? (
           <EmptyNote text="No dishes marked tried yet." />
         ) : (
@@ -192,7 +192,7 @@ function Profile() {
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-4 font-display text-3xl">{t("profile_comparisons")}</h2>
+        <h2 className="type-section-title mb-4">{t("profile_comparisons")}</h2>
         {compared.length === 0 ? (
           <EmptyNote text="No comparisons yet." link />
         ) : (
@@ -224,7 +224,7 @@ function Profile() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="font-display text-2xl leading-none">{value}</div>
+      <div className="type-stat">{value}</div>
       <div className="mt-1 text-[10px] font-bold uppercase text-muted-foreground">{label}</div>
     </div>
   );

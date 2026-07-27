@@ -14,10 +14,17 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — JaanNee" },
-      { name: "description", content: "Sign in to JaanNee with a magic link or Google to add dishes, mark what you have tried, and compare dishes head-to-head." },
+      {
+        name: "description",
+        content:
+          "Sign in to JaanNee with a magic link or Google to add dishes, mark what you have tried, and compare dishes head-to-head.",
+      },
       { name: "robots", content: "noindex, follow" },
       { property: "og:title", content: "Sign in — JaanNee" },
-      { property: "og:description", content: "Sign in to JaanNee to add dishes, mark tried, and compare dishes head-to-head." },
+      {
+        property: "og:description",
+        content: "Sign in to JaanNee to add dishes, mark tried, and compare dishes head-to-head.",
+      },
       { property: "og:url", content: "https://jaannee.lovable.app/auth" },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/auth" }],
@@ -36,7 +43,9 @@ function AuthPage() {
   const redirectTo = redirect?.startsWith("/") ? redirect : "/";
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { if (data.user) navigate({ to: redirectTo }); });
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) navigate({ to: redirectTo });
+    });
   }, [navigate, redirectTo]);
 
   const send = async (e: React.FormEvent) => {
@@ -47,7 +56,10 @@ function AuthPage() {
       options: { emailRedirectTo: `${window.location.origin}${redirectTo}` },
     });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setSent(true);
   };
 
@@ -70,7 +82,7 @@ function AuthPage() {
       <div className="mx-auto max-w-md overflow-hidden rounded-lg border border-border bg-card">
         <div className="bg-secondary p-6">
           <p className="text-xs font-bold uppercase text-primary">Join the board</p>
-          <h1 className="mt-2 font-display text-5xl leading-none">{t("sign_in")}</h1>
+          <h1 className="type-page-title mt-2">{t("sign_in")}</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             We'll email you a magic link. No password needed.
           </p>
@@ -85,7 +97,13 @@ function AuthPage() {
             </div>
           ) : (
             <form onSubmit={send} className="space-y-3">
-              <Input type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                type="email"
+                required
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Sending..." : "Email me a link"}
               </Button>

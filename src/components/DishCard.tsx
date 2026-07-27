@@ -53,7 +53,7 @@ export function DishCard({
             />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center bg-secondary text-muted-foreground">
-              <span className="font-display text-3xl italic opacity-70">Photo needed</span>
+              <span className="type-card-title opacity-70">Photo needed</span>
               <span className="mt-2 text-xs font-semibold uppercase tracking-wide opacity-70">
                 Help this dish look alive
               </span>
@@ -84,9 +84,7 @@ export function DishCard({
             </span>
           )}
           <div className="absolute inset-x-0 bottom-0 p-4">
-            <h3 className="font-display text-2xl leading-none text-white drop-shadow-sm">
-              {primaryName}
-            </h3>
+            <h3 className="type-card-title text-white drop-shadow-sm">{primaryName}</h3>
             {secondaryName ? (
               <p className="mt-1 line-clamp-1 font-thai text-base font-medium leading-tight text-white/90">
                 {secondaryName}

@@ -3,14 +3,31 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Camera, ChevronDown, MapPin } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { listCategories, listAreas, listDishSubtypes, listDishes, listNearbyPlaces, myTriedIds, searchSimilar, searchPlaces, submitDish, toggleTried } from "@/lib/dishes.functions";
+import {
+  listCategories,
+  listAreas,
+  listDishSubtypes,
+  listDishes,
+  listNearbyPlaces,
+  myTriedIds,
+  searchSimilar,
+  searchPlaces,
+  submitDish,
+  toggleTried,
+} from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { CategoryPicker } from "@/components/CategoryPicker";
@@ -21,10 +38,17 @@ export const Route = createFileRoute("/_authenticated/submit")({
   head: () => ({
     meta: [
       { title: "Add a dish — JaanNee" },
-      { name: "description", content: "Nominate a new dish to JaanNee: name it, tag its place and category, add a price and photo, and let comparisons rank it." },
+      {
+        name: "description",
+        content:
+          "Nominate a new dish to JaanNee: name it, tag its place and category, add a price and photo, and let comparisons rank it.",
+      },
       { name: "robots", content: "noindex, follow" },
       { property: "og:title", content: "Add a dish — JaanNee" },
-      { property: "og:description", content: "Nominate a new dish to JaanNee and let comparisons rank it." },
+      {
+        property: "og:description",
+        content: "Nominate a new dish to JaanNee and let comparisons rank it.",
+      },
       { property: "og:url", content: "https://jaannee.lovable.app/submit" },
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/submit" }],
@@ -101,7 +125,13 @@ function Submit() {
   }, []);
 
   useEffect(() => {
-    if (!photoUrl || geoState !== "idle" || typeof navigator === "undefined" || !navigator.geolocation) return;
+    if (
+      !photoUrl ||
+      geoState !== "idle" ||
+      typeof navigator === "undefined" ||
+      !navigator.geolocation
+    )
+      return;
     setGeoState("asking");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -130,13 +160,21 @@ function Submit() {
 
   const check = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name_en || (!category_id && !requestedCategoryEn) || (!selectedPlace && (!place_name || !area_id))) {
+    if (
+      !name_en ||
+      (!category_id && !requestedCategoryEn) ||
+      (!selectedPlace && (!place_name || !area_id))
+    ) {
       toast.error(t("submit_required"));
       return;
     }
     if (!requestingCategory && categoryIncomplete) {
-      setSubtypeError("This category is not ready for submissions because it has no active dish types.");
-      toast.error("This category is not ready for submissions because it has no active dish types.");
+      setSubtypeError(
+        "This category is not ready for submissions because it has no active dish types.",
+      );
+      toast.error(
+        "This category is not ready for submissions because it has no active dish types.",
+      );
       return;
     }
     if (!requestingCategory && activeSubtypes.length > 0 && !subtype_id) {
@@ -237,11 +275,13 @@ function Submit() {
             <span className="font-display text-7xl leading-none text-accent">OK</span>
           </div>
           <div className="p-8 text-center">
-            <h1 className="font-display text-4xl leading-tight">{t("submit_done_title")}</h1>
+            <h1 className="type-page-title">{t("submit_done_title")}</h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("submit_done_body")}</p>
             <div className="mt-6 flex justify-center gap-2">
               <Button onClick={() => nav({ to: "/" })}>{t("back_to_feed")}</Button>
-              <Button variant="outline" onClick={resetForm}>{t("add_another")}</Button>
+              <Button variant="outline" onClick={resetForm}>
+                {t("add_another")}
+              </Button>
             </div>
           </div>
         </div>
@@ -253,23 +293,41 @@ function Submit() {
       <AppShell>
         <div className="mx-auto max-w-lg">
           <p className="text-xs font-bold uppercase text-primary">Possible duplicate</p>
-          <h1 className="mt-2 font-display text-4xl leading-tight">{t("duplicate_title")}</h1>
+          <h1 className="type-page-title mt-2">{t("duplicate_title")}</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("duplicate_body")}</p>
           <div className="mt-4 space-y-3">
-            {(dup.dishes ?? []).filter((d) => d?.id).map((d) => <DuplicateDishMatch key={d.id} dish={d} />)}
-            {(dup.places ?? []).filter((p) => p?.id).map((p) => (
-              <div key={p.id} className="rounded-lg border border-border bg-card p-4 text-sm">
-                <p className="text-xs font-bold uppercase text-primary">Existing place</p>
-                <p className="mt-1 font-semibold">{p.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">This place exists - your dish may be new here.</p>
-                <Button className="mt-3" size="sm" variant="outline" onClick={() => { selectPlace(p); setStep("form"); }}>
-                  Add my dish at this place
-                </Button>
-              </div>
-            ))}
+            {(dup.dishes ?? [])
+              .filter((d) => d?.id)
+              .map((d) => (
+                <DuplicateDishMatch key={d.id} dish={d} />
+              ))}
+            {(dup.places ?? [])
+              .filter((p) => p?.id)
+              .map((p) => (
+                <div key={p.id} className="rounded-lg border border-border bg-card p-4 text-sm">
+                  <p className="text-xs font-bold uppercase text-primary">Existing place</p>
+                  <p className="mt-1 font-semibold">{p.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This place exists - your dish may be new here.
+                  </p>
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      selectPlace(p);
+                      setStep("form");
+                    }}
+                  >
+                    Add my dish at this place
+                  </Button>
+                </div>
+              ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setStep("form")}>{t("back_to_edit")}</Button>
+            <Button variant="outline" onClick={() => setStep("form")}>
+              {t("back_to_edit")}
+            </Button>
             <Button onClick={doSubmit}>{t("submit_anyway")}</Button>
           </div>
         </div>
@@ -292,21 +350,36 @@ function Submit() {
         <div className="mx-auto max-w-xl space-y-5">
           <section className="rounded-lg border border-border bg-card p-6 md:p-8">
             <p className="text-xs font-bold uppercase text-primary">Add a dish</p>
-            <h1 className="mt-2 font-display text-4xl leading-tight md:text-5xl">Sign in to post a plate.</h1>
+            <h1 className="type-page-title mt-2">Sign in to post a plate.</h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-              Dishes are added by signed-in diners so the board stays useful and rankable. Magic link or Google — no password.
+              Dishes are added by signed-in diners so the board stays useful and rankable. Magic
+              link or Google — no password.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button onClick={() => nav({ to: "/auth", search: { redirect: "/submit" } as any })}>Sign in to continue</Button>
-              <Button variant="outline" onClick={() => nav({ to: "/" })}>Back to discover</Button>
+              <Button onClick={() => nav({ to: "/auth", search: { redirect: "/submit" } as any })}>
+                Sign in to continue
+              </Button>
+              <Button variant="outline" onClick={() => nav({ to: "/" })}>
+                Back to discover
+              </Button>
             </div>
           </section>
           <section className="rounded-lg border border-dashed border-border bg-secondary/50 p-6">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Here's what you'll do</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">
+              Here's what you'll do
+            </p>
             <ol className="mt-3 space-y-2 text-sm leading-6 text-foreground/80">
-              <li><span className="font-semibold text-primary">1.</span> Snap a photo of the dish.</li>
-              <li><span className="font-semibold text-primary">2.</span> Search or pin the stall or restaurant.</li>
-              <li><span className="font-semibold text-primary">3.</span> Tag the category and price. Done.</li>
+              <li>
+                <span className="font-semibold text-primary">1.</span> Snap a photo of the dish.
+              </li>
+              <li>
+                <span className="font-semibold text-primary">2.</span> Search or pin the stall or
+                restaurant.
+              </li>
+              <li>
+                <span className="font-semibold text-primary">3.</span> Tag the category and price.
+                Done.
+              </li>
             </ol>
           </section>
         </div>
@@ -325,8 +398,10 @@ function Submit() {
             className="flex min-h-[70dvh] w-full flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center transition-colors hover:bg-secondary"
           >
             <Camera className="h-12 w-12 text-primary" />
-            <span className="mt-5 font-display text-5xl leading-none">Add a photo</span>
-            <span className="mt-2 text-sm font-semibold text-foreground/75">Photo first, details after</span>
+            <span className="type-page-title mt-5">Add a photo</span>
+            <span className="mt-2 text-sm font-semibold text-foreground/75">
+              Photo first, details after
+            </span>
             <span className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
               Start with the dish. Camera or gallery, then four taps to submit.
             </span>
@@ -334,7 +409,23 @@ function Submit() {
               Choose photo
             </span>
           </button>
-          <input ref={fileRef} type="file" accept={PHOTO_ACCEPT_ATTR} className="hidden" onChange={async (e) => { const input = e.currentTarget; const file = input.files?.[0]; if (file) { try { await onFile(file); } finally { input.value = ""; } } }} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept={PHOTO_ACCEPT_ATTR}
+            className="hidden"
+            onChange={async (e) => {
+              const input = e.currentTarget;
+              const file = input.files?.[0];
+              if (file) {
+                try {
+                  await onFile(file);
+                } finally {
+                  input.value = "";
+                }
+              }
+            }}
+          />
         </div>
       </AppShell>
     );
@@ -354,24 +445,39 @@ function Submit() {
               Change
             </button>
           </div>
-          <form onSubmit={check} className="space-y-5 rounded-t-2xl bg-card p-4 shadow-[0_-18px_45px_rgba(42,30,36,0.08)]">
+          <form
+            onSubmit={check}
+            className="space-y-5 rounded-t-2xl bg-card p-4 shadow-[0_-18px_45px_rgba(42,30,36,0.08)]"
+          >
             <div>
               <p className="text-xs font-bold uppercase text-primary">Add to JaanNee</p>
-              <h1 className="mt-1 font-display text-4xl leading-none">Post this dish</h1>
+              <h1 className="type-page-title mt-1">Post this dish</h1>
             </div>
 
             <section>
-              <Label className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Place *</Label>
-              {geoState === "asking" && <p className="mt-2 text-sm text-muted-foreground">Checking nearby places...</p>}
+              <Label className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" /> Place *
+              </Label>
+              {geoState === "asking" && (
+                <p className="mt-2 text-sm text-muted-foreground">Checking nearby places...</p>
+              )}
               {(nearby.data ?? []).length > 0 && !selectedPlace && (
                 <div className="mt-2">
-                  <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">You're near:</p>
+                  <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">
+                    You're near:
+                  </p>
                   <div className="grid gap-2">
                     {(nearby.data ?? []).map((p: any) => (
-                      <button key={p.id} type="button" onClick={() => selectPlace(p)} className="rounded-md border border-border px-3 py-3 text-left text-sm hover:bg-secondary">
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectPlace(p)}
+                        className="rounded-md border border-border px-3 py-3 text-left text-sm hover:bg-secondary"
+                      >
                         <span className="block font-semibold">{p.name}</span>
                         <span className="text-xs text-muted-foreground">
-                          {Math.round(p.distance_m)}m / {lang === "th" ? p.area?.name_th : p.area?.name_en}
+                          {Math.round(p.distance_m)}m /{" "}
+                          {lang === "th" ? p.area?.name_th : p.area?.name_en}
                         </span>
                       </button>
                     ))}
@@ -380,21 +486,55 @@ function Submit() {
               )}
               {selectedPlace ? (
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-border bg-secondary p-3 text-sm">
-                  <span><strong>{selectedPlace.name}</strong> / {lang === "th" ? selectedPlace.area?.name_th : selectedPlace.area?.name_en}</span>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setSelectedPlace(null)}>Change</Button>
+                  <span>
+                    <strong>{selectedPlace.name}</strong> /{" "}
+                    {lang === "th" ? selectedPlace.area?.name_th : selectedPlace.area?.name_en}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedPlace(null)}
+                  >
+                    Change
+                  </Button>
                 </div>
               ) : (
                 <div className="mt-3">
-                  <Input value={place_name} onChange={(e) => { setPlaceName(e.target.value); setSelectedPlace(null); setAddingPlace(false); }} maxLength={160} placeholder="Search place or stall" className="h-12 text-base" />
+                  <Input
+                    value={place_name}
+                    onChange={(e) => {
+                      setPlaceName(e.target.value);
+                      setSelectedPlace(null);
+                      setAddingPlace(false);
+                    }}
+                    maxLength={160}
+                    placeholder="Search place or stall"
+                    className="h-12 text-base"
+                  />
                   {place_name.trim().length >= 2 && (
                     <div className="mt-2 rounded-lg border border-border bg-background p-2">
                       {(placeMatches.data ?? []).map((p: any) => (
-                        <button key={p.id} type="button" onClick={() => selectPlace(p)} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary">
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => selectPlace(p)}
+                          className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary"
+                        >
                           <span className="font-semibold">{p.name}</span>
-                          <span className="ml-2 text-muted-foreground">{lang === "th" ? p.area?.name_th : p.area?.name_en}</span>
+                          <span className="ml-2 text-muted-foreground">
+                            {lang === "th" ? p.area?.name_th : p.area?.name_en}
+                          </span>
                         </button>
                       ))}
-                      <button type="button" onClick={() => { setAddingPlace(true); setDetailsOpen(true); }} className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddingPlace(true);
+                          setDetailsOpen(true);
+                        }}
+                        className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary"
+                      >
                         {t("add_new_place")}
                       </button>
                     </div>
@@ -407,21 +547,71 @@ function Submit() {
               <Label>Category *</Label>
               {requestingCategory ? (
                 <div className="mt-2 space-y-2">
-                  <Input value={requestedCategoryEn} onChange={(e) => { setRequestedCategoryEn(e.target.value); if (!name_en.trim()) setNameEn(e.target.value); }} placeholder="New category name (EN)" maxLength={80} />
-                  <Input value={requestedCategoryTh} onChange={(e) => { setRequestedCategoryTh(e.target.value); if (lang === "th" && !name_th.trim()) setNameTh(e.target.value); }} placeholder="New category name (TH optional)" maxLength={80} />
-                  <Button type="button" variant="outline" onClick={() => { setRequestingCategory(false); setRequestedCategoryEn(""); setRequestedCategoryTh(""); }}>Choose existing category</Button>
+                  <Input
+                    value={requestedCategoryEn}
+                    onChange={(e) => {
+                      setRequestedCategoryEn(e.target.value);
+                      if (!name_en.trim()) setNameEn(e.target.value);
+                    }}
+                    placeholder="New category name (EN)"
+                    maxLength={80}
+                  />
+                  <Input
+                    value={requestedCategoryTh}
+                    onChange={(e) => {
+                      setRequestedCategoryTh(e.target.value);
+                      if (lang === "th" && !name_th.trim()) setNameTh(e.target.value);
+                    }}
+                    placeholder="New category name (TH optional)"
+                    maxLength={80}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setRequestingCategory(false);
+                      setRequestedCategoryEn("");
+                      setRequestedCategoryTh("");
+                    }}
+                  >
+                    Choose existing category
+                  </Button>
                 </div>
               ) : (
                 <div className="mt-2 space-y-2">
-                  <CategoryPicker categories={categories.data ?? []} value={category_id} lang={lang} placeholder={t("choose_category")} onChange={selectCategory} />
-                  <Button type="button" variant="outline" onClick={() => { setRequestingCategory(true); setCategoryId(""); setSubtypeId(""); setSubtypeError(""); }}>Category not listed</Button>
+                  <CategoryPicker
+                    categories={categories.data ?? []}
+                    value={category_id}
+                    lang={lang}
+                    placeholder={t("choose_category")}
+                    onChange={selectCategory}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setRequestingCategory(true);
+                      setCategoryId("");
+                      setSubtypeId("");
+                      setSubtypeError("");
+                    }}
+                  >
+                    Category not listed
+                  </Button>
                 </div>
               )}
             </section>
 
             <section>
               <Label>Dish name *</Label>
-              <Input value={name_en} onChange={(e) => setNameEn(e.target.value)} placeholder="Autofills from category" required maxLength={120} className="mt-2 h-12 text-base" />
+              <Input
+                value={name_en}
+                onChange={(e) => setNameEn(e.target.value)}
+                placeholder="Autofills from category"
+                required
+                maxLength={120}
+                className="mt-2 h-12 text-base"
+              />
             </section>
 
             {!requestingCategory && categoryIncomplete && (
@@ -432,67 +622,174 @@ function Submit() {
             {!requestingCategory && activeSubtypes.length > 0 && (
               <section>
                 <Label>Dish type *</Label>
-                <Select value={subtype_id} onValueChange={(v) => { setSubtypeId(v); setSubtypeError(""); }}>
-                  <SelectTrigger aria-invalid={!!subtypeError} className="mt-2"><SelectValue placeholder="Choose dish type" /></SelectTrigger>
+                <Select
+                  value={subtype_id}
+                  onValueChange={(v) => {
+                    setSubtypeId(v);
+                    setSubtypeError("");
+                  }}
+                >
+                  <SelectTrigger aria-invalid={!!subtypeError} className="mt-2">
+                    <SelectValue placeholder="Choose dish type" />
+                  </SelectTrigger>
                   <SelectContent>
                     {activeSubtypes.map((s: any) => (
-                      <SelectItem key={s.id} value={s.id}>{lang === "th" ? s.name_th : s.name_en}</SelectItem>
+                      <SelectItem key={s.id} value={s.id}>
+                        {lang === "th" ? s.name_th : s.name_en}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {subtypeError && <p className="mt-1 text-sm font-medium text-primary">{subtypeError}</p>}
+                {subtypeError && (
+                  <p className="mt-1 text-sm font-medium text-primary">{subtypeError}</p>
+                )}
               </section>
             )}
 
             <section>
               <Label>Price (THB)</Label>
               <div className="mt-2 flex flex-wrap gap-2">
-                <PriceChip active={!price_thb && !customPrice} onClick={() => { setPrice(""); setCustomPrice(false); }}>Skip</PriceChip>
-                {PRICE_CHIPS.map((p) => <PriceChip key={p} active={price_thb === p && !customPrice} onClick={() => { setPrice(p); setCustomPrice(false); }}>{p}</PriceChip>)}
-                <PriceChip active={customPrice} onClick={() => setCustomPrice(true)}>Custom</PriceChip>
+                <PriceChip
+                  active={!price_thb && !customPrice}
+                  onClick={() => {
+                    setPrice("");
+                    setCustomPrice(false);
+                  }}
+                >
+                  Skip
+                </PriceChip>
+                {PRICE_CHIPS.map((p) => (
+                  <PriceChip
+                    key={p}
+                    active={price_thb === p && !customPrice}
+                    onClick={() => {
+                      setPrice(p);
+                      setCustomPrice(false);
+                    }}
+                  >
+                    {p}
+                  </PriceChip>
+                ))}
+                <PriceChip active={customPrice} onClick={() => setCustomPrice(true)}>
+                  Custom
+                </PriceChip>
               </div>
-              {customPrice && <Input inputMode="numeric" type="number" value={price_thb} onChange={(e) => setPrice(e.target.value)} min={0} max={100000} placeholder="THB" className="mt-2 h-12 text-base" />}
+              {customPrice && (
+                <Input
+                  inputMode="numeric"
+                  type="number"
+                  value={price_thb}
+                  onChange={(e) => setPrice(e.target.value)}
+                  min={0}
+                  max={100000}
+                  placeholder="THB"
+                  className="mt-2 h-12 text-base"
+                />
+              )}
             </section>
 
             <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
               <CollapsibleTrigger asChild>
                 <Button type="button" variant="outline" className="w-full justify-between">
                   More details
-                  <ChevronDown className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+                  />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4 space-y-4">
-                <div><Label>Dish name (TH)</Label><Input value={name_th} onChange={(e) => setNameTh(e.target.value)} maxLength={120} /></div>
+                <div>
+                  <Label>Dish name (TH)</Label>
+                  <Input
+                    value={name_th}
+                    onChange={(e) => setNameTh(e.target.value)}
+                    maxLength={120}
+                  />
+                </div>
                 {addingPlace && !selectedPlace && (
                   <>
                     <div>
                       <Label>Area *</Label>
                       <Select value={area_id} onValueChange={setAreaId}>
-                        <SelectTrigger><SelectValue placeholder={t("choose_area")} /></SelectTrigger>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("choose_area")} />
+                        </SelectTrigger>
                         <SelectContent>
-                          {(areas.data ?? []).map((a: any) => <SelectItem key={a.id} value={a.id}>{lang === "th" ? a.name_th : a.name_en}</SelectItem>)}
+                          {(areas.data ?? []).map((a: any) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {lang === "th" ? a.name_th : a.name_en}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div><Label>Address (optional)</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} /></div>
+                    <div>
+                      <Label>Address (optional)</Label>
+                      <Input
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        maxLength={300}
+                      />
+                    </div>
                   </>
                 )}
-                <div><Label>Note (optional)</Label><Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} /></div>
+                <div>
+                  <Label>Note (optional)</Label>
+                  <Textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    maxLength={500}
+                  />
+                </div>
               </CollapsibleContent>
             </Collapsible>
 
-            <Button type="submit" className="h-12 w-full" disabled={!requestingCategory && categoryIncomplete}>Submit</Button>
+            <Button
+              type="submit"
+              className="h-12 w-full"
+              disabled={!requestingCategory && categoryIncomplete}
+            >
+              Submit
+            </Button>
           </form>
         </div>
-        <input ref={fileRef} type="file" accept={PHOTO_ACCEPT_ATTR} className="hidden" onChange={async (e) => { const input = e.currentTarget; const file = input.files?.[0]; if (file) { try { await onFile(file); } finally { input.value = ""; } } }} />
+        <input
+          ref={fileRef}
+          type="file"
+          accept={PHOTO_ACCEPT_ATTR}
+          className="hidden"
+          onChange={async (e) => {
+            const input = e.currentTarget;
+            const file = input.files?.[0];
+            if (file) {
+              try {
+                await onFile(file);
+              } finally {
+                input.value = "";
+              }
+            }
+          }}
+        />
       </div>
     </AppShell>
   );
 }
 
-function PriceChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function PriceChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <button type="button" onClick={onClick} className={`rounded-full border px-4 py-2 text-sm font-bold ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-4 py-2 text-sm font-bold ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}
+    >
       {children}
     </button>
   );
@@ -522,7 +819,10 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
             }),
           ]);
           const other = ((pool ?? []) as any[]).find(
-            (candidate) => candidate.id !== dish.id && (triedIds ?? []).includes(candidate.id) && (dish.subtype_id ? candidate.subtype_id === dish.subtype_id : !candidate.subtype_id),
+            (candidate) =>
+              candidate.id !== dish.id &&
+              (triedIds ?? []).includes(candidate.id) &&
+              (dish.subtype_id ? candidate.subtype_id === dish.subtype_id : !candidate.subtype_id),
           );
           setOtherTried(other ?? null);
         } catch {
@@ -543,8 +843,16 @@ function DuplicateDishMatch({ dish }: { dish: any }) {
       <p className="mt-1 font-semibold">{name}</p>
       <p className="mt-1 text-xs text-muted-foreground">{dish.place?.name}</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={() => nav({ to: "/dish/$id", params: { id: dish.id } })}>View dish</Button>
-        <Button size="sm" onClick={handleTried} disabled={tryingDish || triedDone}>{triedDone ? "Tried" : t("tried_it")}</Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => nav({ to: "/dish/$id", params: { id: dish.id } })}
+        >
+          View dish
+        </Button>
+        <Button size="sm" onClick={handleTried} disabled={tryingDish || triedDone}>
+          {triedDone ? "Tried" : t("tried_it")}
+        </Button>
       </div>
       {otherTried && <InlineTriedCompare dish={dish} other={otherTried} />}
     </div>

@@ -17,9 +17,21 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { statusLabel, toneClass } from "@/components/DishCard";
 import { ShareButton } from "@/components/ShareButton";
 import { dishStatusLabel } from "@/lib/dish-status";
@@ -90,9 +102,7 @@ export const Route = createFileRoute("/dish/$id")({
     return {
       meta,
       links: origin ? [{ rel: "canonical", href: pageUrl }] : [],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify(productLd) },
-      ],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(productLd) }],
     };
   },
   component: DishPage,
@@ -118,7 +128,11 @@ function DishPage() {
     return () => sub.subscription.unsubscribe();
   }, []);
   const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds(), enabled: authed });
-  const following = useQuery({ queryKey: ["following"], queryFn: () => myFollowingIds(), enabled: authed });
+  const following = useQuery({
+    queryKey: ["following"],
+    queryFn: () => myFollowingIds(),
+    enabled: authed,
+  });
   const isTried = (tried.data ?? []).includes(id);
   const pool = useQuery({
     queryKey: ["dish-ranking-pool", dKey(dish.data)],
@@ -151,17 +165,35 @@ function DishPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (dish.isLoading) return <AppShell><p className="text-muted-foreground">{t("loading")}</p></AppShell>;
-  if (!dish.data) return <AppShell><p>Not found.</p></AppShell>;
+  if (dish.isLoading)
+    return (
+      <AppShell>
+        <p className="text-muted-foreground">{t("loading")}</p>
+      </AppShell>
+    );
+  if (!dish.data)
+    return (
+      <AppShell>
+        <p>Not found.</p>
+      </AppShell>
+    );
 
   const d: any = dish.data;
   const name = lang === "th" && d.name_th ? d.name_th : d.name_en;
   const secondaryName = lang === "th" && d.name_th ? d.name_en : d.name_th;
-  const areaName = d.place?.area ? (lang === "th" ? d.place.area.name_th : d.place.area.name_en) : null;
+  const areaName = d.place?.area
+    ? lang === "th"
+      ? d.place.area.name_th
+      : d.place.area.name_en
+    : null;
   const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
   const s = statusLabel(d, t);
   const triedCount = d.tried_count ?? 0;
-  const shareUrl = origin ? `${origin}/dish/${id}` : (typeof window !== "undefined" ? `${window.location.origin}/dish/${id}` : `/dish/${id}`);
+  const shareUrl = origin
+    ? `${origin}/dish/${id}`
+    : typeof window !== "undefined"
+      ? `${window.location.origin}/dish/${id}`
+      : `/dish/${id}`;
   const otherTried = ((pool.data ?? []) as any[]).find(
     (candidate) =>
       candidate.id !== d.id &&
@@ -170,7 +202,9 @@ function DishPage() {
   );
   const submitter = d.submitter_profile;
   const submitterName = submitter?.display_name || submitter?.username || "A JaanNee eater";
-  const isFollowingSubmitter = d.submitted_by ? (following.data ?? []).includes(d.submitted_by) : false;
+  const isFollowingSubmitter = d.submitted_by
+    ? (following.data ?? []).includes(d.submitted_by)
+    : false;
 
   return (
     <AppShell>
@@ -188,103 +222,138 @@ function DishPage() {
           <div className="photo-scrim absolute inset-0" />
           <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
             <div>
-          <p className="editorial-kicker text-white/75">{lang === "th" ? d.category?.name_th : d.category?.name_en}</p>
-          <h1 className="mt-4 max-w-5xl font-display text-5xl leading-[0.82] tracking-[-0.045em] md:text-8xl">{name}</h1>
-          {secondaryName ? (
-            <p className="mt-3 font-thai text-xl font-medium text-white/75">{secondaryName}</p>
-          ) : null}
-          <p className="mt-5 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
-            {d.place?.name}{areaName ? ` / ${areaName}` : ""}
-          </p>
+              <p className="editorial-kicker text-white/75">
+                {lang === "th" ? d.category?.name_th : d.category?.name_en}
+              </p>
+              <h1 className="type-page-title mt-4 max-w-5xl">{name}</h1>
+              {secondaryName ? (
+                <p className="mt-3 font-thai text-xl font-medium text-white/75">{secondaryName}</p>
+              ) : null}
+              <p className="mt-5 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
+                {d.place?.name}
+                {areaName ? ` / ${areaName}` : ""}
+              </p>
             </div>
-          <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(s.tone)}`}>{s.text}</span>
-            {d.price_thb != null && <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">THB {Number(d.price_thb).toFixed(0)}</span>}
-          </div>
+            <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(s.tone)}`}
+              >
+                {s.text}
+              </span>
+              {d.price_thb != null && (
+                <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">
+                  THB {Number(d.price_thb).toFixed(0)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="grid border-x-2 border-b-2 border-foreground bg-card md:grid-cols-[1.15fr_0.85fr]">
           <div className="p-5 md:border-r-2 md:border-foreground md:p-8">
-          {d.note && <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">{d.note}</p>}
-
-          <h2 className="editorial-kicker mt-8 text-primary">Dish stats</h2>
-          <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
-            <Metric label="Status" value={s.text} />
-            <Metric label="Added" value={`${days} ${t("days_ago")}`} />
-            <Metric label="Comparisons" value={`${d.comparisons_count ?? 0}`} />
-          </div>
-          {triedCount > 0 && (
-            <p className="mt-3 text-sm font-semibold text-muted-foreground">
-              {t("tried_by")} {triedCount} {t("diners")}
-            </p>
-          )}
-
-          {authed && isTried && otherTried && (
-            <InlineTriedCompare dish={d} other={otherTried} />
-          )}
-
-          <div className="mt-7 flex flex-wrap gap-2">
-            {authed ? (
-              <Button variant={isTried ? "secondary" : "default"} onClick={() => tryMut.mutate()} disabled={tryMut.isPending}>
-                {isTried ? t("tried_marked") : t("tried_it")}
-              </Button>
-            ) : (
-              <Link to="/auth"><Button>{t("sign_in")} to mark tried</Button></Link>
+            {d.note && (
+              <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">
+                {d.note}
+              </p>
             )}
-            <Link to="/compare" search={{ dish: id } as any}>
-              <Button variant="outline">{t("compare_this")}</Button>
-            </Link>
-            <ShareButton
-              url={shareUrl}
-              title={name}
-              text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / ${s.text}`}
-              label={t("share") || "Share"}
-            />
-            {d.place && (
-              <a href={mapsDirectionsUrl(d.place)} target="_blank" rel="noreferrer">
-                <Button variant="outline" type="button">Directions</Button>
-              </a>
-            )}
-            {authed && <ReportDialog dishId={id} />}
-          </div>
 
+            <h2 className="editorial-kicker mt-8 text-primary">Dish stats</h2>
+            <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
+              <Metric label="Status" value={s.text} />
+              <Metric label="Added" value={`${days} ${t("days_ago")}`} />
+              <Metric label="Comparisons" value={`${d.comparisons_count ?? 0}`} />
+            </div>
+            {triedCount > 0 && (
+              <p className="mt-3 text-sm font-semibold text-muted-foreground">
+                {t("tried_by")} {triedCount} {t("diners")}
+              </p>
+            )}
+
+            {authed && isTried && otherTried && <InlineTriedCompare dish={d} other={otherTried} />}
+
+            <div className="mt-7 flex flex-wrap gap-2">
+              {authed ? (
+                <Button
+                  variant={isTried ? "secondary" : "default"}
+                  onClick={() => tryMut.mutate()}
+                  disabled={tryMut.isPending}
+                >
+                  {isTried ? t("tried_marked") : t("tried_it")}
+                </Button>
+              ) : (
+                <Link to="/auth">
+                  <Button>{t("sign_in")} to mark tried</Button>
+                </Link>
+              )}
+              <Link to="/compare" search={{ dish: id } as any}>
+                <Button variant="outline">{t("compare_this")}</Button>
+              </Link>
+              <ShareButton
+                url={shareUrl}
+                title={name}
+                text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / ${s.text}`}
+                label={t("share") || "Share"}
+              />
+              {d.place && (
+                <a href={mapsDirectionsUrl(d.place)} target="_blank" rel="noreferrer">
+                  <Button variant="outline" type="button">
+                    Directions
+                  </Button>
+                </a>
+              )}
+              {authed && <ReportDialog dishId={id} />}
+            </div>
           </div>
           <aside className="border-t-2 border-foreground p-5 md:border-t-0 md:p-8">
-          {d.submitted_by && (
-            <div className="border-y border-foreground/25 py-4">
-              <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Submitted by</h2>
-              <div className="flex items-center justify-between gap-3">
-                <Link
-                  to={submitter?.username ? "/u/$username" : "."}
-                  params={submitter?.username ? { username: submitter.username } : undefined as any}
-                  className="flex min-w-0 items-center gap-3"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                    {submitter?.avatar_url ? (
-                      <img src={submitter.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
-                    ) : (
-                      submitterName.slice(0, 1)
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">Posted by {submitterName}</p>
-                    <p className="text-xs text-muted-foreground">Follow to see what they eat next.</p>
-                  </div>
-                </Link>
-                {authed && userId !== d.submitted_by ? (
-                  <Button
-                    variant={isFollowingSubmitter ? "secondary" : "outline"}
-                    size="sm"
-                    onClick={() => followMut.mutate({ targetId: d.submitted_by, follow: !isFollowingSubmitter })}
-                    disabled={followMut.isPending}
+            {d.submitted_by && (
+              <div className="border-y border-foreground/25 py-4">
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Submitted by
+                </h2>
+                <div className="flex items-center justify-between gap-3">
+                  <Link
+                    to={submitter?.username ? "/u/$username" : "."}
+                    params={
+                      submitter?.username ? { username: submitter.username } : (undefined as any)
+                    }
+                    className="flex min-w-0 items-center gap-3"
                   >
-                    {isFollowingSubmitter ? "Following" : "Follow"}
-                  </Button>
-                ) : null}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                      {submitter?.avatar_url ? (
+                        <img
+                          src={submitter.avatar_url}
+                          alt=""
+                          className="h-full w-full rounded-full object-cover"
+                        />
+                      ) : (
+                        submitterName.slice(0, 1)
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Posted by {submitterName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Follow to see what they eat next.
+                      </p>
+                    </div>
+                  </Link>
+                  {authed && userId !== d.submitted_by ? (
+                    <Button
+                      variant={isFollowingSubmitter ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        followMut.mutate({
+                          targetId: d.submitted_by,
+                          follow: !isFollowingSubmitter,
+                        })
+                      }
+                      disabled={followMut.isPending}
+                    >
+                      {isFollowingSubmitter ? "Following" : "Follow"}
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </aside>
         </div>
       </article>
@@ -299,8 +368,10 @@ function dKey(dish: any) {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-r border-foreground/20 px-2 py-4 last:border-r-0">
-      <div className="font-display text-xl text-foreground">{value}</div>
-      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{label}</div>
+      <div className="type-stat text-foreground">{value}</div>
+      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
@@ -321,12 +392,18 @@ function ReportDialog({ dishId }: { dishId: string }) {
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button variant="ghost">{t("report")}</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button variant="ghost">{t("report")}</Button>
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{t("report")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("report")}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <Select value={reason} onValueChange={setReason}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="wrong_info">Wrong info</SelectItem>
               <SelectItem value="duplicate">Duplicate</SelectItem>
@@ -334,8 +411,15 @@ function ReportDialog({ dishId }: { dishId: string }) {
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
-          <Textarea placeholder="Optional details" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>Submit report</Button>
+          <Textarea
+            placeholder="Optional details"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={500}
+          />
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+            Submit report
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
