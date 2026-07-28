@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
   amIAdmin,
+  getAdminOverview,
   listPending,
   listDishesAdmin,
   moderateDish,
@@ -56,7 +57,16 @@ import { toast } from "sonner";
 import { cuisineLabel, groupedCategories } from "@/components/CategoryPicker";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronRight,
+  ClipboardCheck,
+  FileWarning,
+  ImageOff,
+  MapPin,
+  RefreshCw,
+  Tags,
+} from "lucide-react";
 import { PHOTO_ACCEPT_ATTR, buildPhotoPath, validatePhotoFile } from "@/lib/photo-upload";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
@@ -73,8 +83,44 @@ function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 function Admin() {
   const isAdmin = useQuery({ queryKey: ["is-admin"], queryFn: () => amIAdmin() });
+  const sections = [
+    "overview",
+    "pending",
+    "dishes",
+    "places",
+    "reports",
+    "taxonomy",
+    "import",
+  ] as const;
+  type AdminSection = (typeof sections)[number];
+  const [section, setSection] = useState<AdminSection>("overview");
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("section");
+    if (requested && sections.includes(requested as AdminSection)) {
+      setSection(requested as AdminSection);
+    }
+  }, []);
+
+  const changeSection = (next: string) => {
+    const valid = sections.includes(next as AdminSection) ? (next as AdminSection) : "overview";
+    setSection(valid);
+    const url = new URL(window.location.href);
+    url.searchParams.set("section", valid);
+    window.history.replaceState({}, "", url);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (isAdmin.isLoading)
     return (
@@ -105,13 +151,9 @@ function Admin() {
           public ranking.
         </p>
       </section>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <AdminStat label="Pending dishes" value="Queue" />
-        <AdminStat label="Reports" value="Review" />
-        <AdminStat label="Taxonomy" value="Control" />
-      </div>
-      <Tabs defaultValue="pending" className="mt-6">
-        <TabsList className="h-auto flex-wrap justify-start rounded-lg bg-secondary p-1">
+      <Tabs value={section} onValueChange={changeSection} className="mt-6">
+        <TabsList className="sticky top-2 z-20 h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg border border-border bg-secondary/95 p-1 shadow-sm backdrop-blur">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="dishes">Dishes</TabsTrigger>
           <TabsTrigger value="places">Places</TabsTrigger>
@@ -119,6 +161,9 @@ function Admin() {
           <TabsTrigger value="taxonomy">Cuisines, Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
         </TabsList>
+        <TabsContent value="overview">
+          <AdminOverview onNavigate={changeSection} />
+        </TabsContent>
         <TabsContent value="pending">
           <PendingList />
         </TabsContent>
@@ -142,11 +187,180 @@ function Admin() {
   );
 }
 
-function AdminStat({ label, value }: { label: string; value: string }) {
+function AdminStat({
+  label,
+  value,
+  description,
+  icon: Icon,
+  onClick,
+  urgent,
+}: {
+  label: string;
+  value: number;
+  description: string;
+  icon: typeof ClipboardCheck;
+  onClick: () => void;
+  urgent?: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="type-stat text-accent">{value}</p>
-      <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">{label}</p>
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-lg border border-border bg-card p-4 text-left transition hover:border-primary/60 hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <Icon
+          className={urgent && value > 0 ? "text-primary" : "text-muted-foreground"}
+          size={20}
+        />
+        <ChevronRight
+          className="text-muted-foreground transition group-hover:translate-x-0.5"
+          size={18}
+        />
+      </div>
+      <p className={`type-stat mt-5 ${urgent && value > 0 ? "text-primary" : "text-accent"}`}>
+        {value}
+      </p>
+      <p className="mt-2 text-xs font-bold uppercase tracking-wide">{label}</p>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+    </button>
+  );
+}
+
+function AdminOverview({ onNavigate }: { onNavigate: (section: string) => void }) {
+  const overview = useQuery({ queryKey: ["admin-overview"], queryFn: () => getAdminOverview() });
+  if (overview.isLoading) return <AdminLoading label="Loading operations overview…" />;
+  if (overview.isError)
+    return (
+      <AdminError
+        message="The operations overview could not be loaded."
+        retry={() => overview.refetch()}
+      />
+    );
+  const data = overview.data!;
+  return (
+    <div className="mt-5 space-y-6">
+      <div>
+        <h2 className="type-section-title">What needs attention</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Start with moderation queues, then resolve catalogue quality warnings.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <AdminStat
+          label="Pending dishes"
+          value={data.pendingDishes}
+          description="Review diner submissions"
+          icon={ClipboardCheck}
+          urgent
+          onClick={() => onNavigate("pending")}
+        />
+        <AdminStat
+          label="Pending places"
+          value={data.pendingPlaces}
+          description="Verify new locations"
+          icon={MapPin}
+          urgent
+          onClick={() => onNavigate("places")}
+        />
+        <AdminStat
+          label="Open reports"
+          value={data.openReports}
+          description="Resolve community flags"
+          icon={FileWarning}
+          urgent
+          onClick={() => onNavigate("reports")}
+        />
+        <AdminStat
+          label="Missing photos"
+          value={data.missingPhotos}
+          description="Complete approved dishes"
+          icon={ImageOff}
+          onClick={() => onNavigate("dishes")}
+        />
+        <AdminStat
+          label="Taxonomy warnings"
+          value={data.taxonomyWarnings}
+          description="Dish types required"
+          icon={Tags}
+          urgent
+          onClick={() => onNavigate("taxonomy")}
+        />
+      </div>
+      {Object.values(data).every((value) => value === 0) && (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-5">
+          <p className="font-semibold text-emerald-200">Everything is clear</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            There are no moderation queues or catalogue warnings right now.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminLoading({ label = "Loading…" }: { label?: string }) {
+  return (
+    <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+      <RefreshCw className="animate-spin" size={16} />
+      {label}
+    </div>
+  );
+}
+
+function AdminError({ message, retry }: { message: string; retry: () => void }) {
+  return (
+    <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="mt-0.5 text-destructive" size={18} />
+        <div className="flex-1">
+          <p className="font-semibold">Could not load this section</p>
+          <p className="mt-1 text-sm text-muted-foreground">{message}</p>
+          <Button className="mt-3" size="sm" variant="outline" onClick={retry}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminPager({
+  page,
+  pageSize,
+  total,
+  onPage,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPage: (page: number) => void;
+}) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (total <= pageSize) return null;
+  const first = (page - 1) * pageSize + 1;
+  const last = Math.min(total, page * pageSize);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">
+      <p className="text-xs text-muted-foreground">
+        Showing {first}–{last} of {total}
+      </p>
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+          Previous
+        </Button>
+        <span className="text-xs font-semibold">
+          Page {page} of {pages}
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={page >= pages}
+          onClick={() => onPage(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }
@@ -156,6 +370,8 @@ function PendingPlaces() {
   const q = useQuery({ queryKey: ["pending-places"], queryFn: () => listPendingPlaces() });
   const areas = useQuery({ queryKey: ["admin-areas"], queryFn: () => listAreasAdmin() });
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query);
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<any | null>(null);
   const [placeForm, setPlaceForm] = useState({
     name: "",
@@ -165,9 +381,10 @@ function PendingPlaces() {
     coordText: "",
   });
   const places = useQuery({
-    queryKey: ["admin-places", query],
-    queryFn: () => listPlacesAdmin({ data: { query } }),
+    queryKey: ["admin-places", debouncedQuery, page],
+    queryFn: () => listPlacesAdmin({ data: { query: debouncedQuery, page } }),
   });
+  useEffect(() => setPage(1), [debouncedQuery]);
   const exportMut = useMutation({
     mutationFn: () => exportPlacesCsv(),
     onSuccess: (csv) => downloadCsv("jaannee-places.csv", csv as string),
@@ -178,6 +395,7 @@ function PendingPlaces() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pending-places"] });
       qc.invalidateQueries({ queryKey: ["admin-places"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -196,6 +414,7 @@ function PendingPlaces() {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["pending-places"] });
       qc.invalidateQueries({ queryKey: ["admin-places"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -266,31 +485,37 @@ function PendingPlaces() {
             Approve new places created from the submit flow.
           </p>
         </div>
-        {(q.data ?? []).map((p: any) => (
-          <div
-            key={p.id}
-            className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="font-medium">{p.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {p.area?.name_en}
-                {p.address ? ` · ${p.address}` : ""}
-              </div>
-            </div>
-            <Button size="sm" onClick={() => mut.mutate({ id: p.id, action: "approve" })}>
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => mut.mutate({ id: p.id, action: "reject" })}
+        {q.isLoading && <AdminLoading label="Loading pending places…" />}
+        {q.isError && (
+          <AdminError message="Pending places could not be loaded." retry={() => q.refetch()} />
+        )}
+        {!q.isLoading &&
+          !q.isError &&
+          (q.data ?? []).map((p: any) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm"
             >
-              Reject
-            </Button>
-          </div>
-        ))}
-        {(q.data ?? []).length === 0 && (
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">{p.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {p.area?.name_en}
+                  {p.address ? ` · ${p.address}` : ""}
+                </div>
+              </div>
+              <Button size="sm" onClick={() => mut.mutate({ id: p.id, action: "approve" })}>
+                Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => mut.mutate({ id: p.id, action: "reject" })}
+              >
+                Reject
+              </Button>
+            </div>
+          ))}
+        {!q.isLoading && !q.isError && (q.data ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No pending places.</p>
         )}
       </section>
@@ -319,33 +544,47 @@ function PendingPlaces() {
             placeholder="Search place, address, area"
           />
         </div>
-        {(places.data ?? []).map((p: any) => (
-          <div
-            key={p.id}
-            className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 text-sm sm:flex-row sm:items-center"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="font-medium">{p.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {p.area?.name_en}
-                {p.address ? ` / ${p.address}` : ""} / {p.status}
+        {places.isLoading && <AdminLoading label="Loading places…" />}
+        {places.isError && (
+          <AdminError message="Places could not be loaded." retry={() => places.refetch()} />
+        )}
+        {!places.isLoading &&
+          !places.isError &&
+          (places.data?.items ?? []).map((p: any) => (
+            <div
+              key={p.id}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 text-sm sm:flex-row sm:items-center"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">{p.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {p.area?.name_en}
+                  {p.address ? ` / ${p.address}` : ""} / {p.status}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {p.lat != null && p.lng != null ? `${p.lat}, ${p.lng}` : "No coordinates"}
+                </div>
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                {p.lat != null && p.lng != null ? `${p.lat}, ${p.lng}` : "No coordinates"}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <a href={mapsDirectionsUrl(p)} target="_blank" rel="noreferrer">
-                <Button size="sm" variant="outline" type="button">
-                  Open in Maps
+              <div className="flex flex-wrap gap-2">
+                <a href={mapsDirectionsUrl(p)} target="_blank" rel="noreferrer">
+                  <Button size="sm" variant="outline" type="button">
+                    Open in Maps
+                  </Button>
+                </a>
+                <Button size="sm" variant="outline" onClick={() => openPlaceEditor(p)}>
+                  Edit
                 </Button>
-              </a>
-              <Button size="sm" variant="outline" onClick={() => openPlaceEditor(p)}>
-                Edit
-              </Button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        {places.data && (
+          <AdminPager
+            page={places.data.page}
+            pageSize={places.data.pageSize}
+            total={places.data.total}
+            onPage={setPage}
+          />
+        )}
       </section>
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
@@ -450,7 +689,10 @@ function PendingList() {
   const [correcting, setCorrecting] = useState<Record<string, boolean>>({});
   const mut = useMutation({
     mutationFn: (v: { id: string; action: "approve" | "reject" }) => moderateDish({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pending"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pending"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const assignMut = useMutation({
@@ -459,6 +701,7 @@ function PendingList() {
     onSuccess: () => {
       toast.success("Category assigned");
       qc.invalidateQueries({ queryKey: ["pending"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -474,6 +717,8 @@ function PendingList() {
       qc.invalidateQueries({ queryKey: ["pending"] });
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -482,31 +727,49 @@ function PendingList() {
     id ? catsList.find((c: any) => c.id === id) : null;
   return (
     <div className="mt-4 space-y-3">
-      {(q.data ?? []).map((d: any) => (
-        <div
-          key={d.id}
-          className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
-        >
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-            {d.photo_url && <img src={d.photo_url} className="h-full w-full object-cover" alt="" />}
+      {q.isLoading && <AdminLoading label="Loading pending dishes…" />}
+      {q.isError && (
+        <AdminError message="Pending dishes could not be loaded." retry={() => q.refetch()} />
+      )}
+      {!q.isLoading &&
+        !q.isError &&
+        (q.data ?? []).map((d: any) => (
+          <div
+            key={d.id}
+            className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
+          >
+            <a
+              href={d.photo_url || undefined}
+              target={d.photo_url ? "_blank" : undefined}
+              rel="noreferrer"
+              className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted"
+              aria-label={d.photo_url ? `Open photo for ${d.name_en}` : undefined}
+            >
+              {d.photo_url ? (
+                <img src={d.photo_url} className="h-full w-full object-cover" alt="" />
+              ) : (
+                <span className="flex h-full items-center justify-center text-center text-[10px] text-muted-foreground">
+                  No photo
+                </span>
+              )}
+            </a>
+            <PendingDishRow
+              d={d}
+              catsList={catsList}
+              findCat={findCat}
+              assigning={assigning}
+              setAssigning={setAssigning}
+              assigningSubtype={assigningSubtype}
+              setAssigningSubtype={setAssigningSubtype}
+              correcting={correcting}
+              setCorrecting={setCorrecting}
+              assignMut={assignMut}
+              mut={mut}
+              setCreating={setCreating}
+            />
           </div>
-          <PendingDishRow
-            d={d}
-            catsList={catsList}
-            findCat={findCat}
-            assigning={assigning}
-            setAssigning={setAssigning}
-            assigningSubtype={assigningSubtype}
-            setAssigningSubtype={setAssigningSubtype}
-            correcting={correcting}
-            setCorrecting={setCorrecting}
-            assignMut={assignMut}
-            mut={mut}
-            setCreating={setCreating}
-          />
-        </div>
-      ))}
-      {(q.data ?? []).length === 0 && (
+        ))}
+      {!q.isLoading && !q.isError && (q.data ?? []).length === 0 && (
         <p className="text-sm text-muted-foreground">Queue is empty.</p>
       )}
       <Dialog open={!!creating} onOpenChange={(o) => !o && setCreating(null)}>
@@ -593,6 +856,8 @@ function PendingList() {
 function DishAdmin() {
   const qc = useQueryClient();
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query);
+  const [page, setPage] = useState(1);
   const [missingPhotoOnly, setMissingPhotoOnly] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
@@ -601,9 +866,10 @@ function DishAdmin() {
   const [mergeSource, setMergeSource] = useState<any | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState("");
   const dishes = useQuery({
-    queryKey: ["admin-dishes", query, missingPhotoOnly],
-    queryFn: () => listDishesAdmin({ data: { query, missingPhotoOnly } }),
+    queryKey: ["admin-dishes", debouncedQuery, missingPhotoOnly, page],
+    queryFn: () => listDishesAdmin({ data: { query: debouncedQuery, missingPhotoOnly, page } }),
   });
+  useEffect(() => setPage(1), [debouncedQuery, missingPhotoOnly]);
   const exportMut = useMutation({
     mutationFn: () => exportDishesCsv(),
     onSuccess: (csv) => downloadCsv("jaannee-dishes.csv", csv as string),
@@ -618,6 +884,7 @@ function DishAdmin() {
       setEditingPhoto(null);
       setPhotoUrl("");
       invalidate();
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -647,6 +914,7 @@ function DishAdmin() {
       setDeletingDish(null);
       invalidate();
       qc.invalidateQueries({ queryKey: ["pending"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -657,6 +925,7 @@ function DishAdmin() {
       setMergeSource(null);
       setMergeTargetId("");
       invalidate();
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -692,7 +961,7 @@ function DishAdmin() {
         </div>
       </div>
       <div className="space-y-3">
-        {(dishes.data ?? []).map((d: any) => (
+        {(dishes.data?.items ?? []).map((d: any) => (
           <div
             key={d.id}
             className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center"
@@ -755,8 +1024,19 @@ function DishAdmin() {
           </div>
         ))}
         {dishes.isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
-        {!dishes.isLoading && (dishes.data ?? []).length === 0 && (
+        {!dishes.isLoading && !dishes.isError && (dishes.data?.items ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No dishes found.</p>
+        )}
+        {dishes.isError && (
+          <AdminError message="Dishes could not be loaded." retry={() => dishes.refetch()} />
+        )}
+        {dishes.data && (
+          <AdminPager
+            page={dishes.data.page}
+            pageSize={dishes.data.pageSize}
+            total={dishes.data.total}
+            onPage={setPage}
+          />
         )}
       </div>
       <Dialog open={!!editingPhoto} onOpenChange={(o) => !o && setEditingPhoto(null)}>
@@ -862,7 +1142,7 @@ function DishAdmin() {
               <div>
                 <Label>Keep dish</Label>
                 {(() => {
-                  const candidates = (dishes.data ?? []).filter(
+                  const candidates = (dishes.data?.items ?? []).filter(
                     (d: any) =>
                       d.id !== mergeSource.id &&
                       (d.comparisons_count ?? 0) === 0 &&
@@ -970,6 +1250,9 @@ function PendingDishRow(props: {
       <div className="text-xs text-muted-foreground">
         {d.place?.name} · {d.place?.area?.name_en} · {d.category?.name_en ?? "no category"}{" "}
         {d.price_thb && `· ฿${d.price_thb}`}
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">
+        Submitted {new Date(d.created_at).toLocaleDateString()}
       </div>
       {d.note && <div className="mt-1 text-xs italic text-muted-foreground">{d.note}</div>}
       {d.category_id && (
@@ -1090,14 +1373,14 @@ function PendingDishRow(props: {
           disabled={!canApprove || mut.isPending}
           onClick={() => mut.mutate({ id: d.id, action: "approve" })}
         >
-          Approve
+          Approve dish
         </Button>
         <Button
           size="sm"
           variant="outline"
           onClick={() => mut.mutate({ id: d.id, action: "reject" })}
         >
-          Reject
+          Reject dish
         </Button>
       </div>
     </div>
@@ -1109,39 +1392,49 @@ function Reports() {
   const q = useQuery({ queryKey: ["reports"], queryFn: () => listReports() });
   const mut = useMutation({
     mutationFn: (v: { id: string; status: "resolved" | "dismissed" }) => resolveReport({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["reports"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reports"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   return (
     <div className="mt-4 space-y-3">
-      {(q.data ?? []).map((r: any) => (
-        <div
-          key={r.id}
-          className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="font-medium">
-              {r.dish?.name_en}{" "}
-              <span className="text-xs text-muted-foreground">({r.dish?.place?.name})</span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {r.reason}
-              {r.note ? ` — ${r.note}` : ""}
-            </div>
-          </div>
-          <Button size="sm" onClick={() => mut.mutate({ id: r.id, status: "resolved" })}>
-            Resolve
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => mut.mutate({ id: r.id, status: "dismissed" })}
+      {q.isLoading && <AdminLoading label="Loading reports…" />}
+      {q.isError && <AdminError message="Reports could not be loaded." retry={() => q.refetch()} />}
+      {!q.isLoading &&
+        !q.isError &&
+        (q.data ?? []).map((r: any) => (
+          <div
+            key={r.id}
+            className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-sm"
           >
-            Dismiss
-          </Button>
-        </div>
-      ))}
-      {(q.data ?? []).length === 0 && (
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">
+                {r.dish?.name_en}{" "}
+                <span className="text-xs text-muted-foreground">({r.dish?.place?.name})</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {r.reason}
+                {r.note ? ` — ${r.note}` : ""}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Reported {new Date(r.created_at).toLocaleDateString()}
+              </div>
+            </div>
+            <Button size="sm" onClick={() => mut.mutate({ id: r.id, status: "resolved" })}>
+              Resolve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => mut.mutate({ id: r.id, status: "dismissed" })}
+            >
+              Dismiss
+            </Button>
+          </div>
+        ))}
+      {!q.isLoading && !q.isError && (q.data ?? []).length === 0 && (
         <p className="text-sm text-muted-foreground">No open reports.</p>
       )}
     </div>
@@ -1195,6 +1488,8 @@ function Taxonomy() {
     | { kind: "cuisine"; name_en: string; slug: string }
     | null
   >(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  useEffect(() => setDeleteConfirmation(""), [deleting]);
   const [editingSubtype, setEditingSubtype] = useState<any | null>(null);
   const requireOk = (result: any) => {
     if (!result?.ok) throw new Error(result?.error?.message ?? result?.error ?? "Save failed");
@@ -1224,6 +1519,7 @@ function Taxonomy() {
       setA({ slug: "", name_en: "", name_th: "" });
       qc.invalidateQueries({ queryKey: ["admin-areas"] });
       qc.invalidateQueries({ queryKey: ["areas"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1235,6 +1531,7 @@ function Taxonomy() {
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
       qc.invalidateQueries({ queryKey: ["dish-subtypes"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1246,6 +1543,7 @@ function Taxonomy() {
       qc.invalidateQueries({ queryKey: ["cuisines"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1257,6 +1555,7 @@ function Taxonomy() {
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
       qc.invalidateQueries({ queryKey: ["dish-subtypes"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1285,6 +1584,7 @@ function Taxonomy() {
         qc.invalidateQueries({ queryKey: ["areas"] });
       }
       setEditing(null);
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1310,6 +1610,7 @@ function Taxonomy() {
         qc.invalidateQueries({ queryKey: ["admin-categories"] });
       }
       setDeleting(null);
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1983,14 +2284,23 @@ function Taxonomy() {
             <DialogTitle>Delete {deleting?.kind}</DialogTitle>
           </DialogHeader>
           {deleting && (
-            <div className="space-y-2 text-sm">
+            <div className="space-y-3 text-sm">
               <p>
                 Delete <span className="font-semibold">{deleting.name_en}</span>?
               </p>
-              <p className="text-muted-foreground">
-                This only works when nothing uses it. Cuisines with categories, categories with
-                dishes, and areas with places are blocked.
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-5">
+                This changes the public catalogue. The server blocks items that are still in use,
+                but you should confirm the affected dishes and ranking pools before continuing.
               </p>
+              <div>
+                <Label>Type “{deleting.name_en}” to confirm</Label>
+                <Input
+                  className="mt-1"
+                  value={deleteConfirmation}
+                  onChange={(event) => setDeleteConfirmation(event.target.value)}
+                  autoComplete="off"
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -2000,7 +2310,7 @@ function Taxonomy() {
             <Button
               variant="destructive"
               onClick={() => deleteMut.mutate()}
-              disabled={deleteMut.isPending}
+              disabled={deleteMut.isPending || deleteConfirmation !== deleting?.name_en}
             >
               Delete
             </Button>
@@ -2134,7 +2444,9 @@ function Import() {
     "category_slug,subtype_slug,area_slug,place_name,address,lat,lng,dish_name_en,dish_name_th,price_thb,photo_url,note\n",
   );
   const [placesCsv, setPlacesCsv] = useState("name,area_slug,address,lat,lng\n");
-  const [autoApprove, setAutoApprove] = useState(true);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const csvPreview = useMemo(() => previewCsv(csv), [csv]);
+  const placesPreview = useMemo(() => previewCsv(placesCsv), [placesCsv]);
   const readCsvFile = (file: File | undefined, onText: (text: string) => void) => {
     if (!file) return;
     const reader = new FileReader();
@@ -2158,16 +2470,50 @@ function Import() {
       ),
     onError: (e: any) => toast.error(e.message),
   });
+  const confirmAndImport = (kind: "dishes" | "places") => {
+    const preview = kind === "dishes" ? csvPreview : placesPreview;
+    if (!preview.valid) {
+      toast.error("Fix the CSV header before importing.");
+      return;
+    }
+    if (preview.rows === 0) {
+      toast.error("The CSV has no data rows.");
+      return;
+    }
+    const visibility = autoApprove
+      ? "Valid rows will become public immediately."
+      : "Valid rows will remain pending for review.";
+    if (
+      !window.confirm(
+        `Import ${preview.rows} ${kind} row${preview.rows === 1 ? "" : "s"}?\n\n${visibility}`,
+      )
+    )
+      return;
+    if (kind === "dishes") mut.mutate();
+    else placesMut.mutate();
+  };
   return (
     <div className="mt-4 space-y-6">
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={autoApprove}
-          onChange={(e) => setAutoApprove(e.target.checked)}
-        />
-        Auto-approve imported rows
-      </label>
+      <div
+        className={`rounded-lg border p-4 ${
+          autoApprove ? "border-amber-500/50 bg-amber-500/10" : "border-border bg-card"
+        }`}
+      >
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={autoApprove}
+            onChange={(e) => setAutoApprove(e.target.checked)}
+          />
+          <span>
+            <span className="font-semibold">Publish valid rows immediately</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+              Off by default. Leave this off to place imported rows in moderation first.
+            </span>
+          </span>
+        </label>
+      </div>
 
       <section className="space-y-3 rounded-lg border border-border bg-card p-4">
         <div>
@@ -2196,8 +2542,16 @@ function Import() {
           onChange={(e) => setCsv(e.target.value)}
           className="font-mono text-xs"
         />
-        <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
-          {mut.isPending ? "Importing..." : "Import dishes"}
+        <CsvPreview summary={csvPreview} />
+        <Button
+          onClick={() => confirmAndImport("dishes")}
+          disabled={mut.isPending || !csvPreview.valid || csvPreview.rows === 0}
+        >
+          {mut.isPending
+            ? "Importing..."
+            : autoApprove
+              ? "Import and publish dishes"
+              : "Import dishes for review"}
         </Button>
         <ImportResult result={mut.data} />
       </section>
@@ -2226,11 +2580,50 @@ function Import() {
           onChange={(e) => setPlacesCsv(e.target.value)}
           className="font-mono text-xs"
         />
-        <Button onClick={() => placesMut.mutate()} disabled={placesMut.isPending}>
-          {placesMut.isPending ? "Importing..." : "Import places"}
+        <CsvPreview summary={placesPreview} />
+        <Button
+          onClick={() => confirmAndImport("places")}
+          disabled={placesMut.isPending || !placesPreview.valid || placesPreview.rows === 0}
+        >
+          {placesMut.isPending
+            ? "Importing..."
+            : autoApprove
+              ? "Import and publish places"
+              : "Import places for review"}
         </Button>
         <ImportResult result={placesMut.data} />
       </section>
+    </div>
+  );
+}
+
+function previewCsv(csv: string) {
+  const lines = csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const headers = (lines[0] ?? "")
+    .split(",")
+    .map((header) => header.trim())
+    .filter(Boolean);
+  return {
+    rows: Math.max(0, lines.length - 1),
+    columns: headers.length,
+    valid: headers.length > 1 && lines.length > 0,
+  };
+}
+
+function CsvPreview({ summary }: { summary: ReturnType<typeof previewCsv> }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3 text-xs">
+      <span className="font-semibold">Preflight:</span>{" "}
+      {summary.valid
+        ? `${summary.rows} data row${summary.rows === 1 ? "" : "s"}, ${summary.columns} columns detected.`
+        : "A valid CSV header has not been detected."}
+      <span className="mt-1 block text-muted-foreground">
+        The server will still validate taxonomy, duplicates, coordinates, and required fields before
+        creating anything.
+      </span>
     </div>
   );
 }

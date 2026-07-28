@@ -3,7 +3,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function ensureAdmin(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
+  const { data, error } = await ctx.supabase.rpc("has_role", {
+    _user_id: ctx.userId,
+    _role: "admin",
+  });
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }
@@ -11,8 +14,60 @@ async function ensureAdmin(ctx: { supabase: any; userId: string }) {
 export const amIAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { data } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     return { admin: !!data };
+  });
+
+export const getAdminOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const [pendingDishes, pendingPlaces, openReports, missingPhotos, categories] =
+      await Promise.all([
+        context.supabase
+          .from("dishes")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        context.supabase
+          .from("places")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        context.supabase
+          .from("reports")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "open"),
+        context.supabase
+          .from("dishes")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "approved")
+          .is("photo_url", null),
+        context.supabase
+          .from("categories")
+          .select("id, requires_subtype, subtypes:dish_subtypes(id, is_active)"),
+      ]);
+    const firstError = [
+      pendingDishes.error,
+      pendingPlaces.error,
+      openReports.error,
+      missingPhotos.error,
+      categories.error,
+    ].find(Boolean);
+    if (firstError) throw new Error(firstError.message);
+    const taxonomyWarnings = (categories.data ?? []).filter(
+      (category: any) =>
+        category.requires_subtype &&
+        !(category.subtypes ?? []).some((subtype: any) => subtype.is_active),
+    ).length;
+    return {
+      pendingDishes: pendingDishes.count ?? 0,
+      pendingPlaces: pendingPlaces.count ?? 0,
+      openReports: openReports.count ?? 0,
+      missingPhotos: missingPhotos.count ?? 0,
+      taxonomyWarnings,
+    };
   });
 
 export const listPending = createServerFn({ method: "GET" })
@@ -33,35 +88,75 @@ export const listPending = createServerFn({ method: "GET" })
 
 export const listDishesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { query?: string; missingPhotoOnly?: boolean }) =>
-    z.object({ query: z.string().max(120).optional(), missingPhotoOnly: z.boolean().optional() }).parse(i ?? {}),
+  .inputValidator((i: { query?: string; missingPhotoOnly?: boolean; page?: number }) =>
+    z
+      .object({
+        query: z.string().max(120).optional(),
+        missingPhotoOnly: z.boolean().optional(),
+        page: z.number().int().min(1).max(10_000).optional(),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
     const term = data.query?.trim();
+    const page = data.page ?? 1;
+    const pageSize = 40;
+    const from = (page - 1) * pageSize;
     let q = context.supabase
       .from("dishes")
       .select(
         `id, name_en, name_th, price_thb, photo_url, note, status, created_at, comparisons_count,
         place_id, category_id, subtype_id,
         category:categories(name_en, slug), subtype:dish_subtypes(name_en, slug), place:places(name, area:areas(name_en))`,
+        { count: "exact" },
       )
       .order("created_at", { ascending: false });
     if (term) {
       const escaped = term.replace(/[%_,()]/g, " ").trim();
-      if (escaped) q = q.or(`name_en.ilike.%${escaped}%,name_th.ilike.%${escaped}%`);
+      if (escaped) {
+        const [places, categories, subtypes] = await Promise.all([
+          context.supabase.from("places").select("id").ilike("name", `%${escaped}%`).limit(100),
+          context.supabase
+            .from("categories")
+            .select("id")
+            .or(`name_en.ilike.%${escaped}%,name_th.ilike.%${escaped}%`)
+            .limit(100),
+          context.supabase
+            .from("dish_subtypes")
+            .select("id")
+            .or(`name_en.ilike.%${escaped}%,name_th.ilike.%${escaped}%`)
+            .limit(100),
+        ]);
+        const lookupError = [places.error, categories.error, subtypes.error].find(Boolean);
+        if (lookupError) throw new Error(lookupError.message);
+        const filters = [`name_en.ilike.%${escaped}%`, `name_th.ilike.%${escaped}%`];
+        const placeIds = (places.data ?? []).map((row: any) => row.id);
+        const categoryIds = (categories.data ?? []).map((row: any) => row.id);
+        const subtypeIds = (subtypes.data ?? []).map((row: any) => row.id);
+        if (placeIds.length) filters.push(`place_id.in.(${placeIds.join(",")})`);
+        if (categoryIds.length) filters.push(`category_id.in.(${categoryIds.join(",")})`);
+        if (subtypeIds.length) filters.push(`subtype_id.in.(${subtypeIds.join(",")})`);
+        q = q.or(filters.join(","));
+      }
     }
     if (data.missingPhotoOnly) q = q.is("photo_url", null);
-    q = q.limit(100);
-    const { data: rows, error } = await q;
+    q = q.range(from, from + pageSize - 1);
+    const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return { items: rows ?? [], total: count ?? 0, page, pageSize };
   });
 
 export const moderateDish = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { id: string; action: "approve" | "reject" | "needs_update" | "clear_update" }) =>
-    z.object({ id: z.string().uuid(), action: z.enum(["approve", "reject", "needs_update", "clear_update"]) }).parse(i),
+  .inputValidator(
+    (i: { id: string; action: "approve" | "reject" | "needs_update" | "clear_update" }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          action: z.enum(["approve", "reject", "needs_update", "clear_update"]),
+        })
+        .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
@@ -153,9 +248,11 @@ export const assignDishCategoryAdmin = createServerFn({ method: "POST" })
     const scoped = Boolean((cat as any).requires_subtype) || (activeSubs ?? []).length > 0;
     let subtypeId: string | null = null;
     if (scoped) {
-      if (!data.subtypeId) throw new Error("This category requires a dish type — pick one before assigning.");
+      if (!data.subtypeId)
+        throw new Error("This category requires a dish type — pick one before assigning.");
       const match = (activeSubs ?? []).find((s: any) => s.id === data.subtypeId);
-      if (!match) throw new Error("Selected dish type does not belong to this category or is inactive.");
+      if (!match)
+        throw new Error("Selected dish type does not belong to this category or is inactive.");
       subtypeId = data.subtypeId;
     } else {
       if (data.subtypeId) throw new Error("This category does not use dish types.");
@@ -175,17 +272,29 @@ export const assignDishCategoryAdmin = createServerFn({ method: "POST" })
 
 export const createCategoryForDishAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { dishId: string; slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean }) =>
-    z
-      .object({
-        dishId: z.string().uuid(),
-        slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/),
-        name_en: z.string().min(1).max(80),
-        name_th: z.string().min(1).max(80),
-        cuisine: z.string().max(60).optional(),
-        requires_subtype: z.boolean().optional(),
-      })
-      .parse(i),
+  .inputValidator(
+    (i: {
+      dishId: string;
+      slug: string;
+      name_en: string;
+      name_th: string;
+      cuisine?: string;
+      requires_subtype?: boolean;
+    }) =>
+      z
+        .object({
+          dishId: z.string().uuid(),
+          slug: z
+            .string()
+            .min(1)
+            .max(60)
+            .regex(/^[a-z0-9-]+$/),
+          name_en: z.string().min(1).max(80),
+          name_th: z.string().min(1).max(80),
+          cuisine: z.string().max(60).optional(),
+          requires_subtype: z.boolean().optional(),
+        })
+        .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
@@ -245,7 +354,10 @@ export const updateDishAdmin = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (currentError) throw new Error(currentError.message);
-    const { error } = await context.supabase.from("dishes").update({ photo_url: data.photo_url }).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("dishes")
+      .update({ photo_url: data.photo_url })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     const oldPath =
       current?.photo_url?.startsWith("/photos/") && current.photo_url !== data.photo_url
@@ -253,7 +365,9 @@ export const updateDishAdmin = createServerFn({ method: "POST" })
         : null;
     if (oldPath && !oldPath.includes("..")) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error: cleanupError } = await supabaseAdmin.storage.from("dish-photos").remove([oldPath]);
+      const { error: cleanupError } = await supabaseAdmin.storage
+        .from("dish-photos")
+        .remove([oldPath]);
       if (cleanupError) console.error("Failed to remove replaced dish photo", cleanupError);
     }
     return { ok: true };
@@ -316,7 +430,10 @@ export const resolveReport = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
-    const { error } = await context.supabase.from("reports").update({ status: data.status }).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("reports")
+      .update({ status: data.status })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -341,7 +458,9 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
     for (const k of need) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
 
     const [{ data: cats }, { data: areas }, { data: subtypes }] = await Promise.all([
-      context.supabase.from("categories").select("id, slug, requires_subtype, subtypes:dish_subtypes(id, slug, is_active)"),
+      context.supabase
+        .from("categories")
+        .select("id, slug, requires_subtype, subtypes:dish_subtypes(id, slug, is_active)"),
       context.supabase.from("areas").select("id, slug"),
       context.supabase.from("dish_subtypes").select("id, slug, category_id, is_active"),
     ]);
@@ -375,10 +494,14 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
 
         const activeSubtypes = subtypesByCategory.get(cat.id) ?? [];
         const subtypeSlug = get("subtype_slug");
-        const subtype = subtypeSlug ? activeSubtypes.find((s: any) => s.slug === subtypeSlug) : null;
+        const subtype = subtypeSlug
+          ? activeSubtypes.find((s: any) => s.slug === subtypeSlug)
+          : null;
         const scoped = Boolean((cat as any).requires_subtype) || activeSubtypes.length > 0;
-        if (scoped && !subtypeSlug) throw new Error(`subtype_slug is required for ${get("category_slug")}`);
-        if (subtypeSlug && !subtype) throw new Error(`Unknown subtype_slug for ${get("category_slug")}: ${subtypeSlug}`);
+        if (scoped && !subtypeSlug)
+          throw new Error(`subtype_slug is required for ${get("category_slug")}`);
+        if (subtypeSlug && !subtype)
+          throw new Error(`Unknown subtype_slug for ${get("category_slug")}: ${subtypeSlug}`);
 
         const coords = parseOptionalCoords(get("lat"), get("lng"));
         const existingPlace = await findSimilarPlaceInArea(context.supabase, areaId, placeName);
@@ -394,8 +517,7 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
               .is("lng", null);
             if (coordError) throw new Error(coordError.message);
           }
-        }
-        else {
+        } else {
           const { data: np, error: npe } = await context.supabase
             .from("places")
             .insert({
@@ -413,7 +535,10 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
           place = np;
         }
         if (data.autoApprove && place.status !== "approved") {
-          const { error: approveError } = await context.supabase.from("places").update({ status: "approved" }).eq("id", place.id);
+          const { error: approveError } = await context.supabase
+            .from("places")
+            .update({ status: "approved" })
+            .eq("id", place.id);
           if (approveError) throw new Error(approveError.message);
         }
         const { data: existingDish, error: dishCheckError } = await context.supabase
@@ -448,9 +573,8 @@ export const bulkImportCsv = createServerFn({ method: "POST" })
         created++;
       } catch (e: any) {
         failed++;
-        const msg = (e && (e as any).code === "23505")
-          ? "Duplicate dish for this restaurant"
-          : e.message;
+        const msg =
+          e && (e as any).code === "23505" ? "Duplicate dish for this restaurant" : e.message;
         errors.push({ row: li + 1, reason: msg });
       }
     }
@@ -469,7 +593,9 @@ export const importPlacesCsv = createServerFn({ method: "POST" })
     const header = rows[0].map((h, i) => cleanHeader(h, i));
     const idx = (k: string) => header.indexOf(k);
     for (const k of ["name", "area_slug"]) if (idx(k) < 0) throw new Error(`Missing column: ${k}`);
-    const { data: areas, error: areasError } = await context.supabase.from("areas").select("id, slug");
+    const { data: areas, error: areasError } = await context.supabase
+      .from("areas")
+      .select("id, slug");
     if (areasError) throw new Error(areasError.message);
     const areaMap = new Map((areas ?? []).map((a: any) => [a.slug, a.id]));
     let created = 0;
@@ -719,21 +845,29 @@ const cuisineSchema = slugSchema.optional();
 
 export const upsertCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { slug: string; name_en: string; name_th: string; cuisine?: string; requires_subtype?: boolean; reference_photo_url?: string }) =>
-    z
-      .object({
-        slug: z
-          .string()
-          .min(1)
-          .max(60)
-          .regex(/^[a-z0-9-]+$/),
-        name_en: z.string().min(1).max(80),
-        name_th: z.string().min(1).max(80),
-        cuisine: cuisineSchema,
-        requires_subtype: z.boolean().optional(),
-        reference_photo_url: adminPhotoUrlSchema,
-      })
-      .parse(i),
+  .inputValidator(
+    (i: {
+      slug: string;
+      name_en: string;
+      name_th: string;
+      cuisine?: string;
+      requires_subtype?: boolean;
+      reference_photo_url?: string;
+    }) =>
+      z
+        .object({
+          slug: z
+            .string()
+            .min(1)
+            .max(60)
+            .regex(/^[a-z0-9-]+$/),
+          name_en: z.string().min(1).max(80),
+          name_th: z.string().min(1).max(80),
+          cuisine: cuisineSchema,
+          requires_subtype: z.boolean().optional(),
+          reference_photo_url: adminPhotoUrlSchema,
+        })
+        .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
@@ -743,7 +877,8 @@ export const upsertCategory = createServerFn({ method: "POST" })
       name_th: data.name_th,
       cuisine: data.cuisine || null,
     };
-    if (typeof data.requires_subtype === "boolean") payload.requires_subtype = data.requires_subtype;
+    if (typeof data.requires_subtype === "boolean")
+      payload.requires_subtype = data.requires_subtype;
     if (data.reference_photo_url !== undefined) {
       payload.reference_photo_url = data.reference_photo_url || null;
     }
@@ -804,7 +939,10 @@ export const deleteCuisine = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("cuisine", data.slug);
     if (countError) throw new Error(countError.message);
-    if ((count ?? 0) > 0) throw new Error(`Cannot delete cuisine while ${count} categor${count === 1 ? "y" : "ies"} use it.`);
+    if ((count ?? 0) > 0)
+      throw new Error(
+        `Cannot delete cuisine while ${count} categor${count === 1 ? "y" : "ies"} use it.`,
+      );
     const { error } = await context.supabase.from("cuisines").delete().eq("slug", data.slug);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -820,7 +958,10 @@ export const deleteCategory = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("category_id", data.id);
     if (countError) throw new Error(countError.message);
-    if ((count ?? 0) > 0) throw new Error(`Cannot delete category while ${count} dish${count === 1 ? "" : "es"} use it.`);
+    if ((count ?? 0) > 0)
+      throw new Error(
+        `Cannot delete category while ${count} dish${count === 1 ? "" : "es"} use it.`,
+      );
     const { error } = await context.supabase.from("categories").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -836,7 +977,8 @@ export const deleteArea = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("area_id", data.id);
     if (countError) throw new Error(countError.message);
-    if ((count ?? 0) > 0) throw new Error(`Cannot delete area while ${count} place${count === 1 ? "" : "s"} use it.`);
+    if ((count ?? 0) > 0)
+      throw new Error(`Cannot delete area while ${count} place${count === 1 ? "" : "s"} use it.`);
     const { error } = await context.supabase.from("areas").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -881,7 +1023,9 @@ export const listCategoriesAdmin = createServerFn({ method: "GET" })
     await ensureAdmin(context);
     const { data, error } = await context.supabase
       .from("categories")
-      .select("id, slug, name_en, name_th, cuisine, reference_photo_url, requires_subtype, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)")
+      .select(
+        "id, slug, name_en, name_th, cuisine, reference_photo_url, requires_subtype, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, is_active, display_order)",
+      )
       .order("name_en", { ascending: true });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -889,31 +1033,32 @@ export const listCategoriesAdmin = createServerFn({ method: "GET" })
 
 export const upsertSubtype = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: {
-    id?: string;
-    category_id: string;
-    slug?: string;
-    name_en: string;
-    name_th: string;
-    is_active?: boolean;
-    display_order?: number;
-  }) =>
-    z
-      .object({
-        id: z.string().uuid().optional(),
-        category_id: z.string().uuid(),
-        slug: z
-          .string()
-          .min(1)
-          .max(60)
-          .regex(/^[a-z0-9-]+$/)
-          .optional(),
-        name_en: z.string().min(1).max(80),
-        name_th: z.string().min(1).max(80),
-        is_active: z.boolean().optional(),
-        display_order: z.number().int().min(0).max(10000).optional(),
-      })
-      .parse(i),
+  .inputValidator(
+    (i: {
+      id?: string;
+      category_id: string;
+      slug?: string;
+      name_en: string;
+      name_th: string;
+      is_active?: boolean;
+      display_order?: number;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid().optional(),
+          category_id: z.string().uuid(),
+          slug: z
+            .string()
+            .min(1)
+            .max(60)
+            .regex(/^[a-z0-9-]+$/)
+            .optional(),
+          name_en: z.string().min(1).max(80),
+          name_th: z.string().min(1).max(80),
+          is_active: z.boolean().optional(),
+          display_order: z.number().int().min(0).max(10000).optional(),
+        })
+        .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
@@ -957,29 +1102,52 @@ export const listAreasAdmin = createServerFn({ method: "GET" })
 
 export const listPlacesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { query?: string }) =>
-    z.object({ query: z.string().max(120).optional() }).parse(i ?? {}),
+  .inputValidator((i: { query?: string; page?: number }) =>
+    z
+      .object({
+        query: z.string().max(120).optional(),
+        page: z.number().int().min(1).max(10_000).optional(),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    const page = data.page ?? 1;
+    const pageSize = 40;
+    const from = (page - 1) * pageSize;
     let query = (context.supabase as any)
       .from("places")
-      .select("id, name, address, status, lat, lng, area:areas(id, name_en, name_th)")
+      .select("id, name, address, status, lat, lng, area:areas(id, name_en, name_th)", {
+        count: "exact",
+      })
       .in("status", ["approved", "pending"]);
 
     const term = data.query?.trim();
     if (term) {
       const escaped = term.replace(/[%_]/g, (match) => `\\${match}`);
-      query = query.or(`name.ilike.%${escaped}%,address.ilike.%${escaped}%`);
+      const { data: matchingAreas, error: areaError } = await context.supabase
+        .from("areas")
+        .select("id")
+        .or(`name_en.ilike.%${escaped}%,name_th.ilike.%${escaped}%`)
+        .limit(100);
+      if (areaError) throw new Error(areaError.message);
+      const filters = [`name.ilike.%${escaped}%`, `address.ilike.%${escaped}%`];
+      const areaIds = (matchingAreas ?? []).map((row: any) => row.id);
+      if (areaIds.length) filters.push(`area_id.in.(${areaIds.join(",")})`);
+      query = query.or(filters.join(","));
     }
 
-    const { data: rows, error } = await query
+    const {
+      data: rows,
+      error,
+      count,
+    } = await query
       .order("lat", { ascending: true, nullsFirst: true })
       .order("lng", { ascending: true, nullsFirst: true })
       .order("name", { ascending: true })
-      .limit(1000);
+      .range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return { items: rows ?? [], total: count ?? 0, page, pageSize };
   });
 
 export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
@@ -991,7 +1159,10 @@ export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
         lat: z.number().min(-90).max(90).nullable().optional(),
         lng: z.number().min(-180).max(180).nullable().optional(),
       })
-      .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), "Set both latitude and longitude, or clear both.")
+      .refine(
+        (v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null),
+        "Set both latitude and longitude, or clear both.",
+      )
       .parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -1006,19 +1177,31 @@ export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
 
 export const updatePlaceAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { id: string; name: string; areaId: string; address?: string; status: "approved" | "pending" | "rejected"; lat?: number | null; lng?: number | null }) =>
-    z
-      .object({
-        id: z.string().uuid(),
-        name: z.string().trim().min(1).max(160),
-        areaId: z.string().uuid(),
-        address: z.string().trim().max(300).optional(),
-        status: z.enum(["approved", "pending", "rejected"]),
-        lat: z.number().min(-90).max(90).nullable().optional(),
-        lng: z.number().min(-180).max(180).nullable().optional(),
-      })
-      .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), "Set both latitude and longitude, or clear both.")
-      .parse(i),
+  .inputValidator(
+    (i: {
+      id: string;
+      name: string;
+      areaId: string;
+      address?: string;
+      status: "approved" | "pending" | "rejected";
+      lat?: number | null;
+      lng?: number | null;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          name: z.string().trim().min(1).max(160),
+          areaId: z.string().uuid(),
+          address: z.string().trim().max(300).optional(),
+          status: z.enum(["approved", "pending", "rejected"]),
+          lat: z.number().min(-90).max(90).nullable().optional(),
+          lng: z.number().min(-180).max(180).nullable().optional(),
+        })
+        .refine(
+          (v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null),
+          "Set both latitude and longitude, or clear both.",
+        )
+        .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
