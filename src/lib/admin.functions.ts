@@ -1278,6 +1278,28 @@ export const updatePlaceAdmin = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const mergePlacesAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { keepId: string; removeId: string }) =>
+    z
+      .object({
+        keepId: z.string().uuid(),
+        removeId: z.string().uuid(),
+      })
+      .refine((value) => value.keepId !== value.removeId, "Choose two different places.")
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await (supabaseAdmin as any).rpc("admin_merge_places", {
+      _keep_id: data.keepId,
+      _remove_id: data.removeId,
+    });
+    if (error) throw new Error(error.message);
+    return result;
+  });
+
 export const moderatePlace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { id: string; action: "approve" | "reject" }) =>

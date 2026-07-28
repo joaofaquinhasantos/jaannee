@@ -487,7 +487,9 @@ export const submitDish = createServerFn({ method: "POST" })
         .parse(i),
   )
   .handler(async ({ data, context }) => {
-    if (!data.category_id && !data.requested_category_en) throw new Error("Category required");
+    if (!data.category_id && !data.requested_category_en && !data.requested_category_th) {
+      throw new Error("Category required");
+    }
     // The `dishes.name_en` column is NOT NULL. A Thai-first submission stores
     // the Thai name as a provisional English value so moderation can refine
     // it later; no schema change is made here.

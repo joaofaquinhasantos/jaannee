@@ -31,6 +31,7 @@ import {
   listCategoriesAdmin,
   listAreasAdmin,
   listPlacesAdmin,
+  mergePlacesAdmin,
   resolveGoogleMapsLinkAdmin,
   updatePlaceAdmin,
 } from "@/lib/admin.functions";
@@ -374,6 +375,8 @@ function PendingPlaces() {
   const debouncedQuery = useDebouncedValue(query);
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<any | null>(null);
+  const [mergePlaceSource, setMergePlaceSource] = useState<any | null>(null);
+  const [mergePlaceTargetId, setMergePlaceTargetId] = useState("");
   const [placeForm, setPlaceForm] = useState({
     name: "",
     areaId: "",
@@ -421,6 +424,22 @@ function PendingPlaces() {
   });
   const mapsMut = useMutation({
     mutationFn: (url: string) => resolveGoogleMapsLinkAdmin({ data: { url } }),
+  });
+  const mergePlaceMut = useMutation({
+    mutationFn: () =>
+      mergePlacesAdmin({
+        data: { keepId: mergePlaceTargetId, removeId: mergePlaceSource.id },
+      }),
+    onSuccess: () => {
+      toast.success("Places merged");
+      setMergePlaceSource(null);
+      setMergePlaceTargetId("");
+      qc.invalidateQueries({ queryKey: ["pending-places"] });
+      qc.invalidateQueries({ queryKey: ["admin-places"] });
+      qc.invalidateQueries({ queryKey: ["admin-dishes"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
   const openPlaceEditor = (p: any) => {
     setEditing(p);
@@ -551,6 +570,16 @@ function PendingPlaces() {
                 <Button size="sm" variant="outline" onClick={() => openPlaceEditor(p)}>
                   Edit
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setMergePlaceSource(p);
+                    setMergePlaceTargetId("");
+                  }}
+                >
+                  Merge
+                </Button>
               </div>
             </div>
           ))}
@@ -646,6 +675,54 @@ function PendingPlaces() {
               }
             >
               {mapsMut.isPending ? "Reading Maps link..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!mergePlaceSource} onOpenChange={(open) => !open && setMergePlaceSource(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Merge duplicate place</DialogTitle>
+          </DialogHeader>
+          {mergePlaceSource ? (
+            <div className="space-y-4">
+              <p className="text-sm">
+                Remove <span className="font-semibold">{mergePlaceSource.name}</span> and move all
+                of its dishes to the place you keep.
+              </p>
+              <div>
+                <Label>Keep place</Label>
+                <Select value={mergePlaceTargetId} onValueChange={setMergePlaceTargetId}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Choose place to keep" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(places.data?.items ?? [])
+                      .filter((place: any) => place.id !== mergePlaceSource.id)
+                      .map((place: any) => (
+                        <SelectItem key={place.id} value={place.id}>
+                          {place.name} / {place.area?.name_en ?? "No area"}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The kept place retains its name and area. Missing address or map coordinates are
+                copied from the removed place. The merge is blocked if it would create duplicate
+                dish names at the kept place.
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMergePlaceSource(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => mergePlaceMut.mutate()}
+              disabled={!mergePlaceTargetId || mergePlaceMut.isPending}
+            >
+              Merge places
             </Button>
           </DialogFooter>
         </DialogContent>

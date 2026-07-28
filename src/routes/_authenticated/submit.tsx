@@ -102,6 +102,8 @@ function Submit() {
   const [areaId, setAreaId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subtypeId, setSubtypeId] = useState("");
+  const [requestingCategory, setRequestingCategory] = useState(false);
+  const [requestedCategory, setRequestedCategory] = useState("");
   const [price, setPrice] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -133,6 +135,8 @@ function Submit() {
   const selectCategory = (value: string) => {
     setCategoryId(value);
     setSubtypeId("");
+    setRequestingCategory(false);
+    setRequestedCategory("");
   };
 
   const selectPlace = (place: PlaceRow) => {
@@ -149,7 +153,7 @@ function Submit() {
 
   const validate = (): string | null => {
     if (!nameEn.trim() && !nameTh.trim()) return t("submit_required");
-    if (!categoryId) return t("submit_required");
+    if (!categoryId && !requestedCategory.trim()) return t("submit_required");
     if (categoryIncomplete) {
       return copy(
         "This category is not ready because it has no active dish types.",
@@ -208,7 +212,10 @@ function Submit() {
           place_id: selectedPlace?.id,
           place_name: selectedPlace ? undefined : placeTerm.trim(),
           area_id: selectedPlace?.area_id || areaId,
-          category_id: categoryId,
+          category_id: categoryId || undefined,
+          requested_category_en: categoryId ? undefined : requestedCategory.trim(),
+          requested_category_th:
+            !categoryId && lang === "th" ? requestedCategory.trim() : undefined,
           subtype_id: subtypeId || undefined,
           price_thb: price ? Number(price) : undefined,
           photo_url: photoUrl,
@@ -260,6 +267,8 @@ function Submit() {
     setAreaId("");
     setCategoryId("");
     setSubtypeId("");
+    setRequestingCategory(false);
+    setRequestedCategory("");
     setPrice("");
     setPhotoUrl("");
     setDuplicates(null);
@@ -501,13 +510,25 @@ function Submit() {
           <section>
             <Label>{copy("Dish", "จาน")} *</Label>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              <CategoryPicker
-                categories={categories.data ?? []}
-                value={categoryId}
-                lang={lang}
-                placeholder={t("choose_category")}
-                onChange={(value) => selectCategory(value)}
-              />
+              {requestingCategory ? (
+                <Input
+                  autoFocus
+                  value={requestedCategory}
+                  onChange={(event) => setRequestedCategory(event.target.value)}
+                  placeholder={copy("Category you need", "หมวดที่ต้องการ")}
+                  aria-label={copy("Requested category", "หมวดที่ขอเพิ่ม")}
+                  maxLength={80}
+                  className="h-12 text-base"
+                />
+              ) : (
+                <CategoryPicker
+                  categories={categories.data ?? []}
+                  value={categoryId}
+                  lang={lang}
+                  placeholder={t("choose_category")}
+                  onChange={(value) => selectCategory(value)}
+                />
+              )}
               <Input
                 value={primaryName}
                 onChange={(event) => setPrimaryName(event.target.value)}
@@ -518,6 +539,28 @@ function Submit() {
                 className="h-12 text-base"
               />
             </div>
+            <button
+              type="button"
+              className="mt-2 text-xs font-semibold text-primary underline-offset-4 hover:underline"
+              onClick={() => {
+                setRequestingCategory((value) => !value);
+                setCategoryId("");
+                setSubtypeId("");
+                setRequestedCategory("");
+              }}
+            >
+              {requestingCategory
+                ? copy("Choose an existing category", "เลือกหมวดที่มีอยู่")
+                : copy("Category missing? Request it", "ไม่มีหมวดนี้? ขอเพิ่มหมวด")}
+            </button>
+            {requestingCategory ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {copy(
+                  "An admin will review the category before the dish is approved.",
+                  "ผู้ดูแลจะตรวจสอบหมวดก่อนอนุมัติจาน",
+                )}
+              </p>
+            ) : null}
           </section>
 
           {categoryIncomplete ? (
