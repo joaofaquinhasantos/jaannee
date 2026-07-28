@@ -413,7 +413,7 @@ export const submitDish = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (i: {
-      name_en: string;
+      name_en?: string;
       name_th?: string;
       place_id?: string;
       place_name?: string;
@@ -429,7 +429,7 @@ export const submitDish = createServerFn({ method: "POST" })
     }) =>
       z
         .object({
-          name_en: z.string().trim().min(1).max(120),
+          name_en: z.string().trim().max(120).optional(),
           name_th: z.string().trim().max(120).optional(),
           place_id: optionalUuidSchema,
           place_name: z.string().trim().max(160).optional(),
@@ -443,10 +443,20 @@ export const submitDish = createServerFn({ method: "POST" })
           photo_url: imageUrlSchema,
           note: z.string().trim().max(500).optional(),
         })
+        .refine((v) => Boolean(v.name_en?.trim() || v.name_th?.trim()), {
+          message: "A dish name is required.",
+          path: ["name_en"],
+        })
         .parse(i),
   )
   .handler(async ({ data, context }) => {
     if (!data.category_id && !data.requested_category_en) throw new Error("Category required");
+    // The `dishes.name_en` column is NOT NULL. A Thai-first submission stores
+    // the Thai name as a provisional English value so moderation can refine
+    // it later; no schema change is made here.
+    const nameTh = data.name_th?.trim() || undefined;
+    const nameEn = data.name_en?.trim() || nameTh;
+    if (!nameEn) throw new Error("A dish name is required.");
     let placeId = data.place_id;
     if (!placeId) {
       if (!data.place_name) throw new Error("Place required");
@@ -466,8 +476,8 @@ export const submitDish = createServerFn({ method: "POST" })
     const { data: dish, error } = await context.supabase
       .from("dishes")
       .insert({
-        name_en: data.name_en,
-        name_th: data.name_th,
+        name_en: nameEn,
+        name_th: nameTh,
         place_id: placeId,
         category_id: data.category_id ?? null,
         requested_category_en: data.category_id ? null : data.requested_category_en,
