@@ -13,6 +13,7 @@ import {
   getChallengePair,
   myComparedPairKeys,
   myTriedIds,
+  recordChallengeResponse,
   toggleTried,
 } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
@@ -21,8 +22,9 @@ import { pairKey } from "@/lib/pairing";
 import { useAuthUser } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/challenge/$dishAId/$dishBId")({
-  validateSearch: (search: Record<string, unknown>): { pick?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { pick?: string; from?: string } => ({
     pick: typeof search.pick === "string" ? search.pick : undefined,
+    from: typeof search.from === "string" ? search.from : undefined,
   }),
   loader: ({ params }) =>
     getChallengePair({ data: { dishAId: params.dishAId, dishBId: params.dishBId } }),
@@ -102,11 +104,16 @@ function ChallengePage() {
   const a = pair.a as TriedDish;
   const b = pair.b as TriedDish;
   const sharedPick = search.pick === a.id || search.pick === b.id ? search.pick : null;
+  const challengerUserId =
+    search.from && /^[0-9a-f-]{36}$/i.test(search.from) ? search.from : null;
   const triedIds = tried.data ?? [];
   const aTried = triedIds.includes(a.id);
   const bTried = triedIds.includes(b.id);
   const completed = (compared.data ?? []).includes(pairKey(a.id, b.id));
-  const returnPath = `/challenge/${dishAId}/${dishBId}${sharedPick ? `?pick=${sharedPick}` : ""}`;
+  const returnParams = new URLSearchParams();
+  if (sharedPick) returnParams.set("pick", sharedPick);
+  if (challengerUserId) returnParams.set("from", challengerUserId);
+  const returnPath = `/challenge/${dishAId}/${dishBId}${returnParams.size ? `?${returnParams}` : ""}`;
   const agreed = result && sharedPick ? result.winner.id === sharedPick : null;
 
   return (
@@ -190,7 +197,20 @@ function ChallengePage() {
           <ComparePairChoice
             a={a}
             b={b}
-            onCompleted={(winner, loser) => setResult({ winner, loser })}
+            onCompleted={(winner, loser) => {
+              setResult({ winner, loser });
+              if (challengerUserId && sharedPick && challengerUserId !== auth.userId) {
+                void recordChallengeResponse({
+                  data: {
+                    challengerUserId,
+                    dishAId: a.id,
+                    dishBId: b.id,
+                    winnerId: winner.id,
+                    sharedPickId: sharedPick,
+                  },
+                }).then(() => qc.invalidateQueries({ queryKey: ["retention"] }));
+              }
+            }}
           />
         </section>
       )}

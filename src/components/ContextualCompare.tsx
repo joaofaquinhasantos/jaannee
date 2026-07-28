@@ -187,8 +187,9 @@ export function ComparisonResultPanel({
   dinerLabel?: string | null;
 }) {
   const { t, lang } = useI18n();
+  const { userId } = useAuthUser();
   const origin = typeof window !== "undefined" ? window.location.origin : "https://jaannee.lovable.app";
-  const url = challengeUrl(origin, winner.id, loser.id);
+  const url = challengeUrl(origin, winner.id, loser.id, userId);
   const model = buildComparisonCard({ lang, winner, loser, dinerLabel, url });
 
   return (

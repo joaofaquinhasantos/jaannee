@@ -1145,6 +1145,198 @@ export const toggleInterestFollow = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const retentionUnavailable = (error: any) => error?.code === "42P01";
+
+export const listMyRetention = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [notifications, preferences, collections] = await Promise.all([
+      (context.supabase as any)
+        .from("user_notifications")
+        .select("id, kind, title, body, href, read_at, created_at")
+        .eq("user_id", context.userId)
+        .order("created_at", { ascending: false })
+        .limit(30),
+      (context.supabase as any)
+        .from("user_retention_preferences")
+        .select("weekly_digest, challenge_notifications")
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      (context.supabase as any)
+        .from("dish_collections")
+        .select("id, name, kind, created_at, items:dish_collection_items(dish_id, added_at, dish:dishes(id, name_en, name_th, photo_url, status, place:places(name)))")
+        .eq("user_id", context.userId)
+        .order("created_at", { ascending: false }),
+    ]);
+    const error = notifications.error || preferences.error || collections.error;
+    if (error) {
+      if (retentionUnavailable(error)) {
+        return {
+          available: false,
+          notifications: [],
+          preferences: { weekly_digest: true, challenge_notifications: true },
+          collections: [],
+        };
+      }
+      throw new Error(error.message);
+    }
+    return {
+      available: true,
+      notifications: notifications.data ?? [],
+      preferences: preferences.data ?? { weekly_digest: true, challenge_notifications: true },
+      collections: collections.data ?? [],
+    };
+  });
+
+export const saveRetentionPreferences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { weeklyDigest: boolean; challengeNotifications: boolean }) =>
+    z.object({ weeklyDigest: z.boolean(), challengeNotifications: z.boolean() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).from("user_retention_preferences").upsert({
+      user_id: context.userId,
+      weekly_digest: data.weeklyDigest,
+      challenge_notifications: data.challengeNotifications,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const markNotificationRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { notificationId: string }) =>
+    z.object({ notificationId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any)
+      .from("user_notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", data.notificationId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const saveDishCollection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { name: string; kind?: "custom" | "weekend"; dishId?: string }) =>
+    z
+      .object({
+        name: z.string().trim().min(1).max(60),
+        kind: z.enum(["custom", "weekend"]).default("custom"),
+        dishId: z.string().uuid().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: collection, error } = await (context.supabase as any)
+      .from("dish_collections")
+      .upsert(
+        { user_id: context.userId, name: data.name, kind: data.kind },
+        { onConflict: "user_id,name" },
+      )
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    if (data.dishId) {
+      const dish = await context.supabase
+        .from("dishes")
+        .select("id")
+        .eq("id", data.dishId)
+        .eq("status", "approved")
+        .maybeSingle();
+      if (!dish.data) throw new Error("Only public dishes can be added to a collection.");
+      const item = await (context.supabase as any)
+        .from("dish_collection_items")
+        .upsert({ collection_id: collection.id, dish_id: data.dishId });
+      if (item.error) throw new Error(item.error.message);
+    }
+    return { ok: true, collectionId: collection.id };
+  });
+
+export const recordChallengeResponse = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (i: {
+      challengerUserId: string;
+      dishAId: string;
+      dishBId: string;
+      winnerId: string;
+      sharedPickId: string;
+    }) =>
+      z
+        .object({
+          challengerUserId: z.string().uuid(),
+          dishAId: z.string().uuid(),
+          dishBId: z.string().uuid(),
+          winnerId: z.string().uuid(),
+          sharedPickId: z.string().uuid(),
+        })
+        .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.challengerUserId === context.userId) return { ok: true, ignored: true };
+    const lo = data.dishAId < data.dishBId ? data.dishAId : data.dishBId;
+    const hi = data.dishAId < data.dishBId ? data.dishBId : data.dishAId;
+    if (![lo, hi].includes(data.winnerId) || ![lo, hi].includes(data.sharedPickId)) {
+      throw new Error("Invalid challenge response.");
+    }
+    const comparison = await context.supabase
+      .from("comparisons")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("dish_lo_id", lo)
+      .eq("dish_hi_id", hi)
+      .maybeSingle();
+    if (!comparison.data) throw new Error("Complete the comparison before responding.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const original = await (supabaseAdmin as any)
+      .from("comparisons")
+      .select("winner_id")
+      .eq("user_id", data.challengerUserId)
+      .eq("dish_lo_id", lo)
+      .eq("dish_hi_id", hi)
+      .maybeSingle();
+    if (!original.data || original.data.winner_id !== data.sharedPickId) {
+      throw new Error("This shared challenge is no longer valid.");
+    }
+    const response = await (supabaseAdmin as any).from("challenge_responses").upsert(
+      {
+        challenger_user_id: data.challengerUserId,
+        responder_user_id: context.userId,
+        dish_lo_id: lo,
+        dish_hi_id: hi,
+        winner_id: data.winnerId,
+        agreed: data.winnerId === data.sharedPickId,
+      },
+      { onConflict: "challenger_user_id,responder_user_id,dish_lo_id,dish_hi_id" },
+    );
+    if (response.error) {
+      if (retentionUnavailable(response.error)) return { ok: false, available: false };
+      throw new Error(response.error.message);
+    }
+    const prefs = await (supabaseAdmin as any)
+      .from("user_retention_preferences")
+      .select("challenge_notifications")
+      .eq("user_id", data.challengerUserId)
+      .maybeSingle();
+    if (prefs.data?.challenge_notifications !== false) {
+      await (supabaseAdmin as any).from("user_notifications").insert({
+        user_id: data.challengerUserId,
+        kind: "challenge_response",
+        title:
+          data.winnerId === data.sharedPickId
+            ? "A diner agreed with your pick"
+            : "A diner chose the other dish",
+        body: "Open the challenge to see how your choices compare.",
+        href: `/challenge/${lo}/${hi}?pick=${data.sharedPickId}`,
+      });
+    }
+    return { ok: true, available: true };
+  });
+
 export const publicProfile = createServerFn({ method: "GET" })
   .inputValidator((i: { username: string }) =>
     z
