@@ -18,6 +18,17 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    defaultPendingMs: 0,
+    defaultPendingMinMs: 200,
+    defaultPendingComponent: () => (
+      <div
+        className="min-h-screen bg-background px-5 py-20 text-sm text-muted-foreground"
+        role="status"
+        aria-label="Loading page"
+      >
+        <div className="mx-auto h-1 w-24 animate-pulse bg-primary" />
+      </div>
+    ),
     defaultPreload: "intent",
     defaultPreloadDelay: 100,
     defaultPreloadStaleTime: 0,

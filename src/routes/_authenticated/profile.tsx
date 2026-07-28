@@ -39,6 +39,7 @@ function Profile() {
   const compared = q.data?.compared ?? [];
   const posted = q.data?.posted ?? [];
   const profile = q.data?.profile;
+  const hasDisplayName = Boolean(profile?.display_name?.trim());
   const displayName =
     profile?.display_name || profile?.username || copy("Your profile", "โปรไฟล์ของคุณ");
   const [username, setUsername] = useState("");
@@ -87,7 +88,15 @@ function Profile() {
       <div className="flex items-start justify-between gap-4 border-b border-border pb-5 md:pb-7">
         <div>
           <p className="text-xs font-bold uppercase text-primary">{t("my_jaannee")}</p>
-          <h1 className="type-page-title mt-2">{displayName}</h1>
+          <h1
+            className={
+              hasDisplayName
+                ? "mt-2 break-words font-display text-[clamp(2.5rem,7vw,6rem)] leading-[0.9]"
+                : "mt-2 break-all text-3xl font-semibold leading-tight md:text-5xl"
+            }
+          >
+            {hasDisplayName ? displayName : profile?.username ? `@${displayName}` : displayName}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
         </div>
         <Button variant="ghost" onClick={signOut} className="min-h-11">

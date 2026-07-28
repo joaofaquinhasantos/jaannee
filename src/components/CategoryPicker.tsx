@@ -108,7 +108,9 @@ export function CategoryPicker({
             {groups.map(([cuisine, items]) => (
               <div key={cuisine} className="py-2">
                 <p className="px-2 text-xs font-bold uppercase text-muted-foreground">
-                  {cuisineLabel(cuisine, t)}
+                  {lang === "th"
+                    ? items[0]?.cuisine_ref?.name_th || cuisineLabel(cuisine, t)
+                    : items[0]?.cuisine_ref?.name_en || cuisineLabel(cuisine, t)}
                 </p>
                 <div className="mt-1 space-y-1">
                   {items.map((category) => (

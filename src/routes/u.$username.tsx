@@ -117,6 +117,7 @@ function PublicProfilePage() {
   }
 
   const profile = q.data.profile;
+  const hasDisplayName = Boolean(profile.display_name?.trim());
   const displayName = profile.display_name || profile.username;
   const posted = q.data.posted ?? [];
   const tried = (q.data.tried ?? []).map((r: any) => r.dish).filter(Boolean);
@@ -141,8 +142,14 @@ function PublicProfilePage() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase text-primary">@{profile.username}</p>
-              <h1 className="mt-1 truncate font-display text-3xl leading-none sm:text-5xl">
-                {displayName}
+              <h1
+                className={
+                  hasDisplayName
+                    ? "mt-1 break-words font-display text-3xl leading-none sm:text-5xl"
+                    : "mt-1 break-all text-2xl font-semibold leading-tight sm:text-4xl"
+                }
+              >
+                {hasDisplayName ? displayName : `@${displayName}`}
               </h1>
               {profile.bio ? (
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">

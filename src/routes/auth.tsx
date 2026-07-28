@@ -81,18 +81,18 @@ function AuthPage() {
     <AppShell>
       <div className="mx-auto max-w-md overflow-hidden rounded-lg border border-border bg-card">
         <div className="bg-secondary p-6">
-          <p className="text-xs font-bold uppercase text-primary">Join the board</p>
+          <p className="text-xs font-bold uppercase text-primary">{t("auth_kicker")}</p>
           <h1 className="type-page-title mt-2">{t("sign_in")}</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            We'll email you a magic link. No password needed.
+            {t("auth_intro")}
           </p>
         </div>
         <div className="p-5">
           {sent ? (
             <div className="rounded-lg border border-border bg-background p-5">
-              <p className="font-semibold">Check your inbox</p>
+              <p className="font-semibold">{t("auth_check_inbox")}</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Open the link on this device to finish signing in.
+                {t("auth_check_inbox_body")}
               </p>
             </div>
           ) : (
@@ -105,7 +105,7 @@ function AuthPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Sending..." : "Email me a link"}
+                {loading ? t("auth_sending") : t("auth_email_link")}
               </Button>
             </form>
           )}
@@ -113,7 +113,7 @@ function AuthPage() {
             <>
               <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="h-px flex-1 bg-border" />
-                <span>or</span>
+                <span>{t("auth_or")}</span>
                 <span className="h-px flex-1 bg-border" />
               </div>
               <Button
@@ -123,7 +123,7 @@ function AuthPage() {
                 disabled={googleLoading}
                 onClick={signInGoogle}
               >
-                {googleLoading ? "Opening Google..." : "Continue with Google"}
+                {googleLoading ? t("auth_opening_google") : t("auth_google")}
               </Button>
             </>
           )}
