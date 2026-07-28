@@ -64,7 +64,8 @@ function Compare() {
   const eligibleFirstDishes = useMemo(
     () =>
       dishes.filter((dish) => {
-        if (search.category && dish.category?.slug !== search.category) return false;
+        const categorySlug = Reflect.get(dish.category ?? {}, "slug");
+        if (search.category && categorySlug !== search.category) return false;
         return partnersFor(dish.id).length > 0;
       }),
     [dishes, partnersFor, search.category],
