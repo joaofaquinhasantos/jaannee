@@ -327,6 +327,18 @@ export const dict = {
 
   // --- Profile ---
   profile_submitted: { en: "Submitted dishes", th: "จานที่ส่งไว้" },
+  want_to_try: { en: "Want to try", th: "อยากลอง" },
+  want_to_try_body: {
+    en: "Save dishes for your next meal. Saving never affects rankings.",
+    th: "บันทึกจานไว้สำหรับมื้อต่อไป การบันทึกไม่มีผลต่ออันดับ",
+  },
+  saved_for_later: { en: "Saved for later", th: "บันทึกไว้แล้ว" },
+  remove_from_saved: { en: "Remove from saved", th: "นำออกจากรายการที่บันทึก" },
+  no_saved_dishes: {
+    en: "No dishes saved yet. Use Want to try on any dish you would like to visit.",
+    th: "ยังไม่มีจานที่บันทึกไว้ กด อยากลอง บนจานที่คุณอยากไปกิน",
+  },
+  my_jaannee: { en: "My JaanNee", th: "JaanNee ของฉัน" },
   profile_settings: { en: "Profile settings", th: "ตั้งค่าโปรไฟล์" },
   pending_review: { en: "Pending review", th: "รอตรวจสอบ" },
   not_approved: { en: "Not approved", th: "ไม่ผ่านการอนุมัติ" },

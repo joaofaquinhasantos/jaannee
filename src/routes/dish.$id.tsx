@@ -37,6 +37,8 @@ import {
   mapsDirectionsUrl,
   myFollowingIds,
   myTriedIds,
+  myWantToTryIds,
+  setWantToTry,
   submitReport,
   toggleTried,
 } from "@/lib/dishes.functions";
@@ -160,6 +162,11 @@ function DishPage() {
     queryFn: () => myTriedIds(),
     enabled: auth.status === "in",
   });
+  const wantToTry = useQuery({
+    queryKey: ["want-to-try", auth.userId],
+    queryFn: () => myWantToTryIds(),
+    enabled: auth.status === "in",
+  });
   const following = useQuery({
     queryKey: ["following", auth.userId],
     queryFn: () => myFollowingIds(),
@@ -190,6 +197,7 @@ function DishPage() {
 
   const triedIds = tried.data ?? [];
   const isTried = triedIds.includes(id);
+  const isSaved = (wantToTry.data ?? []).includes(id);
   const currentTriedDish = comparison.dishes.find((item) => item.id === id) ?? dish ?? null;
   const eligiblePartner = comparison.partnersFor(id)[0] ?? null;
 
@@ -208,6 +216,7 @@ function DishPage() {
         qc.invalidateQueries({ queryKey: ["tried-ids"] }),
         qc.invalidateQueries({ queryKey: ["dishes"] }),
         qc.invalidateQueries({ queryKey: ["profile"] }),
+        qc.invalidateQueries({ queryKey: ["want-to-try"] }),
       ]);
       toast.success(
         nextTried
@@ -220,6 +229,18 @@ function DishPage() {
         setPromptPartner(null);
         setInlineResult(null);
       }
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const wantMutation = useMutation({
+    mutationFn: (saved: boolean) => setWantToTry({ data: { dishId: id, saved } }),
+    onSuccess: async (_result, saved) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["want-to-try"] }),
+        qc.invalidateQueries({ queryKey: ["profile"] }),
+      ]);
+      toast.success(saved ? t("saved_for_later") : t("remove_from_saved"));
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -333,13 +354,13 @@ function DishPage() {
         <div className="grid border-x-2 border-b-2 border-foreground bg-card md:grid-cols-[1.15fr_0.85fr]">
           <div className="p-5 md:border-r-2 md:border-foreground md:p-8">
             {dish.note ? (
-              <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">{dish.note}</p>
+              <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">
+                {dish.note}
+              </p>
             ) : null}
 
             <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
-              <h2 className="editorial-kicker text-primary">
-                {copy("Dish stats", "ข้อมูลจาน")}
-              </h2>
+              <h2 className="editorial-kicker text-primary">{copy("Dish stats", "ข้อมูลจาน")}</h2>
               <HowRankingWorks
                 comparisonsCount={Number(dish.comparisons_count ?? 0)}
                 triedCount={triedCount}
@@ -348,10 +369,7 @@ function DishPage() {
             <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
               <Metric label={copy("Status", "สถานะ")} value={status.text} />
               <Metric label={copy("Added", "เพิ่มเมื่อ")} value={`${days} ${t("days_ago")}`} />
-              <Metric
-                label={t("comparisons_progress")}
-                value={`${dish.comparisons_count ?? 0}`}
-              />
+              <Metric label={t("comparisons_progress")} value={`${dish.comparisons_count ?? 0}`} />
             </div>
             {triedCount > 0 ? (
               <p className="mt-3 text-sm font-semibold text-muted-foreground">
@@ -398,6 +416,16 @@ function DishPage() {
                   </Button>
                 </Link>
               )}
+              {auth.status === "in" && !isTried ? (
+                <Button
+                  variant={isSaved ? "secondary" : "outline"}
+                  onClick={() => wantMutation.mutate(!isSaved)}
+                  disabled={wantMutation.isPending}
+                  className="min-h-11"
+                >
+                  {isSaved ? t("saved_for_later") : t("want_to_try")}
+                </Button>
+              ) : null}
               <ShareButton
                 url={shareUrl}
                 title={name}
@@ -450,7 +478,10 @@ function DishPage() {
                         <p className="text-sm font-semibold">{submitterName}</p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        {copy("Follow to see what they eat next.", "ติดตามเพื่อดูว่าพวกเขากินอะไรต่อ")}
+                        {copy(
+                          "Follow to see what they eat next.",
+                          "ติดตามเพื่อดูว่าพวกเขากินอะไรต่อ",
+                        )}
                       </p>
                     </div>
                   </div>
@@ -547,7 +578,9 @@ function ReportDialog({ dishId }: { dishId: string }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="wrong_info">{copy("Wrong information", "ข้อมูลไม่ถูกต้อง")}</SelectItem>
+              <SelectItem value="wrong_info">
+                {copy("Wrong information", "ข้อมูลไม่ถูกต้อง")}
+              </SelectItem>
               <SelectItem value="duplicate">{copy("Duplicate", "ซ้ำ")}</SelectItem>
               <SelectItem value="place_closed">{copy("Place closed", "ร้านปิดแล้ว")}</SelectItem>
               <SelectItem value="other">{copy("Other", "อื่นๆ")}</SelectItem>

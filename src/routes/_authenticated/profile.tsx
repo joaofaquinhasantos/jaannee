@@ -16,10 +16,7 @@ import { useAuthUser } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
-    meta: [
-      { title: "Your JaanNee profile" },
-      { name: "robots", content: "noindex, follow" },
-    ],
+    meta: [{ title: "Your JaanNee profile" }, { name: "robots", content: "noindex, follow" }],
   }),
   component: Profile,
 });
@@ -36,6 +33,9 @@ function Profile() {
     enabled: Boolean(userId),
   });
   const tried = (q.data?.tried ?? []).map((row: { dish?: unknown }) => row.dish).filter(Boolean);
+  const wantToTry = (q.data?.want_to_try ?? [])
+    .map((row: { dish?: unknown }) => row.dish)
+    .filter(Boolean);
   const compared = q.data?.compared ?? [];
   const posted = q.data?.posted ?? [];
   const profile = q.data?.profile;
@@ -86,9 +86,7 @@ function Profile() {
     <AppShell>
       <div className="flex items-start justify-between gap-4 border-b border-border pb-5 md:pb-7">
         <div>
-          <p className="text-xs font-bold uppercase text-primary">
-            {copy("Your taste trail", "เส้นทางรสชาติของคุณ")}
-          </p>
+          <p className="text-xs font-bold uppercase text-primary">{t("my_jaannee")}</p>
           <h1 className="type-page-title mt-2">{displayName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
         </div>
@@ -108,10 +106,33 @@ function Profile() {
         <ReadyToComparePanel />
       </div>
 
+      <section className="mt-8 rounded-lg border border-border bg-secondary/35 p-4 md:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+          {copy("Plan your next meal", "วางแผนมื้อต่อไป")}
+        </p>
+        <h2 className="type-section-title mt-2">{t("want_to_try")}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          {t("want_to_try_body")}
+        </p>
+        {wantToTry.length === 0 ? (
+          <div className="mt-5">
+            <EmptyNote text={t("no_saved_dishes")} />
+          </div>
+        ) : (
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {wantToTry.map((dish: any) => (
+              <DishCard key={dish.id} dish={dish} />
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="mt-8">
         <h2 className="type-section-title mb-4">{t("profile_tried")}</h2>
         {tried.length === 0 ? (
-          <EmptyNote text={copy("No dishes marked tried yet.", "ยังไม่มีจานที่ทำเครื่องหมายว่าเคยกิน")} />
+          <EmptyNote
+            text={copy("No dishes marked tried yet.", "ยังไม่มีจานที่ทำเครื่องหมายว่าเคยกิน")}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {tried.map((dish: any) => (
@@ -199,14 +220,15 @@ function Profile() {
           </label>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
             <span>{copy("Bio", "แนะนำตัว")}</span>
-            <Textarea value={bio} onChange={(event) => setBio(event.target.value)} maxLength={160} />
+            <Textarea
+              value={bio}
+              onChange={(event) => setBio(event.target.value)}
+              maxLength={160}
+            />
           </label>
           <label className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm font-semibold md:col-span-2">
             <span>
-              {copy(
-                "Show dishes I tried on my public profile",
-                "แสดงจานที่เคยกินในโปรไฟล์สาธารณะ",
-              )}
+              {copy("Show dishes I tried on my public profile", "แสดงจานที่เคยกินในโปรไฟล์สาธารณะ")}
             </span>
             <input
               type="checkbox"
@@ -260,7 +282,9 @@ function PrivateSubmissionCard({ dish }: { dish: any }) {
           {pending ? t("pending_review") : t("not_approved")}
         </p>
         <h3 className="mt-2 font-display text-2xl">{name}</h3>
-        {dish.place?.name ? <p className="mt-1 text-sm text-muted-foreground">{dish.place.name}</p> : null}
+        {dish.place?.name ? (
+          <p className="mt-1 text-sm text-muted-foreground">{dish.place.name}</p>
+        ) : null}
       </div>
     </article>
   );
@@ -277,7 +301,9 @@ function ComparisonDish({
 }) {
   const { lang } = useI18n();
   return (
-    <span className={`${winner ? "font-semibold" : "text-muted-foreground"} ${align === "right" ? "text-right" : ""}`}>
+    <span
+      className={`${winner ? "font-semibold" : "text-muted-foreground"} ${align === "right" ? "text-right" : ""}`}
+    >
       {localizedName(dish, lang)}
       {dish?.place?.name ? (
         <span className="block text-xs font-normal text-muted-foreground">{dish.place.name}</span>

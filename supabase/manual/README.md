@@ -41,6 +41,11 @@ repeated.
   Every image remains replaceable or removable in Admin > Taxonomy.
 - `VERIFY_20260727_atmospheric_category_photos.sql` — read-only check for the
   three initial reference photos.
+- `20260728_retention_foundation.sql` — adds the private, diner-owned
+  `dish_wants` list and clears a saved dish automatically when it is marked
+  tried. Saved dishes never influence rankings.
+- `VERIFY_20260728_retention_foundation.sql` — read-only checks for the table,
+  RLS, grants, policies, and tried-conversion trigger.
 
 ## Execution order
 
@@ -65,6 +70,9 @@ repeated.
 12. Paste `20260727_atmospheric_category_photos.sql` into the SQL editor.
 13. Run `VERIFY_20260727_atmospheric_category_photos.sql` and confirm all
     three rows report `OK`.
+14. Paste `20260728_retention_foundation.sql` into the SQL editor.
+15. Run `VERIFY_20260728_retention_foundation.sql` and confirm every row
+    reports `OK`.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.
