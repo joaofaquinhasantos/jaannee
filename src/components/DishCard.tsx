@@ -35,7 +35,9 @@ export function DishCard({
   const showRank = isRanked && rank != null;
   const moderationStatus =
     dish.status === "pending"
-      ? "Pending review"
+      ? lang === "th"
+        ? "เผยแพร่แล้ว · รอตรวจสอบ"
+        : "Live · awaiting review"
       : dish.status === "rejected"
         ? "Not approved"
         : null;
@@ -101,7 +103,9 @@ export function DishCard({
             {moderationStatus ? (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">
                 {dish.status === "pending"
-                  ? "Visible publicly after approval"
+                  ? lang === "th"
+                    ? "โพสต์นี้เผยแพร่แล้ว ผู้ดูแลจะตรวจสอบภายหลัง"
+                    : "This post is public. Admin review follows."
                   : "This submission is not public"}
               </p>
             ) : (
