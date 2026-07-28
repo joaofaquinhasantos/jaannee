@@ -25,7 +25,6 @@ import {
   deleteCuisine,
   deleteCategory,
   deleteArea,
-  grantAdminSelf,
   listPendingPlaces,
   moderatePlace,
   listCategoriesAdmin,
@@ -75,7 +74,6 @@ function downloadCsv(filename: string, csv: string) {
 }
 
 function Admin() {
-  const qc = useQueryClient();
   const isAdmin = useQuery({ queryKey: ["is-admin"], queryFn: () => amIAdmin() });
 
   if (isAdmin.isLoading)
@@ -87,7 +85,13 @@ function Admin() {
   if (!isAdmin.data?.admin)
     return (
       <AppShell>
-        <Bootstrap onGranted={() => qc.invalidateQueries({ queryKey: ["is-admin"] })} />
+        <section className="mx-auto max-w-xl py-16 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Restricted</p>
+          <h1 className="type-page-title mt-3">Admin access required</h1>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">
+            This area is available only to authorised JaanNee administrators.
+          </p>
+        </section>
       </AppShell>
     );
 
@@ -143,29 +147,6 @@ function AdminStat({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-border bg-card p-4">
       <p className="type-stat text-accent">{value}</p>
       <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-function Bootstrap({ onGranted }: { onGranted: () => void }) {
-  const mut = useMutation({
-    mutationFn: () => grantAdminSelf(),
-    onSuccess: () => {
-      toast.success("You are now admin");
-      onGranted();
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-  return (
-    <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-6 text-center">
-      <h1 className="type-page-title">Admin access</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        This account isn't an admin yet. If your email is on the server-side allowlist, you can
-        activate admin now.
-      </p>
-      <Button className="mt-4" onClick={() => mut.mutate()} disabled={mut.isPending}>
-        Activate admin
-      </Button>
     </div>
   );
 }

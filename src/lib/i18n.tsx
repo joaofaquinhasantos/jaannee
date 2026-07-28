@@ -199,7 +199,14 @@ export const dict = {
   discover_bangkok: { en: "Discover Bangkok", th: "ค้นพบกรุงเทพฯ" },
   featured_category: { en: "Featured category", th: "หมวดแนะนำ" },
   explore_category: { en: "Explore category", th: "ดูหมวดนี้" },
-  browse_the_board: { en: "Browse the leaderboard", th: "ดูอันดับ" },
+  no_dishes_for_filters: {
+    en: "No dishes match these filters",
+    th: "ไม่พบจานที่ตรงกับตัวกรอง",
+  },
+  no_dishes_for_filters_body: {
+    en: "Try another category or area, or add an individual dish you have tried.",
+    th: "ลองเลือกหมวดหรือย่านอื่น หรือเพิ่มจานที่คุณเคยกิน",
+  },
   photo_needed: { en: "Photo needed", th: "ต้องการรูปภาพ" },
   photo_needed_body: { en: "Help this dish look alive", th: "ช่วยเพิ่มรูปให้จานนี้" },
   add_the_first_dish: { en: "Add the first dish", th: "เพิ่มจานแรก" },

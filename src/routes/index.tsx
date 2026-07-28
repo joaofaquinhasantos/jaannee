@@ -9,6 +9,7 @@ import { listAreas, listCategories, listDishes } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, secondaryName } from "@/lib/names";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
+import { hasActiveDiscoverFilters, shouldShowCategoryGallery } from "@/lib/discover-state";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +52,8 @@ type CategoryRow = {
 };
 
 type AreaRow = {
+  id?: string;
+  slug?: string;
   name_en?: string | null;
   name_th?: string | null;
 };
@@ -79,7 +82,9 @@ function Index() {
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
   const categoryRows = (categories.data ?? []) as CategoryRow[];
+  const areaRows = (areas.data ?? []) as AreaRow[];
   const selectedCategory = categoryRows.find((item) => item.slug === categorySlug);
+  const selectedArea = areaRows.find((item) => item.slug === areaSlug);
   const activeSubtypes = useMemo(
     () =>
       [...(selectedCategory?.subtypes ?? [])]
@@ -91,8 +96,7 @@ function Index() {
         ),
     [selectedCategory],
   );
-  const subtypeScoped =
-    Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
+  const subtypeScoped = Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
   const poolReady = Boolean(categorySlug) && (!subtypeScoped || Boolean(subtypeSlug));
 
   useEffect(() => {
@@ -115,9 +119,7 @@ function Index() {
 
   const dishRows = (dishes.data ?? []) as DishRow[];
   const ranked = poolReady
-    ? dishRows.filter(
-        (dish) => Number(dish.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD,
-      )
+    ? dishRows.filter((dish) => Number(dish.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD)
     : [];
   const contenders = dishRows
     .filter((dish) => Number(dish.comparisons_count ?? 0) < PUBLIC_RANK_THRESHOLD)
@@ -129,13 +131,11 @@ function Index() {
         a.id.localeCompare(b.id),
     );
   const recent = [...dishRows]
-    .sort(
-      (a, b) =>
-        dateValue(b.created_at) - dateValue(a.created_at) || a.id.localeCompare(b.id),
-    )
+    .sort((a, b) => dateValue(b.created_at) - dateValue(a.created_at) || a.id.localeCompare(b.id))
     .slice(0, 8);
   const leader = ranked.find((dish) => dish.photo_url) ?? contenders.find((dish) => dish.photo_url);
   const categoryPhotos = categoryRows.filter((category) => category.reference_photo_url);
+  const discoverFilters = { categorySlug, areaSlug };
 
   const changeCategory = (slug: string | undefined) => {
     setCategorySlug(slug);
@@ -172,7 +172,8 @@ function Index() {
           onSelect={setSubtypeSlug}
           onChangeCategory={() => changeCategory(undefined)}
         />
-      ) : dishes.isLoading || (categorySlug && subtypeScoped && activeSubtypes.length === 1 && !subtypeSlug) ? (
+      ) : dishes.isLoading ||
+        (categorySlug && subtypeScoped && activeSubtypes.length === 1 && !subtypeSlug) ? (
         <div className="min-h-[40vh] px-6 py-16 text-sm text-white/45">{t("loading")}</div>
       ) : leader ? (
         <div>
@@ -202,7 +203,8 @@ function Index() {
           ) : null}
 
           {recent.some(
-            (dish) => dish.id !== leader.id && !contenders.slice(0, 6).some((item) => item.id === dish.id),
+            (dish) =>
+              dish.id !== leader.id && !contenders.slice(0, 6).some((item) => item.id === dish.id),
           ) ? (
             <DishSection
               eyebrow={t("section_recent")}
@@ -219,8 +221,17 @@ function Index() {
             />
           ) : null}
         </div>
-      ) : categoryPhotos.length > 0 ? (
+      ) : shouldShowCategoryGallery(discoverFilters, categoryPhotos.length) ? (
         <CategoryGallery categories={categoryPhotos.slice(0, 8)} onSelect={changeCategory} />
+      ) : hasActiveDiscoverFilters(discoverFilters) ? (
+        <FilteredEmptyDiscover
+          category={selectedCategory}
+          area={selectedArea}
+          onReset={() => {
+            changeCategory(undefined);
+            setAreaSlug(undefined);
+          }}
+        />
       ) : (
         <EmptyDiscover />
       )}
@@ -346,7 +357,9 @@ function DishSection({
     <section className="border-t border-white/10 bg-[#111111] px-5 py-12 text-white md:px-8 md:py-16">
       <div className="mx-auto max-w-[112rem]">
         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
-        <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] md:text-6xl">{title}</h2>
+        <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] md:text-6xl">
+          {title}
+        </h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">{description}</p>
         <div className="mt-8 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
           {dishes.map((dish, index) => (
@@ -380,7 +393,9 @@ function CompactDish({ dish, rank }: { dish: DishRow; rank?: number }) {
             ? `#${rank} · ${dish.comparisons_count ?? 0} ${t("comparisons_progress")}`
             : `${t("gathering_progress")} · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`}
         </p>
-        <h3 className="mt-2 font-noir-display text-4xl uppercase leading-[0.86] text-white">{name}</h3>
+        <h3 className="mt-2 font-noir-display text-4xl uppercase leading-[0.86] text-white">
+          {name}
+        </h3>
         <p className="mt-3 text-xs text-white/50">{dish.place?.name}</p>
       </div>
     </Link>
@@ -404,17 +419,15 @@ function CategoryGallery({
             type="button"
             onClick={() => onSelect(category.slug)}
             className={`group relative overflow-hidden border-b border-white/10 text-left ${
-              index === 0 ? "min-h-[62vh] sm:col-span-2 md:min-h-[720px]" : "min-h-[440px] md:min-h-[580px]"
+              index === 0
+                ? "min-h-[62vh] sm:col-span-2 md:min-h-[720px]"
+                : "min-h-[440px] md:min-h-[580px]"
             }`}
           >
-            <NoirPhoto
-              src={category.reference_photo_url ?? ""}
-              alt=""
-              priority={index === 0}
-            />
+            <NoirPhoto src={category.reference_photo_url ?? ""} alt="" priority={index === 0} />
             <div className="absolute inset-x-0 bottom-0 z-10 p-6 md:p-10">
               <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-primary">
-                {index === 0 ? t("featured_category") : t("browse_the_board")}
+                {t("explore_category")}
               </p>
               <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] md:text-7xl">
                 {localizedName(category, lang)}
@@ -451,6 +464,53 @@ function NoirPhoto({
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/10" />
       <div className="absolute inset-0 bg-black/10 mix-blend-multiply" />
     </>
+  );
+}
+
+function FilteredEmptyDiscover({
+  category,
+  area,
+  onReset,
+}: {
+  category?: CategoryRow;
+  area?: AreaRow;
+  onReset: () => void;
+}) {
+  const { t, lang } = useI18n();
+  const filterName = [localizedName(category, lang), localizedName(area, lang)]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <section className="flex min-h-[56vh] items-end bg-[#111111] px-6 py-16 text-white md:px-12 md:py-20">
+      <div className="max-w-3xl">
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+          {filterName || t("discover_bangkok")}
+        </p>
+        <h1 className="mt-4 font-noir-display text-5xl uppercase leading-[0.86] md:text-7xl">
+          {t("no_dishes_for_filters")}
+        </h1>
+        <p className="mt-4 max-w-xl text-sm leading-6 text-white/55">
+          {t("no_dishes_for_filters_body")}
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex min-h-11 items-center border border-white/25 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white hover:border-primary hover:bg-primary"
+          >
+            {t("reset_filters")}
+          </button>
+          <Link
+            to="/submit"
+            className="inline-flex min-h-11 items-center gap-2 bg-primary px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white hover:bg-primary/90"
+          >
+            {t("cta_add")}
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 
