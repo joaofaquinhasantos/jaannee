@@ -3,7 +3,15 @@ import { submitComparison } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
-export function InlineTriedCompare({ dish, other }: { dish: any; other: any }) {
+export function InlineTriedCompare({
+  dish,
+  other,
+  onCompared,
+}: {
+  dish: any;
+  other: any;
+  onCompared?: () => void;
+}) {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const mut = useMutation({
@@ -17,6 +25,7 @@ export function InlineTriedCompare({ dish, other }: { dish: any; other: any }) {
       qc.invalidateQueries({ queryKey: ["dishes"] });
       qc.invalidateQueries({ queryKey: ["leaderboard"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
+      onCompared?.();
     },
     onError: (e: any) => toast.error(e.message),
   });
