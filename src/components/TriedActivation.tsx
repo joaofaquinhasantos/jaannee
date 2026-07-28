@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
@@ -30,38 +30,45 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const auth = useAuthUser();
+  const applyingRef = useRef(false);
+  const mountedRef = useRef(true);
   const [selected, setSelected] = useState<string[]>(() => readPendingTried());
   const [dismissed, setDismissed] = useState(() => isActivationDismissed());
   const [applying, setApplying] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
 
   useEffect(() => {
-    if (auth.status !== "in" || selected.length === 0 || applying) return;
-    let cancelled = false;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (auth.status !== "in" || selected.length === 0 || applyingRef.current) return;
+    applyingRef.current = true;
     setApplying(true);
-    Promise.all(selected.map((dishId) => toggleTried({ data: { dishId, tried: true } })))
+    const pendingIds = [...selected];
+    Promise.all(pendingIds.map((dishId) => toggleTried({ data: { dishId, tried: true } })))
       .then(async () => {
-        if (cancelled) return;
         clearPendingTried();
-        setSelected([]);
         await Promise.all([
           qc.invalidateQueries({ queryKey: ["tried"] }),
           qc.invalidateQueries({ queryKey: ["tried-ids"] }),
           qc.invalidateQueries({ queryKey: ["profile"] }),
         ]);
+        if (!mountedRef.current) return;
+        setSelected([]);
         setShowComparison(true);
         toast.success(t("activation_saved"));
       })
       .catch((error: Error) => {
-        if (!cancelled) toast.error(error.message);
+        if (mountedRef.current) toast.error(error.message);
       })
       .finally(() => {
-        if (!cancelled) setApplying(false);
+        applyingRef.current = false;
+        if (mountedRef.current) setApplying(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [applying, auth.status, qc, selected, t]);
+  }, [auth.status, qc, selected, t]);
 
   if (showComparison && auth.status === "in") {
     return (
@@ -87,7 +94,9 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
               {t("activation_title")}
             </p>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">{t("activation_body")}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              {t("activation_body")}
+            </p>
           </div>
           <button
             type="button"
@@ -110,7 +119,9 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
                 onClick={() => setSelected(togglePendingTried(dish.id))}
                 aria-pressed={active}
                 className={`relative overflow-hidden border text-left transition ${
-                  active ? "border-primary ring-2 ring-primary" : "border-white/15 hover:border-white/40"
+                  active
+                    ? "border-primary ring-2 ring-primary"
+                    : "border-white/15 hover:border-white/40"
                 }`}
               >
                 <div className="aspect-square bg-black">
@@ -142,13 +153,11 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
             type="button"
-            onClick={() =>
-              navigate({ to: "/auth", search: { redirect: "/?activate=1" } })
-            }
-            disabled={selected.length === 0}
+            onClick={() => navigate({ to: "/auth", search: { redirect: "/?activate=1" } })}
+            disabled={selected.length === 0 || applying}
             className="min-h-11"
           >
-            {t("activation_save")}
+            {applying ? t("saving") : t("activation_save")}
           </Button>
           <span className="text-xs text-white/45">
             {selected.length} {t("selected_count")}
