@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/compare")({
   head: () => ({
     meta: [
       { title: "Compare two dishes — JaanNee" },
+      { name: "robots", content: "noindex, nofollow" },
       {
         name: "description",
         content:
@@ -45,11 +46,19 @@ export const Route = createFileRoute("/compare")({
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
   }),
-  validateSearch: (s: Record<string, unknown>): { dish?: string; category?: string } => {
-    const out: { dish?: string; category?: string } = {};
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { dish?: string; other?: string; category?: string } => {
+    const out: { dish?: string; other?: string; category?: string } = {};
     if (typeof s.dish === "string") out.dish = s.dish;
+    if (typeof s.other === "string") out.other = s.other;
     if (typeof s.category === "string") out.category = s.category;
     return out;
+  },
+  // Compare is not a destination. Without a dish or category context there is
+  // nothing meaningful to compare, so send the diner back to Discover.
+  beforeLoad: ({ search }) => {
+    if (!search.dish && !search.category) throw redirect({ to: "/" });
   },
   component: Compare,
 });
