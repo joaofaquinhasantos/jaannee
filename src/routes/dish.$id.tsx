@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   followUser,
   getDish,
   listDishes,
   mapsDirectionsUrl,
   myFollowingIds,
+  myProfile,
   myTriedIds,
   submitReport,
   toggleTried,
@@ -15,7 +16,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -24,6 +25,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -47,18 +57,18 @@ export const Route = createFileRoute("/dish/$id")({
     return { dish, origin };
   },
   head: ({ params, loaderData }) => {
-    const d: any = loaderData?.dish;
+    const dish: any = loaderData?.dish;
     const origin: string = loaderData?.origin ?? "";
-    if (!d) return { meta: [{ title: "Dish - JaanNee" }] };
-    const name = d.name_en || d.name_th || "Dish";
-    const place = d.place?.name ?? "";
-    const price = d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : "";
-    const status = dishStatusLabel(d, (k) => (dict as any)[k]?.en ?? String(k)).text;
-    const baseDesc = `${place}${price} / ${status}`.trim();
-    const desc = `${name} at ${place || "a Bangkok spot"}${price} — ${status}. See how this dish ranks on JaanNee's dish-by-dish leaderboard.`;
+    if (!dish) return { meta: [{ title: "Dish - JaanNee" }] };
+    const name = dish.name_en || dish.name_th || "Dish";
+    const place = dish.place?.name ?? "";
+    const price = dish.price_thb != null ? ` / THB ${Number(dish.price_thb).toFixed(0)}` : "";
+    const status = dishStatusLabel(dish, (key) => (dict as any)[key]?.en ?? String(key)).text;
+    const baseDescription = `${place}${price} / ${status}`.trim();
+    const description = `${name} at ${place || "a Bangkok spot"}${price} — ${status}. See how this dish ranks on JaanNee's dish-by-dish leaderboard.`;
     const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
-    const rawPhoto: string | undefined = d.photo_url;
-    const ogImage = rawPhoto
+    const rawPhoto: string | undefined = dish.photo_url;
+    const image = rawPhoto
       ? /^https?:\/\//i.test(rawPhoto)
         ? rawPhoto
         : origin
@@ -67,33 +77,33 @@ export const Route = createFileRoute("/dish/$id")({
       : undefined;
     const meta: Array<Record<string, string>> = [
       { title: `${name} - JaanNee` },
-      { name: "description", content: desc },
+      { name: "description", content: description },
       { property: "og:title", content: name },
-      { property: "og:description", content: desc },
+      { property: "og:description", content: description },
       { property: "og:type", content: "article" },
       { property: "og:url", content: pageUrl },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: name },
-      { name: "twitter:description", content: desc },
+      { name: "twitter:description", content: description },
     ];
-    if (ogImage) {
-      meta.push({ property: "og:image", content: ogImage });
-      meta.push({ name: "twitter:image", content: ogImage });
+    if (image) {
+      meta.push({ property: "og:image", content: image });
+      meta.push({ name: "twitter:image", content: image });
     }
-    const productLd: Record<string, unknown> = {
+    const structuredData: Record<string, unknown> = {
       "@context": "https://schema.org",
       "@type": "Product",
       name,
-      description: baseDesc || desc,
+      description: baseDescription || description,
       url: pageUrl,
-      category: d.category?.name_en,
+      category: dish.category?.name_en,
     };
-    if (ogImage) productLd.image = ogImage;
-    if (place) productLd.brand = { "@type": "Brand", name: place };
-    if (d.price_thb != null) {
-      productLd.offers = {
+    if (image) structuredData.image = image;
+    if (place) structuredData.brand = { "@type": "Brand", name: place };
+    if (dish.price_thb != null) {
+      structuredData.offers = {
         "@type": "Offer",
-        price: Number(d.price_thb).toFixed(0),
+        price: Number(dish.price_thb).toFixed(0),
         priceCurrency: "THB",
         availability: "https://schema.org/InStock",
         url: pageUrl,
@@ -102,7 +112,7 @@ export const Route = createFileRoute("/dish/$id")({
     return {
       meta,
       links: origin ? [{ rel: "canonical", href: pageUrl }] : [],
-      scripts: [{ type: "application/ld+json", children: JSON.stringify(productLd) }],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(structuredData) }],
     };
   },
   component: DishPage,
@@ -116,26 +126,35 @@ function DishPage() {
   const dish = useQuery({ queryKey: ["dish", id], queryFn: () => getDish({ data: { id } }) });
   const [authed, setAuthed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [comparePromptOpen, setComparePromptOpen] = useState(false);
+  const [comparePromptDish, setComparePromptDish] = useState<any | null>(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setAuthed(!!data.user);
+      setAuthed(Boolean(data.user));
       setUserId(data.user?.id ?? null);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setAuthed(!!s?.user);
-      setUserId(s?.user?.id ?? null);
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(Boolean(session?.user));
+      setUserId(session?.user?.id ?? null);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => subscription.subscription.unsubscribe();
   }, []);
+
   const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds(), enabled: authed });
   const following = useQuery({
     queryKey: ["following"],
     queryFn: () => myFollowingIds(),
     enabled: authed,
   });
+  const comparisonContext = useQuery({
+    queryKey: ["profile", "dish-comparison-context"],
+    queryFn: () => myProfile(),
+    enabled: authed,
+  });
   const isTried = (tried.data ?? []).includes(id);
   const pool = useQuery({
-    queryKey: ["dish-ranking-pool", dKey(dish.data)],
+    queryKey: ["dish-ranking-pool", dishPoolKey(dish.data)],
     queryFn: () =>
       listDishes({
         data: {
@@ -143,14 +162,26 @@ function DishPage() {
           subtypeSlug: (dish.data as any).subtype?.slug,
         },
       }),
-    enabled: authed && isTried && !!(dish.data as any)?.category?.slug,
+    enabled: authed && Boolean((dish.data as any)?.category?.slug),
   });
+
+  const eligibleOther = useMemo(() => {
+    if (!dish.data || !comparisonContext.isSuccess) return null;
+    return findEligibleOtherDish(
+      dish.data,
+      (pool.data ?? []) as any[],
+      tried.data ?? [],
+      comparisonContext.data?.compared ?? [],
+    );
+  }, [dish.data, pool.data, tried.data, comparisonContext.data, comparisonContext.isSuccess]);
 
   const tryMut = useMutation({
     mutationFn: () => toggleTried({ data: { dishId: id, tried: !isTried } }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      const markingAsTried = !isTried;
       qc.invalidateQueries({ queryKey: ["tried"] });
       qc.invalidateQueries({ queryKey: ["dishes"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
       toast.success(
         isTried
           ? lang === "th"
@@ -160,16 +191,38 @@ function DishPage() {
             ? "ทำเครื่องหมายว่าเคยกินแล้ว"
             : "Marked as tried",
       );
+
+      if (!markingAsTried || !dish.data) {
+        setComparePromptOpen(false);
+        setComparePromptDish(null);
+        return;
+      }
+
+      const [poolResult, profileResult] = await Promise.all([
+        pool.refetch(),
+        comparisonContext.refetch(),
+      ]);
+      const candidate = findEligibleOtherDish(
+        dish.data,
+        (poolResult.data ?? []) as any[],
+        tried.data ?? [],
+        profileResult.data?.compared ?? [],
+      );
+      if (candidate) {
+        setComparePromptDish(candidate);
+        setComparePromptOpen(true);
+      }
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: any) => toast.error(error.message),
   });
+
   const followMut = useMutation({
     mutationFn: ({ targetId, follow }: { targetId: string; follow: boolean }) =>
       followUser({ data: { userId: targetId, follow } }),
-    onSuccess: (_data, vars) => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["following"] });
       toast.success(
-        vars.follow
+        variables.follow
           ? lang === "th"
             ? "กำลังติดตาม"
             : "Following"
@@ -178,64 +231,73 @@ function DishPage() {
             : "Unfollowed",
       );
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: any) => toast.error(error.message),
   });
 
-  if (dish.isLoading)
+  if (dish.isLoading) {
     return (
       <AppShell>
         <p className="text-muted-foreground">{t("loading")}</p>
       </AppShell>
     );
-  if (!dish.data)
+  }
+
+  if (!dish.data) {
     return (
       <AppShell>
         <p>{lang === "th" ? "ไม่พบจานนี้" : "Not found."}</p>
       </AppShell>
     );
+  }
 
-  const d: any = dish.data;
-  const name = lang === "th" && d.name_th ? d.name_th : d.name_en;
-  const secondaryName = lang === "th" && d.name_th ? d.name_en : d.name_th;
-  const areaName = d.place?.area
+  const currentDish: any = dish.data;
+  const name = lang === "th" && currentDish.name_th ? currentDish.name_th : currentDish.name_en;
+  const secondaryName =
+    lang === "th" && currentDish.name_th ? currentDish.name_en : currentDish.name_th;
+  const areaName = currentDish.place?.area
     ? lang === "th"
-      ? d.place.area.name_th || d.place.area.name_en
-      : d.place.area.name_en
+      ? currentDish.place.area.name_th || currentDish.place.area.name_en
+      : currentDish.place.area.name_en
     : null;
-  const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
-  const s = statusLabel(d, t);
-  const triedCount = d.tried_count ?? 0;
+  const days = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(currentDish.created_at).getTime()) / 86400000),
+  );
+  const status = statusLabel(currentDish, t);
+  const triedCount = currentDish.tried_count ?? 0;
   const priceLabel =
-    d.price_thb != null
+    currentDish.price_thb != null
       ? lang === "th"
-        ? `${Number(d.price_thb).toFixed(0)} ${t("thb")}`
-        : `${t("thb")} ${Number(d.price_thb).toFixed(0)}`
+        ? `${Number(currentDish.price_thb).toFixed(0)} ${t("thb")}`
+        : `${t("thb")} ${Number(currentDish.price_thb).toFixed(0)}`
       : null;
   const shareUrl = origin
     ? `${origin}/dish/${id}`
     : typeof window !== "undefined"
       ? `${window.location.origin}/dish/${id}`
       : `/dish/${id}`;
-  const otherTried = ((pool.data ?? []) as any[]).find(
-    (candidate) =>
-      candidate.id !== d.id &&
-      (tried.data ?? []).includes(candidate.id) &&
-      (d.subtype_id ? candidate.subtype_id === d.subtype_id : !candidate.subtype_id),
-  );
-  const submitter = d.submitter_profile;
+  const submitter = currentDish.submitter_profile;
   const submitterName =
-    submitter?.display_name || submitter?.username || (lang === "th" ? "นักชิม JaanNee" : "A JaanNee eater");
-  const isFollowingSubmitter = d.submitted_by
-    ? (following.data ?? []).includes(d.submitted_by)
+    submitter?.display_name ||
+    submitter?.username ||
+    (lang === "th" ? "นักชิม JaanNee" : "A JaanNee eater");
+  const isFollowingSubmitter = currentDish.submitted_by
+    ? (following.data ?? []).includes(currentDish.submitted_by)
     : false;
+
+  const finishContextualComparison = () => {
+    setComparePromptOpen(false);
+    setComparePromptDish(null);
+    comparisonContext.refetch();
+  };
 
   return (
     <AppShell>
       <article>
         <div className="relative min-h-[32rem] overflow-hidden border-2 border-foreground bg-ink md:min-h-[43rem]">
           <div className="absolute inset-0 bg-muted">
-            {d.photo_url ? (
-              <img src={d.photo_url} alt={name} className="h-full w-full object-cover" />
+            {currentDish.photo_url ? (
+              <img src={currentDish.photo_url} alt={name} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center bg-secondary font-display text-5xl italic text-muted-foreground">
                 {t("brand")}
@@ -246,61 +308,66 @@ function DishPage() {
           <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
             <div>
               <p className="editorial-kicker text-white/75">
-                {lang === "th" ? d.category?.name_th || d.category?.name_en : d.category?.name_en}
+                {lang === "th"
+                  ? currentDish.category?.name_th || currentDish.category?.name_en
+                  : currentDish.category?.name_en}
               </p>
               <h1 className="type-page-title mt-4 max-w-5xl">{name}</h1>
               {secondaryName ? (
                 <p className="mt-3 font-thai text-xl font-medium text-white/75">{secondaryName}</p>
               ) : null}
               <p className="mt-5 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
-                {d.place?.name}
+                {currentDish.place?.name}
                 {areaName ? ` / ${areaName}` : ""}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(s.tone)}`}
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(status.tone)}`}
               >
-                {s.text}
+                {status.text}
               </span>
-              {priceLabel && (
+              {priceLabel ? (
                 <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">
                   {priceLabel}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
 
         <div className="grid border-x-2 border-b-2 border-foreground bg-card md:grid-cols-[1.15fr_0.85fr]">
           <div className="p-5 md:border-r-2 md:border-foreground md:p-8">
-            {d.note && (
+            {currentDish.note ? (
               <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">
-                {d.note}
+                {currentDish.note}
               </p>
-            )}
+            ) : null}
 
             <h2 className="editorial-kicker mt-8 text-primary">
               {lang === "th" ? "สถิติจาน" : "Dish stats"}
             </h2>
             <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
-              <Metric label={lang === "th" ? "สถานะ" : "Status"} value={s.text} />
+              <Metric label={lang === "th" ? "สถานะ" : "Status"} value={status.text} />
               <Metric
                 label={lang === "th" ? "เพิ่มเมื่อ" : "Added"}
                 value={lang === "th" ? `${days} วันก่อน` : `${days} ${t("days_ago")}`}
               />
-              <Metric
-                label={t("profile_comparisons")}
-                value={`${d.comparisons_count ?? 0}`}
-              />
+              <Metric label={t("profile_comparisons")} value={`${currentDish.comparisons_count ?? 0}`} />
             </div>
-            {triedCount > 0 && (
+            {triedCount > 0 ? (
               <p className="mt-3 text-sm font-semibold text-muted-foreground">
                 {t("tried_by")} {triedCount} {t("diners")}
               </p>
-            )}
+            ) : null}
 
-            {authed && isTried && otherTried && <InlineTriedCompare dish={d} other={otherTried} />}
+            {authed && isTried && eligibleOther ? (
+              <InlineTriedCompare
+                dish={currentDish}
+                other={eligibleOther}
+                onCompared={() => comparisonContext.refetch()}
+              />
+            ) : null}
 
             <div className="mt-7 flex flex-wrap gap-2">
               {authed ? (
@@ -312,33 +379,33 @@ function DishPage() {
                   {isTried ? t("tried_marked") : t("tried_it")}
                 </Button>
               ) : (
-                <Link to="/auth">
+                <Link to="/auth" search={{ redirect: `/dish/${id}` }}>
                   <Button>
-                    {lang === "th" ? "เข้าสู่ระบบเพื่อทำเครื่องหมายว่าเคยกิน" : "Sign in to mark tried"}
+                    {lang === "th"
+                      ? "เข้าสู่ระบบเพื่อทำเครื่องหมายว่าเคยกิน"
+                      : "Sign in to mark tried"}
                   </Button>
                 </Link>
               )}
-              <Link to="/compare" search={{ dish: id } as any}>
-                <Button variant="outline">{t("compare_this")}</Button>
-              </Link>
               <ShareButton
                 url={shareUrl}
                 title={name}
-                text={[d.place?.name, priceLabel, s.text].filter(Boolean).join(" / ")}
+                text={[currentDish.place?.name, priceLabel, status.text].filter(Boolean).join(" / ")}
                 label={t("share")}
               />
-              {d.place && (
-                <a href={mapsDirectionsUrl(d.place)} target="_blank" rel="noreferrer">
+              {currentDish.place ? (
+                <a href={mapsDirectionsUrl(currentDish.place)} target="_blank" rel="noreferrer">
                   <Button variant="outline" type="button">
                     {lang === "th" ? "เส้นทาง" : "Directions"}
                   </Button>
                 </a>
-              )}
-              {authed && <ReportDialog dishId={id} />}
+              ) : null}
+              {authed ? <ReportDialog dishId={id} /> : null}
             </div>
           </div>
+
           <aside className="border-t-2 border-foreground p-5 md:border-t-0 md:p-8">
-            {d.submitted_by && (
+            {currentDish.submitted_by ? (
               <div className="border-y border-foreground/25 py-4">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                   {lang === "th" ? "เพิ่มโดย" : "Submitted by"}
@@ -346,7 +413,9 @@ function DishPage() {
                 <div className="flex items-center justify-between gap-3">
                   <Link
                     to={submitter?.username ? "/u/$username" : "."}
-                    params={submitter?.username ? { username: submitter.username } : (undefined as any)}
+                    params={
+                      submitter?.username ? { username: submitter.username } : (undefined as any)
+                    }
                     className="flex min-w-0 items-center gap-3"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
@@ -371,13 +440,13 @@ function DishPage() {
                       </p>
                     </div>
                   </Link>
-                  {authed && userId !== d.submitted_by ? (
+                  {authed && userId !== currentDish.submitted_by ? (
                     <Button
                       variant={isFollowingSubmitter ? "secondary" : "outline"}
                       size="sm"
                       onClick={() =>
                         followMut.mutate({
-                          targetId: d.submitted_by,
+                          targetId: currentDish.submitted_by,
                           follow: !isFollowingSubmitter,
                         })
                       }
@@ -394,16 +463,87 @@ function DishPage() {
                   ) : null}
                 </div>
               </div>
-            )}
+            ) : null}
           </aside>
         </div>
       </article>
+
+      <Drawer
+        open={comparePromptOpen && Boolean(comparePromptDish)}
+        onOpenChange={(open) => {
+          setComparePromptOpen(open);
+          if (!open) setComparePromptDish(null);
+        }}
+      >
+        <DrawerContent className="max-h-[92dvh]">
+          <div className="mx-auto w-full max-w-3xl overflow-y-auto">
+            <DrawerHeader>
+              <DrawerTitle>{t("which_better")}</DrawerTitle>
+              <DrawerDescription>
+                {lang === "th"
+                  ? "คุณเคยกินทั้งสองจานแล้ว เลือกจานที่คุณชอบมากกว่า"
+                  : "You have tried both dishes. Choose the one you preferred."}
+              </DrawerDescription>
+            </DrawerHeader>
+            {comparePromptDish ? (
+              <div className="px-4 pb-2">
+                <InlineTriedCompare
+                  dish={currentDish}
+                  other={comparePromptDish}
+                  onCompared={finishContextualComparison}
+                />
+              </div>
+            ) : null}
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button variant="ghost">{lang === "th" ? "ไว้ทีหลัง" : "Not now"}</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AppShell>
   );
 }
 
-function dKey(dish: any) {
+function dishPoolKey(dish: any) {
   return dish ? [dish.id, dish.category?.slug, dish.subtype_id].join(":") : "none";
+}
+
+function comparisonPairKey(firstId: string, secondId: string) {
+  return [firstId, secondId].sort().join(":");
+}
+
+function findEligibleOtherDish(
+  currentDish: any,
+  candidates: any[],
+  triedIds: string[],
+  comparisons: any[],
+) {
+  if (!currentDish?.id) return null;
+  const triedSet = new Set(triedIds);
+  const comparedSet = new Set(
+    comparisons
+      .map((comparison) => {
+        const firstId = comparison.lo?.id;
+        const secondId = comparison.hi?.id;
+        return firstId && secondId ? comparisonPairKey(firstId, secondId) : null;
+      })
+      .filter(Boolean),
+  );
+  const currentSubtype = currentDish.subtype_id ?? currentDish.subtype?.id ?? null;
+
+  return (
+    candidates.find((candidate) => {
+      if (!candidate?.id || candidate.id === currentDish.id || !triedSet.has(candidate.id)) {
+        return false;
+      }
+      if (candidate.category?.id !== currentDish.category?.id) return false;
+      const candidateSubtype = candidate.subtype_id ?? candidate.subtype?.id ?? null;
+      if (candidateSubtype !== currentSubtype) return false;
+      return !comparedSet.has(comparisonPairKey(currentDish.id, candidate.id));
+    }) ?? null
+  );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
@@ -422,15 +562,16 @@ function ReportDialog({ dishId }: { dishId: string }) {
   const [reason, setReason] = useState("wrong_info");
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
-  const mut = useMutation({
+  const mutation = useMutation({
     mutationFn: () => submitReport({ data: { dishId, reason, note: note || undefined } }),
     onSuccess: () => {
       toast.success(lang === "th" ? "ขอบคุณ เราจะตรวจสอบรายงานนี้" : "Thanks. We'll review this.");
       setOpen(false);
       setNote("");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: any) => toast.error(error.message),
   });
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -446,19 +587,25 @@ function ReportDialog({ dishId }: { dishId: string }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="wrong_info">{lang === "th" ? "ข้อมูลไม่ถูกต้อง" : "Wrong info"}</SelectItem>
-              <SelectItem value="duplicate">{lang === "th" ? "รายการซ้ำ" : "Duplicate"}</SelectItem>
-              <SelectItem value="place_closed">{lang === "th" ? "ร้านปิดแล้ว" : "Place closed"}</SelectItem>
+              <SelectItem value="wrong_info">
+                {lang === "th" ? "ข้อมูลไม่ถูกต้อง" : "Wrong info"}
+              </SelectItem>
+              <SelectItem value="duplicate">
+                {lang === "th" ? "รายการซ้ำ" : "Duplicate"}
+              </SelectItem>
+              <SelectItem value="place_closed">
+                {lang === "th" ? "ร้านปิดแล้ว" : "Place closed"}
+              </SelectItem>
               <SelectItem value="other">{lang === "th" ? "อื่นๆ" : "Other"}</SelectItem>
             </SelectContent>
           </Select>
           <Textarea
             placeholder={lang === "th" ? "รายละเอียดเพิ่มเติม (ไม่บังคับ)" : "Optional details"}
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(event) => setNote(event.target.value)}
             maxLength={500}
           />
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
             {lang === "th" ? "ส่งรายงาน" : "Submit report"}
           </Button>
         </div>
