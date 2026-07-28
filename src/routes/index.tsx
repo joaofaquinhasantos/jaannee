@@ -5,6 +5,7 @@ import { ArrowUpRight, Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
+import { ReturnHub } from "@/components/ReturnHub";
 import { getDiscoverBootstrap, listDishes } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, secondaryName } from "@/lib/names";
@@ -204,6 +205,7 @@ function Index() {
       </div>
 
       <TriedActivation dishes={dishRows} />
+      <ReturnHub />
 
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
         <SubtypeChooser
