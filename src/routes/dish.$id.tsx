@@ -414,7 +414,7 @@ function DishPage() {
             </div>
             {triedCount > 0 ? (
               <p className="mt-3 text-sm font-semibold text-muted-foreground">
-                {t("tried_by")} {triedCount} {t("diners")}
+                {t("tried_by")} {triedCount} {t(triedCount === 1 ? "diner" : "diners")}
               </p>
             ) : null}
 
@@ -437,6 +437,26 @@ function DishPage() {
                     />
                   )}
                 </div>
+              </section>
+            ) : auth.status === "in" &&
+              isTried &&
+              !comparison.isLoading &&
+              dish.category?.slug ? (
+              <section className="mt-8 border-t border-border pt-6">
+                <p className="label-caps text-primary">{t("no_pairs_yet")}</p>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+                  {t("no_pairs_yet_body")}
+                </p>
+                <Link
+                  to="/"
+                  search={{ category: dish.category.slug }}
+                  className="mt-4 inline-flex min-h-11 items-center border border-foreground px-4 py-2 text-xs font-bold uppercase tracking-wide transition hover:bg-foreground hover:text-background"
+                >
+                  {copy(
+                    `Find another ${localizedName(dish.category, lang)}`,
+                    `ค้นหา${localizedName(dish.category, lang)}จานอื่น`,
+                  )}
+                </Link>
               </section>
             ) : null}
 

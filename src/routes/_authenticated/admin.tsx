@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -71,7 +71,13 @@ import {
 } from "lucide-react";
 import { PHOTO_ACCEPT_ATTR, buildPhotoPath, validatePhotoFile } from "@/lib/photo-upload";
 
-export const Route = createFileRoute("/_authenticated/admin")({ component: Admin });
+export const Route = createFileRoute("/_authenticated/admin")({
+  beforeLoad: async () => {
+    const access = await amIAdmin();
+    if (!access.admin) throw redirect({ to: "/" });
+  },
+  component: Admin,
+});
 
 function downloadCsv(filename: string, csv: string) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });

@@ -9,9 +9,17 @@ import { getDiscoverBootstrap, listDishes } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, secondaryName } from "@/lib/names";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
-import { hasActiveDiscoverFilters, shouldShowCategoryGallery } from "@/lib/discover-state";
+import {
+  discoverRows,
+  hasActiveDiscoverFilters,
+  shouldShowCategoryGallery,
+} from "@/lib/discover-state";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): { category?: string; area?: string } => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+    area: typeof search.area === "string" ? search.area : undefined,
+  }),
   loader: () => getDiscoverBootstrap(),
   head: () => ({
     meta: [
@@ -82,9 +90,10 @@ type DishRow = {
 function Index() {
   const { t, lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
-  const [categorySlug, setCategorySlug] = useState<string | undefined>();
+  const search = Route.useSearch();
+  const [categorySlug, setCategorySlug] = useState<string | undefined>(search.category);
   const [subtypeSlug, setSubtypeSlug] = useState<string | undefined>();
-  const [areaSlug, setAreaSlug] = useState<string | undefined>();
+  const [areaSlug, setAreaSlug] = useState<string | undefined>(search.area);
 
   const loadedBootstrap = Route.useLoaderData();
   const bootstrap = useQuery({
@@ -128,7 +137,14 @@ function Index() {
     enabled: hasFilters && (!categorySlug || !subtypeScoped || Boolean(subtypeSlug)),
   });
 
-  const dishRows = (hasFilters ? filteredDishes.data : bootstrap.data?.dishes ?? []) as DishRow[];
+  // A filter change starts a new query whose data is briefly undefined.
+  // Always render an empty collection during that transition instead of
+  // calling Array methods on undefined and crashing the whole route.
+  const dishRows = discoverRows(
+    hasFilters,
+    filteredDishes.data as DishRow[] | undefined,
+    bootstrap.data?.dishes as DishRow[] | undefined,
+  );
   const ranked = poolReady
     ? dishRows.filter((dish) => Number(dish.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD)
     : [];
@@ -174,6 +190,7 @@ function Index() {
         </div>
       </div>
 
+      <RankingPrimer />
       <TriedActivation dishes={dishRows} />
 
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
@@ -259,6 +276,25 @@ function Index() {
   );
 }
 
+function RankingPrimer() {
+  const { t } = useI18n();
+  return (
+    <section className="border-b border-white/10 bg-[#171717] px-5 py-5 text-white md:px-8">
+      <div className="mx-auto grid max-w-[90rem] gap-4 md:grid-cols-[auto_1fr_1fr_1fr] md:items-start">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+          {t("how_ranking_works")}
+        </p>
+        {[t("how_rule_tried"), t("how_rule_pool"), t("how_rule_threshold")].map((rule, index) => (
+          <p key={rule} className="flex gap-3 text-xs leading-5 text-white/60">
+            <span className="font-bold text-white">{index + 1}</span>
+            <span>{rule}</span>
+          </p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function SubtypeChooser({
   category,
   subtypes,
@@ -335,7 +371,7 @@ function HeroDish({ dish, rank, poolReady }: { dish: DishRow; rank: number; pool
             ? `${t("trusted_rank")} · #${rank}`
             : `${t("unranked_label")} · ${Number(dish.comparisons_count ?? 0)}/${PUBLIC_RANK_THRESHOLD}`}
         </p>
-        <h1 className="mt-3 font-noir-display text-6xl uppercase leading-[0.82] text-white md:text-8xl lg:text-[8rem]">
+        <h1 className="mt-3 break-words font-noir-display text-[clamp(3.25rem,14vw,8rem)] uppercase leading-[0.82] text-white">
           {name}
         </h1>
         {alternate ? <p className="mt-3 font-thai text-lg text-white/65">{alternate}</p> : null}

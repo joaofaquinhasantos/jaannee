@@ -111,7 +111,7 @@ export function DishCard({
             )}
             {triedCount > 0 && (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">
-                {t("tried_by")} {triedCount} {t("diners")}
+                {t("tried_by")} {triedCount} {t(triedCount === 1 ? "diner" : "diners")}
               </p>
             )}
           </div>
