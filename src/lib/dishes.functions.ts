@@ -25,7 +25,7 @@ function publicClient() {
 
 const dishSelect = `
   id, name_en, name_th, price_thb, photo_url, note, status, elo, comparisons_count,
-  subtype_id,
+  subtype_id, requested_category_en, requested_category_th,
   needs_update, created_at, submitted_by,
   category:categories(id, slug, name_en, name_th),
   subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
@@ -262,7 +262,6 @@ export const getDish = createServerFn({ method: "GET" })
     const { data: dish, error } = await supabase
       .from("dishes")
       .select(dishSelect)
-      .not("category_id", "is", null)
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -1051,7 +1050,7 @@ export const publicProfile = createServerFn({ method: "GET" })
         .from("dishes")
         .select(profileDishSelect)
         .eq("submitted_by", profile.id)
-        .eq("status", "approved")
+        .in("status", ["pending", "approved"])
         .order("created_at", { ascending: false })
         .limit(60),
       profile.tried_public
