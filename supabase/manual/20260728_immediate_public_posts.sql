@@ -1,8 +1,9 @@
 -- JaanNee post-moderation visibility
 -- Run manually in the Supabase SQL editor.
--- Pending diner submissions become publicly viewable immediately, but all
--- discovery, tried, comparison, and ranking queries continue to require
--- status = 'approved'. Rejecting a dish or place removes public visibility.
+-- Pending diner submissions and their new places become publicly viewable
+-- immediately. Application discovery includes pending posts, while tried
+-- marks, comparisons, and rankings continue to require status = 'approved'.
+-- Rejecting a dish or place removes public visibility.
 
 BEGIN;
 

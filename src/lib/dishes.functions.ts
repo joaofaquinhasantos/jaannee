@@ -229,8 +229,7 @@ export const listDishes = createServerFn({ method: "GET" })
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
     q = q
-      .eq("status", "approved")
-      .not("category_id", "is", null)
+      .in("status", ["pending", "approved"])
       .order("elo", { ascending: false });
     if (catRes.data) q = q.eq("category_id", catRes.data.id);
     if (subtypeRes.data) q = q.eq("subtype_id", subtypeRes.data.id);
@@ -384,8 +383,7 @@ export const getDiscoverBootstrap = createServerFn({ method: "GET" }).handler(as
     supabase
       .from("dishes")
       .select(dishSelect)
-      .eq("status", "approved")
-      .not("category_id", "is", null)
+      .in("status", ["pending", "approved"])
       .order("elo", { ascending: false })
       .limit(60),
   ]);
@@ -409,7 +407,7 @@ export const listCategoryCounts = createServerFn({ method: "GET" }).handler(asyn
   const { data, error } = await publicClient()
     .from("dishes")
     .select("category_id")
-    .eq("status", "approved")
+    .in("status", ["pending", "approved"])
     .not("category_id", "is", null);
   if (error) throw new Error(error.message);
   const counts: Record<string, number> = {};
@@ -442,8 +440,7 @@ export const searchSimilar = createServerFn({ method: "GET" })
           await supabase
             .from("dishes")
             .select(dishSelect)
-            .eq("status", "approved")
-            .not("category_id", "is", null)
+            .in("status", ["pending", "approved"])
             .ilike("name_en", `%${data.dishName}%`)
             .limit(5)
         ).data ?? [])
@@ -457,9 +454,13 @@ export const searchPlaces = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const supabase = publicClient();
-    const { data: matches, error } = await supabase.rpc("search_places_by_similarity", {
-      _term: data.term.trim(),
-    });
+    const { data: matches, error } = await supabase
+      .from("places")
+      .select("id, name, area_id, address, google_maps_url")
+      .in("status", ["pending", "approved"])
+      .ilike("name", `%${data.term.trim()}%`)
+      .order("name")
+      .limit(12);
     if (error) throw new Error(error.message);
     const areaIds = [...new Set((matches ?? []).map((p: any) => p.area_id).filter(Boolean))];
     const { data: areas, error: areaError } = areaIds.length
@@ -761,8 +762,7 @@ export const listActivityFeed = createServerFn({ method: "GET" })
       (supabase as any)
         .from("dishes")
         .select(dishSelect)
-        .eq("status", "approved")
-        .not("category_id", "is", null)
+        .in("status", ["pending", "approved"])
         .order("created_at", { ascending: false })
         .limit(50),
     ]);
@@ -818,8 +818,7 @@ export const listFollowingActivityFeed = createServerFn({ method: "GET" })
         .from("dishes")
         .select(dishSelect)
         .in("submitted_by", followingIds)
-        .eq("status", "approved")
-        .not("category_id", "is", null)
+        .in("status", ["pending", "approved"])
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
