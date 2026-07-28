@@ -7,6 +7,7 @@ import {
   SHARE_FORMATS,
   shareText,
   type ComparisonCardModel,
+  type FoodPostCardModel,
   type RankingCardModel,
   type ShareFormat,
 } from "@/lib/share-card";
@@ -20,9 +21,11 @@ import {
 export function ShareCardActions({
   model,
   filenameBase,
+  shareImageFormat,
 }: {
-  model: ComparisonCardModel | RankingCardModel;
+  model: ComparisonCardModel | RankingCardModel | FoodPostCardModel;
   filenameBase: string;
+  shareImageFormat?: ShareFormat;
 }) {
   const { t } = useI18n();
   const [busy, setBusy] = useState<ShareFormat | "share" | null>(null);
@@ -40,6 +43,23 @@ export function ShareCardActions({
     setBusy("share");
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        if (shareImageFormat) {
+          const { renderShareCard } = await import("@/lib/share-card-canvas");
+          const blob = await renderShareCard(model, shareImageFormat);
+          if (blob) {
+            const file = new File([blob], `${filenameBase}-${shareImageFormat}.png`, {
+              type: "image/png",
+            });
+            if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                text: shareText(model),
+                url: model.url,
+              });
+              return;
+            }
+          }
+        }
         await navigator.share({ text: shareText(model), url: model.url });
         return;
       }

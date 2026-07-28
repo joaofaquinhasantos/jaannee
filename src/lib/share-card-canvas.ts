@@ -4,6 +4,7 @@
 import {
   SHARE_FORMATS,
   type ComparisonCardModel,
+  type FoodPostCardModel,
   type RankingCardModel,
   type ShareFormat,
 } from "@/lib/share-card";
@@ -250,8 +251,80 @@ async function renderRanking(
   drawFooter(ctx, width, height, pad, model.tagline);
 }
 
+async function renderFoodPost(
+  ctx: CanvasRenderingContext2D,
+  model: FoodPostCardModel,
+  width: number,
+  height: number,
+) {
+  const pad = Math.round(width * 0.065);
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = RED;
+  ctx.font = `800 27px ${SANS_FONT}`;
+  ctx.textAlign = "left";
+  ctx.fillText(model.kicker, pad, pad + 38);
+
+  if (model.pool) {
+    ctx.fillStyle = "rgba(30,25,23,0.55)";
+    ctx.font = `700 22px ${SANS_FONT}`;
+    ctx.textAlign = "right";
+    ctx.fillText(truncate(ctx, model.pool, width * 0.48), width - pad, pad + 38);
+  }
+
+  const photoTop = pad + 76;
+  const footerSpace = Math.max(330, Math.round(height * 0.29));
+  const photoHeight = height - photoTop - footerSpace;
+  const photoWidth = width - pad * 2;
+  const img = await loadImage(model.photo);
+  if (img) coverDraw(ctx, img, pad, photoTop, photoWidth, photoHeight);
+  else placeholder(ctx, pad, photoTop, photoWidth, photoHeight);
+
+  const scrim = ctx.createLinearGradient(0, photoTop, 0, photoTop + photoHeight);
+  scrim.addColorStop(0.45, "rgba(0,0,0,0)");
+  scrim.addColorStop(1, "rgba(0,0,0,0.78)");
+  ctx.fillStyle = scrim;
+  ctx.fillRect(pad, photoTop, photoWidth, photoHeight);
+
+  if (model.priceLabel) {
+    ctx.fillStyle = "rgba(0,0,0,0.66)";
+    ctx.fillRect(pad + 24, photoTop + 24, 170, 54);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = `800 24px ${SANS_FONT}`;
+    ctx.textAlign = "center";
+    ctx.fillText(model.priceLabel, pad + 109, photoTop + 59);
+  }
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#FFFFFF";
+  const photoNameSize = fitText(ctx, model.dishName, photoWidth - 64, Math.round(width * 0.105));
+  ctx.font = `${photoNameSize}px ${DISPLAY_FONT}`;
+  ctx.fillText(
+    truncate(ctx, model.dishName, photoWidth - 64),
+    pad + 32,
+    photoTop + photoHeight - 78,
+  );
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.font = `600 25px ${SANS_FONT}`;
+  const location = [model.placeName, model.areaName].filter(Boolean).join(" · ");
+  ctx.fillText(truncate(ctx, location, photoWidth - 64), pad + 32, photoTop + photoHeight - 36);
+
+  let y = photoTop + photoHeight + 54;
+  ctx.fillStyle = RED;
+  ctx.font = `800 24px ${SANS_FONT}`;
+  ctx.fillText(model.personalLabel, pad, y);
+  if (model.alternateName) {
+    y += 52;
+    ctx.fillStyle = "rgba(30,25,23,0.62)";
+    ctx.font = `600 28px ${SANS_FONT}`;
+    ctx.fillText(truncate(ctx, model.alternateName, photoWidth), pad, y);
+  }
+  drawFooter(ctx, width, height, pad, model.tagline);
+}
+
 export async function renderShareCard(
-  model: ComparisonCardModel | RankingCardModel,
+  model: ComparisonCardModel | RankingCardModel | FoodPostCardModel,
   format: ShareFormat,
 ): Promise<Blob | null> {
   const { width, height } = SHARE_FORMATS[format];
@@ -268,7 +341,8 @@ export async function renderShareCard(
     }
   }
   if (model.kind === "comparison") await renderComparison(ctx, model, width, height);
-  else await renderRanking(ctx, model, width, height);
+  else if (model.kind === "ranking") await renderRanking(ctx, model, width, height);
+  else await renderFoodPost(ctx, model, width, height);
   return new Promise((resolve) => {
     try {
       canvas.toBlob((blob) => resolve(blob), "image/png", 0.95);
