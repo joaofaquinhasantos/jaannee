@@ -532,6 +532,8 @@ export type Database = {
           similarity_score: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       submit_comparison_atomic: {
         Args: {
           _dish_a_id: string
@@ -541,8 +543,6 @@ export type Database = {
         }
         Returns: string
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
