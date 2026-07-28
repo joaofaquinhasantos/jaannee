@@ -85,6 +85,12 @@ repeated.
 16. Paste `20260728_submitter_tried_on_approval.sql` into the SQL editor.
 17. Run `VERIFY_20260728_submitter_tried_on_approval.sql` and confirm every
     row reports `OK`.
+18. Paste `20260728_interest_follows.sql` into the SQL editor.
+19. Run `VERIFY_20260728_interest_follows.sql` and confirm the tables, RLS,
+    policies, and grants are present.
+20. Paste `20260728_retention_suite.sql` into the SQL editor.
+21. Run `VERIFY_20260728_retention_suite.sql` and confirm all five tables have
+    RLS plus the expected owner-only policies and grants.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

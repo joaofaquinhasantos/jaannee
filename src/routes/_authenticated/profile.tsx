@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
 import { ReadyToComparePanel } from "@/components/ContextualCompare";
+import { RetentionSuite } from "@/components/RetentionSuite";
 import { PostActivity, PostProgressTimeline } from "@/components/PostActivity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +112,15 @@ function Profile() {
         <Stat label={t("profile_comparisons")} value={compared.length} />
         <Stat label={copy("Followers", "ผู้ติดตาม")} value={q.data?.followers_count ?? 0} />
       </div>
+
+      <RetentionSuite
+        counts={{
+          posted: posted.length,
+          tried: tried.length,
+          compared: compared.length,
+          saved: wantToTry,
+        }}
+      />
 
       <div className="mt-6">
         <ReadyToComparePanel />

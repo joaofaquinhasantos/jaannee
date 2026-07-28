@@ -230,7 +230,14 @@ export function shareText(
 }
 
 /** Absolute URL for a challenge deep link. */
-export function challengeUrl(origin: string, winnerId: string, loserId: string): string {
+export function challengeUrl(
+  origin: string,
+  winnerId: string,
+  loserId: string,
+  challengerUserId?: string | null,
+): string {
   const base = origin.replace(/\/+$/, "");
-  return `${base}/challenge/${winnerId}/${loserId}?pick=${winnerId}`;
+  const params = new URLSearchParams({ pick: winnerId });
+  if (challengerUserId) params.set("from", challengerUserId);
+  return `${base}/challenge/${winnerId}/${loserId}?${params.toString()}`;
 }
