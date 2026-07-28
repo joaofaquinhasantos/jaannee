@@ -1175,6 +1175,64 @@ export const updatePlaceCoordinatesAdmin = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+function isGoogleMapsHost(hostname: string) {
+  const host = hostname.toLowerCase();
+  return (
+    host === "google.com" ||
+    host.endsWith(".google.com") ||
+    host === "maps.app.goo.gl" ||
+    host === "goo.gl"
+  );
+}
+
+function coordinatesFromMapsUrl(value: string) {
+  const url = new URL(value);
+  if (!isGoogleMapsHost(url.hostname)) throw new Error("Paste a Google Maps link.");
+  const candidates = [
+    url.href.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/),
+    url.href.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/),
+    ...["q", "query", "ll"].map((key) =>
+      (url.searchParams.get(key) ?? "").match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/),
+    ),
+  ];
+  const match = candidates.find(Boolean);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    throw new Error("The Google Maps link contains an invalid location.");
+  }
+  return { lat, lng };
+}
+
+export const resolveGoogleMapsLinkAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { url: string }) =>
+    z.object({ url: z.string().trim().url().max(2000) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const direct = coordinatesFromMapsUrl(data.url);
+    if (direct) return direct;
+
+    const original = new URL(data.url);
+    if (!isGoogleMapsHost(original.hostname)) throw new Error("Paste a Google Maps link.");
+    const response = await fetch(original, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "JaanNee place location resolver" },
+    });
+    await response.body?.cancel();
+    const resolved = coordinatesFromMapsUrl(response.url);
+    if (!resolved) {
+      throw new Error(
+        "This link does not contain a location. In Google Maps, open the place and copy its share link.",
+      );
+    }
+    return resolved;
+  });
+
 export const updatePlaceAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(

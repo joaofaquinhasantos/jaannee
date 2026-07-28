@@ -31,6 +31,7 @@ import {
   listCategoriesAdmin,
   listAreasAdmin,
   listPlacesAdmin,
+  resolveGoogleMapsLinkAdmin,
   updatePlaceAdmin,
 } from "@/lib/admin.functions";
 import { listCuisines, mapsDirectionsUrl } from "@/lib/dishes.functions";
@@ -378,7 +379,7 @@ function PendingPlaces() {
     areaId: "",
     address: "",
     status: "pending",
-    coordText: "",
+    mapsUrl: "",
   });
   const places = useQuery({
     queryKey: ["admin-places", debouncedQuery, page],
@@ -418,22 +419,9 @@ function PendingPlaces() {
     },
     onError: (e: any) => toast.error(e.message),
   });
-  const parseCoordText = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return { lat: null, lng: null };
-    const parts = trimmed
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-    if (parts.length !== 2) throw new Error("Paste coordinates as lat,lng");
-    const lat = Number(parts[0]);
-    const lng = Number(parts[1]);
-    if (!Number.isFinite(lat) || lat < -90 || lat > 90)
-      throw new Error("Latitude must be between -90 and 90");
-    if (!Number.isFinite(lng) || lng < -180 || lng > 180)
-      throw new Error("Longitude must be between -180 and 180");
-    return { lat, lng };
-  };
+  const mapsMut = useMutation({
+    mutationFn: (url: string) => resolveGoogleMapsLinkAdmin({ data: { url } }),
+  });
   const openPlaceEditor = (p: any) => {
     setEditing(p);
     setPlaceForm({
@@ -441,13 +429,15 @@ function PendingPlaces() {
       areaId: p.area?.id ?? "",
       address: p.address ?? "",
       status: p.status ?? "pending",
-      coordText: p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : "",
+      mapsUrl: "",
     });
   };
-  const savePlace = () => {
+  const savePlace = async () => {
     if (!editing) return;
     try {
-      const coords = parseCoordText(placeForm.coordText);
+      const coords = placeForm.mapsUrl.trim()
+        ? await mapsMut.mutateAsync(placeForm.mapsUrl.trim())
+        : { lat: editing.lat ?? null, lng: editing.lng ?? null };
       placeMut.mutate({
         id: editing.id,
         name: placeForm.name,
@@ -460,21 +450,6 @@ function PendingPlaces() {
       toast.error(e.message);
       return;
     }
-  };
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Location is not available in this browser");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        setPlaceForm((v) => ({
-          ...v,
-          coordText: `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`,
-        })),
-      () => toast.error("Could not read your location"),
-      { enableHighAccuracy: true, timeout: 7000 },
-    );
   };
   return (
     <div className="mt-4 space-y-6">
@@ -524,9 +499,9 @@ function PendingPlaces() {
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="type-section-title">Place coordinates</h3>
+              <h3 className="type-section-title">Place locations</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Backfill lat,lng so nearby place picking works from the photo-first flow.
+                Add a Google Maps link so nearby place picking works accurately.
               </p>
             </div>
             <Button
@@ -562,7 +537,9 @@ function PendingPlaces() {
                   {p.address ? ` / ${p.address}` : ""} / {p.status}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {p.lat != null && p.lng != null ? `${p.lat}, ${p.lng}` : "No coordinates"}
+                  {p.lat != null && p.lng != null
+                    ? "Google Maps location saved"
+                    : "Location needed"}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -642,16 +619,17 @@ function PendingPlaces() {
                 </Select>
               </div>
               <div>
-                <Label>lat,lng</Label>
+                <Label>Google Maps link</Label>
                 <Input
-                  value={placeForm.coordText}
-                  onChange={(e) => setPlaceForm({ ...placeForm, coordText: e.target.value })}
-                  placeholder="13.756331,100.501762"
+                  type="url"
+                  value={placeForm.mapsUrl}
+                  onChange={(e) => setPlaceForm({ ...placeForm, mapsUrl: e.target.value })}
+                  placeholder="https://maps.app.goo.gl/..."
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Open the place in Google Maps, tap Share, and paste the link here.
+                </p>
               </div>
-              <Button type="button" variant="outline" onClick={useCurrentLocation}>
-                Use my current location
-              </Button>
             </div>
           )}
           <DialogFooter>
@@ -659,17 +637,15 @@ function PendingPlaces() {
               Cancel
             </Button>
             <Button
-              variant="outline"
-              onClick={() => setPlaceForm({ ...placeForm, coordText: "" })}
-              disabled={placeMut.isPending}
-            >
-              Clear coords
-            </Button>
-            <Button
               onClick={savePlace}
-              disabled={placeMut.isPending || !placeForm.name.trim() || !placeForm.areaId}
+              disabled={
+                placeMut.isPending ||
+                mapsMut.isPending ||
+                !placeForm.name.trim() ||
+                !placeForm.areaId
+              }
             >
-              Save
+              {mapsMut.isPending ? "Reading Maps link..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
