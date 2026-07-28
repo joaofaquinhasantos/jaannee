@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -42,6 +43,7 @@ import {
   setWantToTry,
   submitReport,
   toggleTried,
+  updateSubmittedDishPrice,
 } from "@/lib/dishes.functions";
 import { dishStatusLabel } from "@/lib/dish-status";
 import { dict, useI18n } from "@/lib/i18n";
@@ -195,6 +197,8 @@ function DishPage() {
     winner: TriedDish;
     loser: TriedDish;
   } | null>(null);
+  const [priceOpen, setPriceOpen] = useState(false);
+  const [priceValue, setPriceValue] = useState("");
 
   const triedIds = tried.data ?? [];
   const isTried = triedIds.includes(id);
@@ -254,6 +258,26 @@ function DishPage() {
       toast.success(
         variables.follow ? copy("Following", "ติดตามแล้ว") : copy("Unfollowed", "เลิกติดตามแล้ว"),
       );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const priceMutation = useMutation({
+    mutationFn: () =>
+      updateSubmittedDishPrice({
+        data: {
+          dishId: id,
+          priceThb: priceValue.trim() ? Number(priceValue) : null,
+        },
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["dish", id] }),
+        qc.invalidateQueries({ queryKey: ["dishes"] }),
+        qc.invalidateQueries({ queryKey: ["profile"] }),
+      ]);
+      setPriceOpen(false);
+      toast.success(copy("Price updated", "อัปเดตราคาแล้ว"));
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -434,6 +458,69 @@ function DishPage() {
               />
               <FoodPostCreator dish={dish} url={shareUrl} isTried={isTried} isSaved={isSaved} />
               {rank > 0 ? <RankingShare dish={dish} rank={rank} /> : null}
+              {auth.status === "in" && auth.userId === dish.submitted_by ? (
+                <Dialog
+                  open={priceOpen}
+                  onOpenChange={(open) => {
+                    setPriceOpen(open);
+                    if (open) {
+                      setPriceValue(
+                        dish.price_thb != null ? String(Math.round(Number(dish.price_thb))) : "",
+                      );
+                    }
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" type="button" className="min-h-11">
+                      {dish.price_thb == null
+                        ? copy("Add price", "เพิ่มราคา")
+                        : copy("Edit price", "แก้ไขราคา")}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {dish.price_thb == null
+                          ? copy("Add the price", "เพิ่มราคา")
+                          : copy("Update the price", "อัปเดตราคา")}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <form
+                      className="space-y-4"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        priceMutation.mutate();
+                      }}
+                    >
+                      <div className="relative">
+                        <Input
+                          autoFocus
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          max={100000}
+                          step={1}
+                          value={priceValue}
+                          onChange={(event) => setPriceValue(event.target.value)}
+                          placeholder={copy("Optional", "ไม่บังคับ")}
+                          aria-label={copy("Price in Thai baht", "ราคาเป็นเงินบาท")}
+                          className="h-12 pr-16 text-base"
+                        />
+                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-semibold text-muted-foreground">
+                          THB
+                        </span>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="h-11 w-full"
+                        disabled={priceMutation.isPending}
+                      >
+                        {priceMutation.isPending ? t("saving") : copy("Save price", "บันทึกราคา")}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              ) : null}
               {dish.place ? (
                 <a href={mapsDirectionsUrl(dish.place)} target="_blank" rel="noreferrer">
                   <Button variant="outline" type="button" className="min-h-11">

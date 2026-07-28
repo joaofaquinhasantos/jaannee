@@ -537,6 +537,37 @@ export const submitDish = createServerFn({ method: "POST" })
     return { id: dish.id };
   });
 
+export const updateSubmittedDishPrice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { dishId: string; priceThb: number | null }) =>
+    z
+      .object({
+        dishId: z.string().uuid(),
+        priceThb: z.number().int().min(0).max(100000).nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: dish, error: dishError } = await context.supabase
+      .from("dishes")
+      .select("id, submitted_by")
+      .eq("id", data.dishId)
+      .maybeSingle();
+    if (dishError) throw new Error(dishError.message);
+    if (!dish || dish.submitted_by !== context.userId) {
+      throw new Error("Only the diner who added this dish can change its price.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("dishes")
+      .update({ price_thb: data.priceThb })
+      .eq("id", data.dishId)
+      .eq("submitted_by", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, price_thb: data.priceThb };
+  });
+
 export const toggleTried = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { dishId: string; tried: boolean }) =>
