@@ -342,6 +342,7 @@ function Submit() {
   if (step === "done") {
     return (
       <AppShell>
+        <SubmitProgress current={3} />
         <section className="mx-auto max-w-lg rounded-lg border border-border bg-card p-8 text-center">
           <p className="font-display text-7xl text-primary">OK</p>
           <h1 className="type-page-title mt-4">{t("submit_done_title")}</h1>
@@ -373,6 +374,7 @@ function Submit() {
   if (step === "duplicates" && duplicates) {
     return (
       <AppShell>
+        <SubmitProgress current={2} />
         <section className="mx-auto max-w-2xl">
           <p className="editorial-kicker text-primary">
             {copy("Possible duplicate", "อาจมีรายการซ้ำ")}
@@ -419,6 +421,7 @@ function Submit() {
   if (!photoUrl) {
     return (
       <AppShell>
+        <SubmitProgress current={1} />
         <section className="mx-auto max-w-xl text-center">
           <p className="editorial-kicker text-primary">{t("nav_submit")}</p>
           <h1 className="type-page-title mt-3">{copy("Start with the dish", "เริ่มจากรูปจาน")}</h1>
@@ -447,6 +450,7 @@ function Submit() {
 
   return (
     <AppShell>
+      <SubmitProgress current={2} />
       <div className="mx-auto max-w-xl overflow-hidden rounded-lg border border-border bg-card">
         <div className="relative aspect-[4/5] bg-muted">
           <img
@@ -676,6 +680,43 @@ function Submit() {
         <PhotoInput fileRef={fileRef} onFile={onFile} />
       </div>
     </AppShell>
+  );
+}
+
+function SubmitProgress({ current }: { current: 1 | 2 | 3 }) {
+  const { lang } = useI18n();
+  const labels =
+    lang === "th"
+      ? ["รูปภาพ", "รายละเอียด", "โพสต์"]
+      : ["Photo", "Dish", "Post"];
+
+  return (
+    <ol
+      aria-label={lang === "th" ? "ขั้นตอนการโพสต์" : "Post progress"}
+      className="mx-auto mb-6 grid max-w-xl grid-cols-3 gap-2"
+    >
+      {labels.map((label, index) => {
+        const stepNumber = (index + 1) as 1 | 2 | 3;
+        const active = stepNumber === current;
+        const complete = stepNumber < current;
+        return (
+          <li
+            key={label}
+            aria-current={active ? "step" : undefined}
+            className={`border-t-2 pt-2 text-center text-xs font-bold uppercase tracking-[0.1em] ${
+              active || complete
+                ? "border-primary text-foreground"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <span className="mr-1 text-primary">
+              {complete ? <Check className="inline h-3.5 w-3.5" aria-hidden="true" /> : stepNumber}
+            </span>
+            {label}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

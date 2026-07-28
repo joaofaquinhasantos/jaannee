@@ -248,6 +248,10 @@ function Index() {
                 .slice(0, 6)}
             />
           ) : null}
+
+          {categoryPhotos.length > 0 ? (
+            <CategoryBrowse categories={categoryPhotos.slice(0, 8)} onSelect={changeCategory} />
+          ) : null}
         </div>
       ) : shouldShowCategoryGallery(discoverFilters, categoryPhotos.length) ? (
         <CategoryGallery categories={categoryPhotos.slice(0, 8)} onSelect={changeCategory} />
@@ -272,6 +276,46 @@ function Index() {
         <Plus className="h-5 w-5" aria-hidden="true" />
       </Link>
     </AppShell>
+  );
+}
+
+function CategoryBrowse({
+  categories,
+  onSelect,
+}: {
+  categories: CategoryRow[];
+  onSelect: (slug: string) => void;
+}) {
+  const { t, lang } = useI18n();
+  return (
+    <section className="border-t border-white/10 bg-[#111111] px-5 py-12 text-white md:px-8 md:py-16">
+      <div className="mx-auto max-w-[112rem]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+          {t("explore_category")}
+        </p>
+        <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] md:text-6xl">
+          {lang === "th" ? "ค้นหาจานถัดไป" : "Browse more dishes"}
+        </h2>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onSelect(category.slug)}
+              className="group relative min-h-64 overflow-hidden border border-white/10 text-left transition hover:border-primary"
+            >
+              <NoirPhoto src={category.reference_photo_url ?? ""} alt="" />
+              <div className="absolute inset-x-0 bottom-0 z-10 p-5">
+                <h3 className="font-noir-display text-3xl uppercase leading-none text-white">
+                  {localizedName(category, lang)}
+                </h3>
+                <ArrowUpRight className="mt-4 h-4 w-4 text-white/60 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

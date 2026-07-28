@@ -8,6 +8,7 @@ import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { LeaderboardEntry } from "@/components/LeaderboardEntry";
 import { getPublicTaxonomy, listDishes, leaderboard } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
+import { localizedName } from "@/lib/names";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 
 export const Route = createFileRoute("/rankings")({
@@ -128,9 +129,35 @@ function Rankings() {
         {taxonomy.isSuccess && categories.length === 0 ? (
           <EmptyBoard title={copy("No rankings yet.", "ยังไม่มีอันดับ")} />
         ) : !cat ? (
-          <p className="py-10 text-sm text-muted-foreground">
-            {copy("Choose a dish category.", "เลือกหมวดจาน")}
-          </p>
+          <section className="py-4">
+            <p className="label-caps text-primary">
+              {copy("Choose a ranking", "เลือกอันดับที่สนใจ")}
+            </p>
+            <h2 className="type-section-title mt-2">
+              {copy("Browse dish categories", "เลือกหมวดจาน")}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {copy(
+                "Every category has its own fair comparison pool.",
+                "แต่ละหมวดมีการเปรียบเทียบและอันดับแยกจากกันอย่างยุติธรรม",
+              )}
+            </p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {categories.slice(0, 18).map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => {
+                    setCat(category.slug);
+                    setSubtype(undefined);
+                  }}
+                  className="min-h-16 rounded-md border border-border bg-card px-4 py-3 text-left font-semibold transition hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {localizedName(category, lang)}
+                </button>
+              ))}
+            </div>
+          </section>
         ) : subtypeScoped && !subtype ? (
           <p className="py-10 text-sm text-muted-foreground">
             {copy("Choose a dish type.", "เลือกประเภทจาน")}
