@@ -8,6 +8,10 @@ repeated.
 
 ## Files
 
+- `20260728_interest_follows.sql` — private, diner-owned category and area
+  follows used to personalize Discover. Run
+  `VERIFY_20260728_interest_follows.sql` afterward.
+
 - `20260725_integrity_hardening.sql` — corrected final intended integrity
   state (safe merge, tried-on-every-update trigger, ranking-key,
   requires_subtype flag + seeds, whitespace-safe normaliser + index
