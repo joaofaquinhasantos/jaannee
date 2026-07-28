@@ -194,6 +194,135 @@ export const dict = {
     en: "Your posts, tried dishes, and comparison history.",
     th: "โพสต์ จานที่คุณเคยกิน และประวัติการเปรียบเทียบของคุณ",
   },
+
+  // --- Discover / hero ---
+  discover_bangkok: { en: "Discover Bangkok", th: "ค้นพบกรุงเทพฯ" },
+  featured_category: { en: "Featured category", th: "หมวดแนะนำ" },
+  explore_category: { en: "Explore category", th: "ดูหมวดนี้" },
+  browse_the_board: { en: "Browse the leaderboard", th: "ดูอันดับ" },
+  photo_needed: { en: "Photo needed", th: "ต้องการรูปภาพ" },
+  photo_needed_body: { en: "Help this dish look alive", th: "ช่วยเพิ่มรูปให้จานนี้" },
+  add_the_first_dish: { en: "Add the first dish", th: "เพิ่มจานแรก" },
+  section_top_ranked: { en: "Current leaders", th: "ผู้นำอันดับ" },
+  section_top_ranked_body: {
+    en: "Ranked from at least 5 diner comparisons in the same dish type.",
+    th: "จัดอันดับจากการเปรียบเทียบของนักชิมอย่างน้อย 5 ครั้งในประเภทจานเดียวกัน",
+  },
+  section_almost_ranked: { en: "Almost ranked", th: "ใกล้ได้อันดับ" },
+  section_almost_ranked_body: {
+    en: "A few more diner comparisons and these get a public rank.",
+    th: "อีกไม่กี่การเปรียบเทียบ จานเหล่านี้จะได้อันดับสาธารณะ",
+  },
+  section_recent: { en: "Recently added", th: "เพิ่มล่าสุด" },
+  section_recent_body: {
+    en: "Freshly approved dishes waiting for their first comparisons.",
+    th: "จานที่เพิ่งได้รับอนุมัติ กำลังรอการเปรียบเทียบครั้งแรก",
+  },
+  choose_dish_type: { en: "Choose a dish type", th: "เลือกประเภทจาน" },
+  choose_dish_type_body: {
+    en: "Rankings stay inside one dish type, so pick the one you want to see.",
+    th: "การจัดอันดับอยู่ภายในประเภทจานเดียว เลือกประเภทที่ต้องการดู",
+  },
+  show_more: { en: "Show more", th: "แสดงเพิ่มเติม" },
+  reset_filters: { en: "Reset filters", th: "ล้างตัวกรอง" },
+  close: { en: "Close", th: "ปิด" },
+  cancel: { en: "Cancel", th: "ยกเลิก" },
+  not_now: { en: "Not now", th: "ไว้ก่อน" },
+  done: { en: "Done", th: "เสร็จสิ้น" },
+  error_generic: { en: "Something went wrong.", th: "เกิดข้อผิดพลาด" },
+
+  // --- Trust / how it works ---
+  how_ranking_works: { en: "How this ranking works", th: "อันดับนี้ทำงานอย่างไร" },
+  how_rule_tried: {
+    en: "A diner must have personally tried both dishes before comparing them.",
+    th: "นักชิมต้องเคยกินทั้งสองจานด้วยตัวเองก่อนจึงจะเปรียบเทียบได้",
+  },
+  how_rule_pool: {
+    en: "Comparisons only ever happen inside the same dish type.",
+    th: "การเปรียบเทียบเกิดขึ้นภายในประเภทจานเดียวกันเท่านั้น",
+  },
+  how_rule_no_pay: {
+    en: "Restaurants cannot vote, and ranking position is never for sale.",
+    th: "ร้านอาหารโหวตไม่ได้ และตำแหน่งอันดับไม่มีวันขาย",
+  },
+  how_rule_threshold: {
+    en: "A public numeric rank needs at least 5 diner comparisons.",
+    th: "อันดับตัวเลขสาธารณะต้องมีการเปรียบเทียบจากนักชิมอย่างน้อย 5 ครั้ง",
+  },
+
+  // --- Contextual comparison ---
+  ready_to_compare: { en: "Ready to compare", th: "พร้อมเปรียบเทียบ" },
+  ready_to_compare_body: {
+    en: "You have tried both of these. Which did you prefer?",
+    th: "คุณเคยกินทั้งสองจานนี้ คุณชอบจานไหนมากกว่า",
+  },
+  no_pairs_yet: { en: "No pair ready yet", th: "ยังไม่มีคู่ที่พร้อม" },
+  no_pairs_yet_body: {
+    en: "Mark two dishes of the same dish type as tried to unlock a comparison.",
+    th: "ทำเครื่องหมายว่าเคยกินสองจานในประเภทเดียวกันเพื่อปลดล็อกการเปรียบเทียบ",
+  },
+  i_prefer_this: { en: "I prefer this", th: "ฉันชอบจานนี้" },
+  saving: { en: "Saving…", th: "กำลังบันทึก…" },
+
+  // --- Sharing ---
+  share_result: { en: "Share this result", th: "แชร์ผลลัพธ์นี้" },
+  share_ranking: { en: "Share ranking", th: "แชร์อันดับ" },
+  copy_link: { en: "Copy link", th: "คัดลอกลิงก์" },
+  link_copied: { en: "Link copied", th: "คัดลอกลิงก์แล้ว" },
+  download_story: { en: "Download story", th: "ดาวน์โหลดสตอรี" },
+  download_post: { en: "Download post", th: "ดาวน์โหลดโพสต์" },
+  download_square: { en: "Download square", th: "ดาวน์โหลดสี่เหลี่ยม" },
+  image_saved: { en: "Image saved", th: "บันทึกรูปแล้ว" },
+  image_failed: { en: "Could not create the image.", th: "ไม่สามารถสร้างรูปได้" },
+  do_you_agree: { en: "Do you agree?", th: "คุณเห็นด้วยไหม" },
+  you_picked: { en: "You picked", th: "คุณเลือก" },
+
+  // --- Challenge ---
+  challenge_title: { en: "Head-to-head challenge", th: "ท้าดวลจานต่อจาน" },
+  challenge_intro: {
+    en: "Someone picked a winner. Try both dishes and cast your own comparison.",
+    th: "มีคนเลือกจานที่ชอบแล้ว ลองกินทั้งสองจานแล้วเปรียบเทียบด้วยตัวคุณเอง",
+  },
+  challenge_unavailable: { en: "This challenge is not available", th: "ไม่พบการท้าดวลนี้" },
+  challenge_unavailable_body: {
+    en: "Both dishes must be approved and in the exact same dish type.",
+    th: "ทั้งสองจานต้องได้รับอนุมัติและอยู่ในประเภทจานเดียวกัน",
+  },
+  challenge_sign_in: {
+    en: "Sign in to add your own comparison.",
+    th: "เข้าสู่ระบบเพื่อเพิ่มการเปรียบเทียบของคุณ",
+  },
+  challenge_mark_tried: {
+    en: "Mark both dishes as tried to take part.",
+    th: "ทำเครื่องหมายว่าเคยกินทั้งสองจานเพื่อร่วมเปรียบเทียบ",
+  },
+  challenge_agree: { en: "You agreed with the sharer.", th: "คุณเห็นด้วยกับผู้แชร์" },
+  challenge_disagree: { en: "You disagreed with the sharer.", th: "คุณไม่เห็นด้วยกับผู้แชร์" },
+  their_pick: { en: "Their pick", th: "จานที่เขาเลือก" },
+
+  // --- Activation ---
+  activation_title: { en: "Which dishes have you tried?", th: "คุณเคยกินจานไหนบ้าง" },
+  activation_body: {
+    en: "Tap the ones you know. Sign in afterwards and we will save them to your account.",
+    th: "แตะจานที่คุณเคยกิน เข้าสู่ระบบแล้วเราจะบันทึกไว้ในบัญชีของคุณ",
+  },
+  activation_save: { en: "Save my tried dishes", th: "บันทึกจานที่เคยกิน" },
+  activation_saved: { en: "Saved to your account", th: "บันทึกลงบัญชีของคุณแล้ว" },
+  dismiss: { en: "Dismiss", th: "ปิดไว้" },
+  selected_count: { en: "selected", th: "เลือกแล้ว" },
+
+  // --- Add a dish ---
+  dish_name: { en: "Dish name", th: "ชื่อจาน" },
+  dish_name_th: { en: "Dish name (Thai)", th: "ชื่อจาน (ไทย)" },
+  dish_name_en: { en: "Dish name (English)", th: "ชื่อจาน (อังกฤษ)" },
+  more_details: { en: "More details", th: "รายละเอียดเพิ่มเติม" },
+  optional: { en: "Optional", th: "ไม่บังคับ" },
+
+  // --- Profile ---
+  profile_submitted: { en: "Submitted dishes", th: "จานที่ส่งไว้" },
+  profile_settings: { en: "Profile settings", th: "ตั้งค่าโปรไฟล์" },
+  pending_review: { en: "Pending review", th: "รอตรวจสอบ" },
+  not_approved: { en: "Not approved", th: "ไม่ผ่านการอนุมัติ" },
 };
 
 export type Key = keyof typeof dict;
