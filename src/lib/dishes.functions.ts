@@ -29,7 +29,7 @@ const dishSelect = `
   needs_update, created_at, submitted_by,
   category:categories(id, slug, name_en, name_th),
   subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
-  place:places(id, name, address, lat, lng, area:areas(id, slug, name_en, name_th))
+  place:places(id, name, address, google_maps_url, lat, lng, area:areas(id, slug, name_en, name_th))
 `;
 
 // Same shape but with an inner join on places so we can filter dishes by
@@ -41,15 +41,17 @@ const dishSelectInner = `
   needs_update, created_at,
   category:categories(id, slug, name_en, name_th),
   subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
-  place:places!inner(id, name, address, lat, lng, area:areas(id, slug, name_en, name_th))
+  place:places!inner(id, name, address, google_maps_url, lat, lng, area:areas(id, slug, name_en, name_th))
 `;
 
 export function mapsDirectionsUrl(place: {
   name?: string | null;
   address?: string | null;
+  google_maps_url?: string | null;
   lat?: number | null;
   lng?: number | null;
 }) {
+  if (place.google_maps_url) return place.google_maps_url;
   const query =
     place.lat != null && place.lng != null
       ? `${place.lat},${place.lng}`

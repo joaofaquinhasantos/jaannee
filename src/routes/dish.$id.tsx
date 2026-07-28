@@ -75,6 +75,7 @@ type DishDetail = TriedDish & {
     id?: string | null;
     name?: string | null;
     address?: string | null;
+    google_maps_url?: string | null;
     lat?: number | null;
     lng?: number | null;
     area?: {

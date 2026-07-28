@@ -343,8 +343,14 @@ const adminPhotoUrlSchema = z
 
 export const updateDishAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { id: string; photo_url?: string }) =>
-    z.object({ id: z.string().uuid(), photo_url: adminPhotoUrlSchema }).parse(i),
+  .inputValidator((i: { id: string; photo_url?: string; price_thb?: number | null }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        photo_url: adminPhotoUrlSchema,
+        price_thb: z.number().int().min(0).max(100000).nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
@@ -356,7 +362,10 @@ export const updateDishAdmin = createServerFn({ method: "POST" })
     if (currentError) throw new Error(currentError.message);
     const { error } = await context.supabase
       .from("dishes")
-      .update({ photo_url: data.photo_url })
+      .update({
+        photo_url: data.photo_url,
+        ...(data.price_thb !== undefined ? { price_thb: data.price_thb } : {}),
+      })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     const oldPath =
@@ -1117,9 +1126,10 @@ export const listPlacesAdmin = createServerFn({ method: "GET" })
     const from = (page - 1) * pageSize;
     let query = (context.supabase as any)
       .from("places")
-      .select("id, name, address, status, lat, lng, area:areas(id, name_en, name_th)", {
-        count: "exact",
-      })
+      .select(
+        "id, name, address, google_maps_url, status, lat, lng, area:areas(id, name_en, name_th)",
+        { count: "exact" },
+      )
       .in("status", ["approved", "pending"]);
 
     const term = data.query?.trim();
@@ -1242,6 +1252,7 @@ export const updatePlaceAdmin = createServerFn({ method: "POST" })
       areaId: string;
       address?: string;
       status: "approved" | "pending" | "rejected";
+      googleMapsUrl?: string | null;
       lat?: number | null;
       lng?: number | null;
     }) =>
@@ -1252,6 +1263,17 @@ export const updatePlaceAdmin = createServerFn({ method: "POST" })
           areaId: z.string().uuid(),
           address: z.string().trim().max(300).optional(),
           status: z.enum(["approved", "pending", "rejected"]),
+          googleMapsUrl: z
+            .string()
+            .trim()
+            .url()
+            .max(2000)
+            .nullable()
+            .optional()
+            .refine(
+              (value) => !value || isGoogleMapsHost(new URL(value).hostname),
+              "Paste a Google Maps link.",
+            ),
           lat: z.number().min(-90).max(90).nullable().optional(),
           lng: z.number().min(-180).max(180).nullable().optional(),
         })
@@ -1270,6 +1292,7 @@ export const updatePlaceAdmin = createServerFn({ method: "POST" })
         area_id: data.areaId,
         address: data.address || null,
         status: data.status,
+        google_maps_url: data.googleMapsUrl ?? null,
         lat: data.lat ?? null,
         lng: data.lng ?? null,
       })
