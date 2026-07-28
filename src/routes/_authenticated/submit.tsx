@@ -33,7 +33,12 @@ import {
 } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName } from "@/lib/names";
-import { PHOTO_ACCEPT_ATTR, buildPhotoPath, validatePhotoFile } from "@/lib/photo-upload";
+import {
+  PHOTO_ACCEPT_ATTR,
+  buildPhotoPath,
+  storagePathFromPhotoUrl,
+  validatePhotoFile,
+} from "@/lib/photo-upload";
 import { useAuthUser } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/submit")({
@@ -248,7 +253,14 @@ function Submit() {
         .from("dish-photos")
         .upload(path, file, { upsert: false, contentType: file.type });
       if (error) throw new Error(error.message);
+      const replacedPath = storagePathFromPhotoUrl(photoUrl);
       setPhotoUrl(`/photos/${path}`);
+      if (replacedPath && replacedPath.startsWith(`${auth.userId}/`)) {
+        const { error: cleanupError } = await supabase.storage
+          .from("dish-photos")
+          .remove([replacedPath]);
+        if (cleanupError) console.error("Failed to remove replaced pending photo", cleanupError);
+      }
     } catch (error) {
       toast.error((error as Error).message);
     } finally {

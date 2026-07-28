@@ -38,6 +38,7 @@ export const listDishesAdmin = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    const term = data.query?.trim();
     let q = context.supabase
       .from("dishes")
       .select(
@@ -45,18 +46,16 @@ export const listDishesAdmin = createServerFn({ method: "GET" })
         place_id, category_id, subtype_id,
         category:categories(name_en, slug), subtype:dish_subtypes(name_en, slug), place:places(name, area:areas(name_en))`,
       )
-      .order("created_at", { ascending: false })
-      .limit(80);
+      .order("created_at", { ascending: false });
+    if (term) {
+      const escaped = term.replace(/[%_,()]/g, " ").trim();
+      if (escaped) q = q.or(`name_en.ilike.%${escaped}%,name_th.ilike.%${escaped}%`);
+    }
     if (data.missingPhotoOnly) q = q.is("photo_url", null);
+    q = q.limit(100);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const term = data.query?.trim().toLowerCase();
-    if (!term) return rows ?? [];
-    return (rows ?? []).filter((dish: any) =>
-      [dish.name_en, dish.name_th, dish.place?.name, dish.category?.name_en, dish.category?.slug]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
-    );
+    return rows ?? [];
   });
 
 export const moderateDish = createServerFn({ method: "POST" })
@@ -240,8 +239,23 @@ export const updateDishAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await ensureAdmin(context);
+    const { data: current, error: currentError } = await context.supabase
+      .from("dishes")
+      .select("photo_url")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (currentError) throw new Error(currentError.message);
     const { error } = await context.supabase.from("dishes").update({ photo_url: data.photo_url }).eq("id", data.id);
     if (error) throw new Error(error.message);
+    const oldPath =
+      current?.photo_url?.startsWith("/photos/") && current.photo_url !== data.photo_url
+        ? current.photo_url.slice("/photos/".length)
+        : null;
+    if (oldPath && !oldPath.includes("..")) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: cleanupError } = await supabaseAdmin.storage.from("dish-photos").remove([oldPath]);
+      if (cleanupError) console.error("Failed to remove replaced dish photo", cleanupError);
+    }
     return { ok: true };
   });
 
