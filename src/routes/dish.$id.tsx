@@ -1,22 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  followUser,
-  getDish,
-  listDishes,
-  mapsDirectionsUrl,
-  myFollowingIds,
-  myTriedIds,
-  submitReport,
-  toggleTried,
-} from "@/lib/dishes.functions";
-import { getRequestOrigin } from "@/lib/origin.functions";
-import { AppShell } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
-import { useI18n } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AppShell } from "@/components/AppShell";
+import {
+  ComparePairChoice,
+  ComparePromptDrawer,
+  ComparisonResultPanel,
+  type TriedDish,
+  useComparePairs,
+} from "@/components/ContextualCompare";
+import { DishCard, statusLabel, toneClass } from "@/components/DishCard";
+import { HowRankingWorks } from "@/components/HowRankingWorks";
+import { RankingShare } from "@/components/RankingShare";
+import { ShareButton } from "@/components/ShareButton";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +22,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -32,11 +29,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { statusLabel, toneClass } from "@/components/DishCard";
-import { ShareButton } from "@/components/ShareButton";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  followUser,
+  getDish,
+  leaderboard,
+  mapsDirectionsUrl,
+  myFollowingIds,
+  myTriedIds,
+  submitReport,
+  toggleTried,
+} from "@/lib/dishes.functions";
 import { dishStatusLabel } from "@/lib/dish-status";
-import { dict } from "@/lib/i18n";
-import { InlineTriedCompare } from "@/components/InlineTriedCompare";
+import { dict, useI18n } from "@/lib/i18n";
+import { localizedName, secondaryName } from "@/lib/names";
+import { getRequestOrigin } from "@/lib/origin.functions";
+import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
+import { useAuthUser } from "@/lib/use-auth";
+
+type DishDetail = TriedDish & {
+  status?: string | null;
+  note?: string | null;
+  price_thb?: number | null;
+  created_at?: string | null;
+  comparisons_count?: number | null;
+  tried_count?: number | null;
+  elo?: number | null;
+  needs_update?: boolean | null;
+  submitted_by?: string | null;
+  category?: TriedDish["category"] & {
+    slug?: string | null;
+    name_en?: string | null;
+    name_th?: string | null;
+  };
+  subtype?: TriedDish["subtype"] & {
+    slug?: string | null;
+    name_en?: string | null;
+    name_th?: string | null;
+  };
+  place?: {
+    id?: string | null;
+    name?: string | null;
+    address?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    area?: {
+      name_en?: string | null;
+      name_th?: string | null;
+    } | null;
+  } | null;
+  submitter_profile?: {
+    username?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+};
 
 export const Route = createFileRoute("/dish/$id")({
   loader: async ({ params }) => {
@@ -47,62 +94,52 @@ export const Route = createFileRoute("/dish/$id")({
     return { dish, origin };
   },
   head: ({ params, loaderData }) => {
-    const d: any = loaderData?.dish;
-    const origin: string = loaderData?.origin ?? "";
-    if (!d) return { meta: [{ title: "Dish - JaanNee" }] };
-    const name = d.name_en || d.name_th || "Dish";
-    const place = d.place?.name ?? "";
-    const price = d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : "";
-    const status = dishStatusLabel(d, (k) => (dict as any)[k]?.en ?? String(k)).text;
-    const baseDesc = `${place}${price} / ${status}`.trim();
-    const desc = `${name} at ${place || "a Bangkok spot"}${price} — ${status}. See how this dish ranks on JaanNee's dish-by-dish leaderboard.`;
+    const dish = loaderData?.dish as DishDetail | undefined;
+    const origin = loaderData?.origin ?? "";
+    if (!dish) return { meta: [{ title: "Dish — JaanNee" }] };
+    const name = dish.name_en || dish.name_th || "Dish";
+    const place = dish.place?.name ?? "";
+    const price = dish.price_thb != null ? ` · THB ${Number(dish.price_thb).toFixed(0)}` : "";
+    const status = dishStatusLabel(dish, (key) => dict[key]?.en ?? String(key)).text;
+    const description = `${name} at ${place || "a Bangkok spot"}${price}. ${status} on JaanNee's dish leaderboard.`;
     const pageUrl = origin ? `${origin}/dish/${params.id}` : `/dish/${params.id}`;
-    const rawPhoto: string | undefined = d.photo_url;
-    const ogImage = rawPhoto
-      ? /^https?:\/\//i.test(rawPhoto)
-        ? rawPhoto
+    const photo = dish.photo_url
+      ? /^https?:\/\//i.test(dish.photo_url)
+        ? dish.photo_url
         : origin
-          ? `${origin}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`
+          ? `${origin}${dish.photo_url.startsWith("/") ? "" : "/"}${dish.photo_url}`
           : undefined
       : undefined;
-    const meta: Array<Record<string, string>> = [
-      { title: `${name} - JaanNee` },
-      { name: "description", content: desc },
-      { property: "og:title", content: name },
-      { property: "og:description", content: desc },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: pageUrl },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: name },
-      { name: "twitter:description", content: desc },
-    ];
-    if (ogImage) {
-      meta.push({ property: "og:image", content: ogImage });
-      meta.push({ name: "twitter:image", content: ogImage });
-    }
-    const productLd: Record<string, unknown> = {
+    const menuItem = {
       "@context": "https://schema.org",
-      "@type": "Product",
+      "@type": "MenuItem",
       name,
-      description: baseDesc || desc,
+      description,
       url: pageUrl,
-      category: d.category?.name_en,
+      image: photo,
+      offers:
+        dish.price_thb != null
+          ? {
+              "@type": "Offer",
+              price: Number(dish.price_thb).toFixed(0),
+              priceCurrency: "THB",
+              url: pageUrl,
+            }
+          : undefined,
     };
-    if (ogImage) productLd.image = ogImage;
-    if (place) productLd.brand = { "@type": "Brand", name: place };
-    if (d.price_thb != null) {
-      productLd.offers = {
-        "@type": "Offer",
-        price: Number(d.price_thb).toFixed(0),
-        priceCurrency: "THB",
-        availability: "https://schema.org/InStock",
-        url: pageUrl,
-      };
-    }
     return {
-      meta,
+      meta: [
+        { title: `${name} — JaanNee` },
+        { name: "description", content: description },
+        { property: "og:title", content: name },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: pageUrl },
+        ...(photo ? [{ property: "og:image", content: photo }] : []),
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
       links: origin ? [{ rel: "canonical", href: pageUrl }] : [],
-      scripts: [{ type: "application/ld+json", children: JSON.stringify(productLd) }],
+      scripts: [{ type: "application/ld+json", children: safeJsonLd(menuItem) }],
     };
   },
   component: DishPage,
@@ -112,98 +149,130 @@ function DishPage() {
   const { id } = Route.useParams();
   const { origin } = Route.useLoaderData();
   const { t, lang } = useI18n();
+  const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
-  const dish = useQuery({ queryKey: ["dish", id], queryFn: () => getDish({ data: { id } }) });
-  const [authed, setAuthed] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthed(!!data.user);
-      setUserId(data.user?.id ?? null);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setAuthed(!!s?.user);
-      setUserId(s?.user?.id ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-  const tried = useQuery({ queryKey: ["tried"], queryFn: () => myTriedIds(), enabled: authed });
-  const following = useQuery({
-    queryKey: ["following"],
-    queryFn: () => myFollowingIds(),
-    enabled: authed,
+  const auth = useAuthUser();
+  const comparison = useComparePairs();
+  const dishQuery = useQuery({ queryKey: ["dish", id], queryFn: () => getDish({ data: { id } }) });
+  const dish = dishQuery.data as DishDetail | undefined;
+  const tried = useQuery({
+    queryKey: ["tried-ids", auth.userId],
+    queryFn: () => myTriedIds(),
+    enabled: auth.status === "in",
   });
-  const isTried = (tried.data ?? []).includes(id);
-  const pool = useQuery({
-    queryKey: ["dish-ranking-pool", dKey(dish.data)],
+  const following = useQuery({
+    queryKey: ["following", auth.userId],
+    queryFn: () => myFollowingIds(),
+    enabled: auth.status === "in",
+  });
+  const rankPool = useQuery({
+    queryKey: ["dish-rank", id, dish?.category?.slug, dish?.subtype?.slug],
     queryFn: () =>
-      listDishes({
+      leaderboard({
         data: {
-          categorySlug: (dish.data as any).category?.slug,
-          subtypeSlug: (dish.data as any).subtype?.slug,
+          categorySlug: dish!.category!.slug!,
+          subtypeSlug: dish?.subtype?.slug ?? undefined,
+          minimumComparisons: PUBLIC_RANK_THRESHOLD,
         },
       }),
-    enabled: authed && isTried && !!(dish.data as any)?.category?.slug,
+    enabled:
+      Number(dish?.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD &&
+      Boolean(dish?.category?.slug),
   });
 
-  const tryMut = useMutation({
-    mutationFn: () => toggleTried({ data: { dishId: id, tried: !isTried } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tried"] });
-      qc.invalidateQueries({ queryKey: ["dishes"] });
-      toast.success(isTried ? "Removed from tried" : "Marked as tried");
+  const [promptRequested, setPromptRequested] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [promptPartner, setPromptPartner] = useState<TriedDish | null>(null);
+  const [inlineResult, setInlineResult] = useState<{
+    winner: TriedDish;
+    loser: TriedDish;
+  } | null>(null);
+
+  const triedIds = tried.data ?? [];
+  const isTried = triedIds.includes(id);
+  const currentTriedDish = comparison.dishes.find((item) => item.id === id) ?? dish ?? null;
+  const eligiblePartner = comparison.partnersFor(id)[0] ?? null;
+
+  useEffect(() => {
+    if (!promptRequested || !currentTriedDish || !eligiblePartner) return;
+    setPromptPartner(eligiblePartner);
+    setPromptOpen(true);
+    setPromptRequested(false);
+  }, [currentTriedDish, eligiblePartner, promptRequested]);
+
+  const tryMutation = useMutation({
+    mutationFn: (nextTried: boolean) => toggleTried({ data: { dishId: id, tried: nextTried } }),
+    onSuccess: async (_result, nextTried) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["tried"] }),
+        qc.invalidateQueries({ queryKey: ["tried-ids"] }),
+        qc.invalidateQueries({ queryKey: ["dishes"] }),
+        qc.invalidateQueries({ queryKey: ["profile"] }),
+      ]);
+      toast.success(
+        nextTried
+          ? copy("Marked as tried", "ทำเครื่องหมายว่าเคยกินแล้ว")
+          : copy("Removed from tried dishes", "นำออกจากจานที่เคยกินแล้ว"),
+      );
+      if (nextTried) setPromptRequested(true);
+      else {
+        setPromptOpen(false);
+        setPromptPartner(null);
+        setInlineResult(null);
+      }
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: Error) => toast.error(error.message),
   });
-  const followMut = useMutation({
+
+  const followMutation = useMutation({
     mutationFn: ({ targetId, follow }: { targetId: string; follow: boolean }) =>
       followUser({ data: { userId: targetId, follow } }),
-    onSuccess: (_data, vars) => {
+    onSuccess: (_result, variables) => {
       qc.invalidateQueries({ queryKey: ["following"] });
-      toast.success(vars.follow ? "Following" : "Unfollowed");
+      toast.success(
+        variables.follow ? copy("Following", "ติดตามแล้ว") : copy("Unfollowed", "เลิกติดตามแล้ว"),
+      );
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
-  if (dish.isLoading)
+  if (dishQuery.isLoading) {
     return (
       <AppShell>
         <p className="text-muted-foreground">{t("loading")}</p>
       </AppShell>
     );
-  if (!dish.data)
+  }
+  if (!dish) {
     return (
       <AppShell>
-        <p>Not found.</p>
+        <p>{copy("Not found.", "ไม่พบจานนี้")}</p>
       </AppShell>
     );
+  }
 
-  const d: any = dish.data;
-  const name = lang === "th" && d.name_th ? d.name_th : d.name_en;
-  const secondaryName = lang === "th" && d.name_th ? d.name_en : d.name_th;
-  const areaName = d.place?.area
-    ? lang === "th"
-      ? d.place.area.name_th
-      : d.place.area.name_en
-    : null;
-  const days = Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000));
-  const s = statusLabel(d, t);
-  const triedCount = d.tried_count ?? 0;
+  const name = localizedName(dish, lang);
+  const alternateName = secondaryName(dish, lang);
+  const areaName = localizedName(dish.place?.area, lang);
+  const days = dish.created_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(dish.created_at).getTime()) / 86400000))
+    : 0;
+  const status = statusLabel(dish, t);
+  const triedCount = Number(dish.tried_count ?? 0);
   const shareUrl = origin
     ? `${origin}/dish/${id}`
     : typeof window !== "undefined"
       ? `${window.location.origin}/dish/${id}`
       : `/dish/${id}`;
-  const otherTried = ((pool.data ?? []) as any[]).find(
-    (candidate) =>
-      candidate.id !== d.id &&
-      (tried.data ?? []).includes(candidate.id) &&
-      (d.subtype_id ? candidate.subtype_id === d.subtype_id : !candidate.subtype_id),
-  );
-  const submitter = d.submitter_profile;
-  const submitterName = submitter?.display_name || submitter?.username || "A JaanNee eater";
-  const isFollowingSubmitter = d.submitted_by
-    ? (following.data ?? []).includes(d.submitted_by)
+  const rank =
+    Number(dish.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD
+      ? (rankPool.data ?? []).findIndex((item: { id: string }) => item.id === id) + 1
+      : 0;
+  const submitter = dish.submitter_profile;
+  const submitterName =
+    submitter?.display_name || submitter?.username || copy("A JaanNee diner", "นักชิม JaanNee");
+  const isFollowingSubmitter = dish.submitted_by
+    ? (following.data ?? []).includes(dish.submitted_by)
     : false;
 
   return (
@@ -211,11 +280,17 @@ function DishPage() {
       <article>
         <div className="relative min-h-[32rem] overflow-hidden border-2 border-foreground bg-ink md:min-h-[43rem]">
           <div className="absolute inset-0 bg-muted">
-            {d.photo_url ? (
-              <img src={d.photo_url} alt={name} className="h-full w-full object-cover" />
+            {dish.photo_url ? (
+              <img
+                src={dish.photo_url}
+                alt={name}
+                width={1400}
+                height={1050}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <div className="flex h-full items-center justify-center bg-secondary font-display text-5xl italic text-muted-foreground">
-                JaanNee
+                {t("photo_needed")}
               </div>
             )}
           </div>
@@ -223,146 +298,210 @@ function DishPage() {
           <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
             <div>
               <p className="editorial-kicker text-white/75">
-                {lang === "th" ? d.category?.name_th : d.category?.name_en}
+                {localizedName(dish.category, lang)}
+                {dish.subtype ? ` · ${localizedName(dish.subtype, lang)}` : ""}
               </p>
               <h1 className="type-page-title mt-4 max-w-5xl">{name}</h1>
-              {secondaryName ? (
-                <p className="mt-3 font-thai text-xl font-medium text-white/75">{secondaryName}</p>
+              {alternateName ? (
+                <p className="mt-3 font-thai text-xl font-medium text-white/75">{alternateName}</p>
               ) : null}
               <p className="mt-5 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
-                {d.place?.name}
-                {areaName ? ` / ${areaName}` : ""}
+                {dish.place?.name}
+                {areaName ? ` · ${areaName}` : ""}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(s.tone)}`}
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(status.tone)}`}
               >
-                {s.text}
+                {status.text}
               </span>
-              {d.price_thb != null && (
-                <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">
-                  THB {Number(d.price_thb).toFixed(0)}
+              {rank > 0 ? (
+                <span className="border border-gold bg-black/45 px-3 py-2 text-sm font-bold text-gold">
+                  #{rank}
                 </span>
-              )}
+              ) : null}
+              {dish.price_thb != null ? (
+                <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">
+                  THB {Number(dish.price_thb).toFixed(0)}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
 
         <div className="grid border-x-2 border-b-2 border-foreground bg-card md:grid-cols-[1.15fr_0.85fr]">
           <div className="p-5 md:border-r-2 md:border-foreground md:p-8">
-            {d.note && (
-              <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">
-                {d.note}
-              </p>
-            )}
+            {dish.note ? (
+              <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">{dish.note}</p>
+            ) : null}
 
-            <h2 className="editorial-kicker mt-8 text-primary">Dish stats</h2>
-            <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
-              <Metric label="Status" value={s.text} />
-              <Metric label="Added" value={`${days} ${t("days_ago")}`} />
-              <Metric label="Comparisons" value={`${d.comparisons_count ?? 0}`} />
+            <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
+              <h2 className="editorial-kicker text-primary">
+                {copy("Dish stats", "ข้อมูลจาน")}
+              </h2>
+              <HowRankingWorks
+                comparisonsCount={Number(dish.comparisons_count ?? 0)}
+                triedCount={triedCount}
+              />
             </div>
-            {triedCount > 0 && (
+            <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
+              <Metric label={copy("Status", "สถานะ")} value={status.text} />
+              <Metric label={copy("Added", "เพิ่มเมื่อ")} value={`${days} ${t("days_ago")}`} />
+              <Metric
+                label={t("comparisons_progress")}
+                value={`${dish.comparisons_count ?? 0}`}
+              />
+            </div>
+            {triedCount > 0 ? (
               <p className="mt-3 text-sm font-semibold text-muted-foreground">
                 {t("tried_by")} {triedCount} {t("diners")}
               </p>
-            )}
+            ) : null}
 
-            {authed && isTried && otherTried && <InlineTriedCompare dish={d} other={otherTried} />}
+            {auth.status === "in" && isTried && currentTriedDish && eligiblePartner ? (
+              <section className="mt-8 border-t border-border pt-6">
+                <p className="label-caps text-primary">{t("ready_to_compare")}</p>
+                <h2 className="type-section-title mt-2">{t("which_better")}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{t("ready_to_compare_body")}</p>
+                <div className="mt-4">
+                  {inlineResult ? (
+                    <ComparisonResultPanel
+                      winner={inlineResult.winner}
+                      loser={inlineResult.loser}
+                    />
+                  ) : (
+                    <ComparePairChoice
+                      a={currentTriedDish}
+                      b={eligiblePartner}
+                      onCompleted={(winner, loser) => setInlineResult({ winner, loser })}
+                    />
+                  )}
+                </div>
+              </section>
+            ) : null}
 
             <div className="mt-7 flex flex-wrap gap-2">
-              {authed ? (
+              {auth.status === "in" ? (
                 <Button
                   variant={isTried ? "secondary" : "default"}
-                  onClick={() => tryMut.mutate()}
-                  disabled={tryMut.isPending}
+                  onClick={() => tryMutation.mutate(!isTried)}
+                  disabled={tryMutation.isPending}
+                  className="min-h-11"
                 >
                   {isTried ? t("tried_marked") : t("tried_it")}
                 </Button>
               ) : (
-                <Link to="/auth">
-                  <Button>{t("sign_in")} to mark tried</Button>
+                <Link to="/auth" search={{ redirect: `/dish/${id}` }}>
+                  <Button className="min-h-11">
+                    {copy("Sign in to mark tried", "เข้าสู่ระบบเพื่อทำเครื่องหมายว่าเคยกิน")}
+                  </Button>
                 </Link>
               )}
-              <Link to="/compare" search={{ dish: id } as any}>
-                <Button variant="outline">{t("compare_this")}</Button>
-              </Link>
               <ShareButton
                 url={shareUrl}
                 title={name}
-                text={`${d.place?.name ?? ""}${d.price_thb != null ? ` / THB ${Number(d.price_thb).toFixed(0)}` : ""} / ${s.text}`}
-                label={t("share") || "Share"}
+                text={`${dish.place?.name ?? ""}${dish.price_thb != null ? ` · THB ${Number(dish.price_thb).toFixed(0)}` : ""} · ${status.text}`}
               />
-              {d.place && (
-                <a href={mapsDirectionsUrl(d.place)} target="_blank" rel="noreferrer">
-                  <Button variant="outline" type="button">
-                    Directions
+              {rank > 0 ? <RankingShare dish={dish} rank={rank} /> : null}
+              {dish.place ? (
+                <a href={mapsDirectionsUrl(dish.place)} target="_blank" rel="noreferrer">
+                  <Button variant="outline" type="button" className="min-h-11">
+                    {copy("Directions", "เส้นทาง")}
                   </Button>
                 </a>
-              )}
-              {authed && <ReportDialog dishId={id} />}
+              ) : null}
+              {auth.status === "in" ? <ReportDialog dishId={id} /> : null}
             </div>
           </div>
-          <aside className="border-t-2 border-foreground p-5 md:border-t-0 md:p-8">
-            {d.submitted_by && (
+
+          <aside className="space-y-5 p-5 md:p-8">
+            {dish.submitted_by ? (
               <div className="border-y border-foreground/25 py-4">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  Submitted by
+                  {copy("Submitted by", "ส่งโดย")}
                 </h2>
                 <div className="flex items-center justify-between gap-3">
-                  <Link
-                    to={submitter?.username ? "/u/$username" : "."}
-                    params={
-                      submitter?.username ? { username: submitter.username } : (undefined as any)
-                    }
-                    className="flex min-w-0 items-center gap-3"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground">
                       {submitter?.avatar_url ? (
                         <img
                           src={submitter.avatar_url}
                           alt=""
-                          className="h-full w-full rounded-full object-cover"
+                          width={40}
+                          height={40}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
                         submitterName.slice(0, 1)
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">Posted by {submitterName}</p>
+                      {submitter?.username ? (
+                        <Link
+                          to="/u/$username"
+                          params={{ username: submitter.username }}
+                          className="text-sm font-semibold hover:underline"
+                        >
+                          {submitterName}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-semibold">{submitterName}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">
-                        Follow to see what they eat next.
+                        {copy("Follow to see what they eat next.", "ติดตามเพื่อดูว่าพวกเขากินอะไรต่อ")}
                       </p>
                     </div>
-                  </Link>
-                  {authed && userId !== d.submitted_by ? (
+                  </div>
+                  {auth.status === "in" && auth.userId !== dish.submitted_by ? (
                     <Button
                       variant={isFollowingSubmitter ? "secondary" : "outline"}
                       size="sm"
                       onClick={() =>
-                        followMut.mutate({
-                          targetId: d.submitted_by,
+                        followMutation.mutate({
+                          targetId: dish.submitted_by!,
                           follow: !isFollowingSubmitter,
                         })
                       }
-                      disabled={followMut.isPending}
+                      disabled={followMutation.isPending}
                     >
-                      {isFollowingSubmitter ? "Following" : "Follow"}
+                      {isFollowingSubmitter
+                        ? copy("Following", "กำลังติดตาม")
+                        : copy("Follow", "ติดตาม")}
                     </Button>
                   ) : null}
                 </div>
               </div>
-            )}
+            ) : null}
+
+            {rankPool.data && rankPool.data.length > 1 ? (
+              <section>
+                <h2 className="type-section-title">
+                  {copy("More in this ranking", "จานอื่นในอันดับนี้")}
+                </h2>
+                <div className="mt-4 space-y-4">
+                  {rankPool.data
+                    .filter((item: { id: string }) => item.id !== id)
+                    .slice(0, 2)
+                    .map((item) => (
+                      <DishCard key={item.id} dish={item} />
+                    ))}
+                </div>
+              </section>
+            ) : null}
           </aside>
         </div>
       </article>
+
+      <ComparePromptDrawer
+        open={promptOpen}
+        onOpenChange={setPromptOpen}
+        a={currentTriedDish}
+        b={promptPartner}
+      />
     </AppShell>
   );
-}
-
-function dKey(dish: any) {
-  return dish ? [dish.id, dish.category?.slug, dish.subtype_id].join(":") : "none";
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
@@ -377,23 +516,26 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 function ReportDialog({ dishId }: { dishId: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const [reason, setReason] = useState("wrong_info");
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
-  const mut = useMutation({
+  const mutation = useMutation({
     mutationFn: () => submitReport({ data: { dishId, reason, note: note || undefined } }),
     onSuccess: () => {
-      toast.success("Thanks. We'll review this.");
+      toast.success(copy("Thanks. We will review this.", "ขอบคุณ เราจะตรวจสอบข้อมูลนี้"));
       setOpen(false);
       setNote("");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: Error) => toast.error(error.message),
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost">{t("report")}</Button>
+        <Button variant="ghost" className="min-h-11">
+          {t("report")}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -401,27 +543,36 @@ function ReportDialog({ dishId }: { dishId: string }) {
         </DialogHeader>
         <div className="space-y-3">
           <Select value={reason} onValueChange={setReason}>
-            <SelectTrigger>
+            <SelectTrigger className="min-h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="wrong_info">Wrong info</SelectItem>
-              <SelectItem value="duplicate">Duplicate</SelectItem>
-              <SelectItem value="place_closed">Place closed</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="wrong_info">{copy("Wrong information", "ข้อมูลไม่ถูกต้อง")}</SelectItem>
+              <SelectItem value="duplicate">{copy("Duplicate", "ซ้ำ")}</SelectItem>
+              <SelectItem value="place_closed">{copy("Place closed", "ร้านปิดแล้ว")}</SelectItem>
+              <SelectItem value="other">{copy("Other", "อื่นๆ")}</SelectItem>
             </SelectContent>
           </Select>
           <Textarea
-            placeholder="Optional details"
+            placeholder={copy("Optional details", "รายละเอียดเพิ่มเติม")}
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(event) => setNote(event.target.value)}
             maxLength={500}
           />
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
-            Submit report
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            {copy("Submit report", "ส่งรายงาน")}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
+}
+
+function safeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
