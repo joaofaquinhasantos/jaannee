@@ -12,8 +12,10 @@ import {
   submitComparison,
 } from "@/lib/dishes.functions";
 import {
+  bestEligiblePair,
   eligiblePartnersFor,
-  firstEligiblePair,
+  pairRankOpportunity,
+  type EligiblePair,
   type PairDish,
 } from "@/lib/pairing";
 import { localizedName, placeDisplayName } from "@/lib/names";
@@ -51,7 +53,7 @@ export function useComparePairs() {
     isLoading: enabled && (tried.isLoading || compared.isLoading),
     dishes,
     comparedKeys,
-    nextPair: useMemo(() => firstEligiblePair(dishes, comparedKeys), [dishes, comparedKeys]),
+    nextPair: useMemo(() => bestEligiblePair(dishes, comparedKeys), [dishes, comparedKeys]),
     partnersFor: useCallback(
       (dishId: string) => eligiblePartnersFor(dishId, dishes, comparedKeys),
       [dishes, comparedKeys],
@@ -287,6 +289,7 @@ export function ReadyToComparePanel() {
       ) : nextPair ? (
         <>
           <p className="mt-2 text-sm text-muted-foreground">{t("ready_to_compare_body")}</p>
+          <PairProgress pair={nextPair} />
           <div className="mt-4">
             <ComparePairChoice
               a={nextPair.a as TriedDish}
@@ -307,5 +310,36 @@ export function ReadyToComparePanel() {
         </>
       )}
     </section>
+  );
+}
+
+export function PairProgress({ pair }: { pair: EligiblePair<TriedDish> }) {
+  const { lang } = useI18n();
+  const copy = (en: string, th: string) => (lang === "th" ? th : en);
+  const opportunity = pairRankOpportunity(pair);
+  if (!opportunity?.almostRanked) return null;
+
+  return (
+    <div className="mt-4 border-l-2 border-primary bg-primary/10 px-3 py-2 text-sm">
+      <p className="font-semibold text-primary">
+        {opportunity.unlocksRankNow
+          ? copy(
+              "Your comparison can unlock a public rank.",
+              "การเปรียบเทียบของคุณสามารถปลดล็อกอันดับสาธารณะได้",
+            )
+          : copy(
+              "This pair is close to unlocking a public rank.",
+              "คู่นี้ใกล้จะปลดล็อกอันดับสาธารณะแล้ว",
+            )}
+      </p>
+      {!opportunity.unlocksRankNow ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {copy(
+            `The closest dish needs ${opportunity.comparisonsRemaining} more comparisons.`,
+            `จานที่ใกล้ที่สุดต้องการอีก ${opportunity.comparisonsRemaining} การเปรียบเทียบ`,
+          )}
+        </p>
+      ) : null}
+    </div>
   );
 }
