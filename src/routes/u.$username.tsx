@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Grid3X3, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -10,6 +10,8 @@ import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$username")({
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(publicProfileQuery(params.username)),
   head: ({ params }) => {
     const url = `https://jaannee.lovable.app/u/${params.username}`;
     const title = `@${params.username} on JaanNee`;
@@ -47,15 +49,20 @@ export const Route = createFileRoute("/u/$username")({
   component: PublicProfilePage,
 });
 
+function publicProfileQuery(username: string) {
+  return queryOptions({
+    queryKey: ["public-profile", username],
+    queryFn: () => publicProfile({ data: { username } }),
+    staleTime: 60_000,
+  });
+}
+
 function PublicProfilePage() {
   const { username } = Route.useParams();
   const { lang, t } = useI18n();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<"posts" | "tried">("posts");
-  const q = useQuery({
-    queryKey: ["public-profile", username],
-    queryFn: () => publicProfile({ data: { username } }),
-  });
+  const q = useQuery(publicProfileQuery(username));
   const [authed, setAuthed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 

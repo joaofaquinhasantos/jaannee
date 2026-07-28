@@ -44,6 +44,13 @@ const dishSelectInner = `
   place:places!inner(id, name, address, google_maps_url, lat, lng, area:areas(id, slug, name_en, name_th))
 `;
 
+// Public profiles render a compact photo grid, so avoid transferring full
+// dish-detail, taxonomy, location, ranking, and moderation payloads.
+const profileDishSelect = `
+  id, name_en, name_th, photo_url,
+  place:places(id, name)
+`;
+
 export function mapsDirectionsUrl(place: {
   name?: string | null;
   address?: string | null;
@@ -1042,7 +1049,7 @@ export const publicProfile = createServerFn({ method: "GET" })
     const [posted, tried, compared, counts] = await Promise.all([
       (supabaseAdmin as any)
         .from("dishes")
-        .select(dishSelect)
+        .select(profileDishSelect)
         .eq("submitted_by", profile.id)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
@@ -1050,20 +1057,25 @@ export const publicProfile = createServerFn({ method: "GET" })
       profile.tried_public
         ? (supabaseAdmin as any)
             .from("dish_tries")
-            .select(`dish_id, created_at, dish:dishes(${dishSelect})`)
+            .select(`dish_id, created_at, dish:dishes(${profileDishSelect})`)
             .eq("user_id", profile.id)
             .eq("dish.status", "approved")
             .order("created_at", { ascending: false })
             .limit(24)
         : Promise.resolve({ data: [] }),
-      (supabaseAdmin as any).from("comparisons").select("id").eq("user_id", profile.id),
+      (supabaseAdmin as any)
+        .from("comparisons")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile.id),
       (supabaseAdmin as any).rpc("get_follow_counts", { _user_id: profile.id }).maybeSingle(),
     ]);
+    const queryError = posted.error || tried.error || compared.error || counts.error;
+    if (queryError) throw new Error(queryError.message);
     return {
       profile,
       posted: posted.data ?? [],
       tried: tried.data ?? [],
-      comparisons_count: compared.data?.length ?? 0,
+      comparisons_count: compared.count ?? 0,
       followers_count: Number((counts as any)?.data?.followers_count ?? 0),
       following_count: Number((counts as any)?.data?.following_count ?? 0),
     };
