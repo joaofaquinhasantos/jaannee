@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Grid3X3, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { DishCard } from "@/components/DishCard";
 import { followUser, myFollowingIds, publicProfile } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$username")({
@@ -48,7 +49,9 @@ export const Route = createFileRoute("/u/$username")({
 
 function PublicProfilePage() {
   const { username } = Route.useParams();
+  const { lang, t } = useI18n();
   const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"posts" | "tried">("posts");
   const q = useQuery({
     queryKey: ["public-profile", username],
     queryFn: () => publicProfile({ data: { username } }),
@@ -105,16 +108,17 @@ function PublicProfilePage() {
 
   const profile = q.data.profile;
   const displayName = profile.display_name || profile.username;
+  const posted = q.data.posted ?? [];
   const tried = (q.data.tried ?? []).map((r: any) => r.dish).filter(Boolean);
   const isSelf = userId === profile.id;
   const isFollowing = (following.data ?? []).includes(profile.id);
 
   return (
     <AppShell>
-      <section className="border-b border-border pb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary font-display text-3xl text-primary-foreground">
+      <section className="mx-auto max-w-5xl">
+        <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary font-display text-3xl text-primary-foreground sm:h-28 sm:w-28 sm:text-5xl">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -127,9 +131,13 @@ function PublicProfilePage() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase text-primary">@{profile.username}</p>
-              <h1 className="type-page-title mt-1 truncate">{displayName}</h1>
+              <h1 className="mt-1 truncate font-display text-3xl leading-none sm:text-5xl">
+                {displayName}
+              </h1>
               {profile.bio ? (
-                <p className="mt-2 max-w-xl text-sm text-muted-foreground">{profile.bio}</p>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                  {profile.bio}
+                </p>
               ) : null}
             </div>
           </div>
@@ -151,28 +159,132 @@ function PublicProfilePage() {
             </Link>
           )}
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-2 rounded-lg border border-border bg-card p-3 text-center">
-          <Stat label="Tried" value={tried.length} />
-          <Stat label="Comparisons" value={q.data.comparisons_count ?? 0} />
-          <Stat label="Followers" value={q.data.followers_count ?? 0} />
+        <div className="mt-6 grid grid-cols-4 border-y border-border py-4 text-center">
+          <Stat label={t("profile_posts")} value={posted.length} />
+          <Stat label={t("profile_tried")} value={tried.length} />
+          <Stat label={t("profile_comparisons")} value={q.data.comparisons_count ?? 0} />
+          <Stat label={lang === "th" ? "ผู้ติดตาม" : "Followers"} value={q.data.followers_count ?? 0} />
         </div>
       </section>
 
-      <section className="mt-8">
-        <h2 className="type-section-title mb-4">Tried dishes</h2>
-        {!profile.tried_public ? (
-          <Empty text="This eater keeps tried dishes private." />
-        ) : tried.length === 0 ? (
-          <Empty text="No public tried dishes yet." />
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {tried.map((d: any) => (
-              <DishCard key={d.id} dish={d} />
-            ))}
-          </div>
-        )}
+      <section className="mx-auto mt-6 max-w-5xl">
+        <div className="grid grid-cols-2 border-b border-border" role="tablist">
+          <ProfileTab
+            active={activeTab === "posts"}
+            label={t("profile_posts")}
+            icon={<Grid3X3 className="h-4 w-4" />}
+            onClick={() => setActiveTab("posts")}
+          />
+          <ProfileTab
+            active={activeTab === "tried"}
+            label={t("profile_tried")}
+            icon={<Utensils className="h-4 w-4" />}
+            onClick={() => setActiveTab("tried")}
+          />
+        </div>
+
+        <div className="mt-1">
+          {activeTab === "posts" ? (
+            <ProfileDishGrid
+              dishes={posted}
+              lang={lang}
+              emptyText={lang === "th" ? "ยังไม่มีโพสต์ที่ได้รับอนุมัติ" : "No approved posts yet."}
+            />
+          ) : !profile.tried_public ? (
+            <Empty
+              text={
+                lang === "th"
+                  ? "นักชิมคนนี้ตั้งค่ารายการที่เคยกินเป็นส่วนตัว"
+                  : "This diner keeps tried dishes private."
+              }
+            />
+          ) : (
+            <ProfileDishGrid
+              dishes={tried}
+              lang={lang}
+              emptyText={lang === "th" ? "ยังไม่มีจานที่เคยกินแบบสาธารณะ" : "No public tried dishes yet."}
+            />
+          )}
+        </div>
       </section>
     </AppShell>
+  );
+}
+
+function ProfileTab({
+  active,
+  label,
+  icon,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`flex min-h-12 items-center justify-center gap-2 border-b-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+        active
+          ? "border-primary text-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function ProfileDishGrid({
+  dishes,
+  lang,
+  emptyText,
+}: {
+  dishes: any[];
+  lang: "en" | "th";
+  emptyText: string;
+}) {
+  if (dishes.length === 0) return <Empty text={emptyText} />;
+
+  return (
+    <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
+      {dishes.map((dish) => {
+        const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+        return (
+          <Link
+            key={dish.id}
+            to="/dish/$id"
+            params={{ id: dish.id }}
+            aria-label={name}
+            className="group relative aspect-square overflow-hidden bg-card focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {dish.photo_url ? (
+              <img
+                src={dish.photo_url}
+                alt={name}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center p-3 text-center font-display text-lg">
+                {name}
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2 pt-8 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+              <p className="truncate text-xs font-bold text-white sm:text-sm">{name}</p>
+              {dish.place?.name ? (
+                <p className="truncate text-[10px] text-white/75 sm:text-xs">{dish.place.name}</p>
+              ) : null}
+            </div>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
