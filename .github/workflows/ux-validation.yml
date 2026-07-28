@@ -32,17 +32,6 @@ jobs:
           echo "$status" > tests.status
           tail -80 tests.log
           exit $status
-      - name: Typecheck
-        id: typecheck
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-          npm run typecheck > typecheck.log 2>&1
-          status=$?
-          echo "$status" > typecheck.status
-          tail -120 typecheck.log
-          exit $status
       - name: Production build
         id: build
         continue-on-error: true
@@ -53,6 +42,17 @@ jobs:
           status=$?
           echo "$status" > build.status
           tail -120 build.log
+          exit $status
+      - name: Typecheck generated route tree
+        id: typecheck
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npm run typecheck > typecheck.log 2>&1
+          status=$?
+          echo "$status" > typecheck.status
+          tail -120 typecheck.log
           exit $status
       - name: Upload validation diagnostics
         if: always()
