@@ -327,8 +327,8 @@ function Submit() {
           <h1 className="type-page-title">{t("nav_submit")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
             {copy(
-              "Sign in to upload and submit a dish for moderation.",
-              "เข้าสู่ระบบเพื่ออัปโหลดและส่งจานให้ผู้ดูแลตรวจสอบ",
+              "Sign in to share a dish now. Your post goes live immediately and admin review follows.",
+              "เข้าสู่ระบบเพื่อแชร์จานได้ทันที โพสต์จะเผยแพร่ก่อนและผู้ดูแลจะตรวจสอบภายหลัง",
             )}
           </p>
           <Link to="/auth" search={{ redirect: "/submit" }}>

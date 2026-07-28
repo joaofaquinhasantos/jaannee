@@ -75,6 +75,7 @@ type AreaRow = {
 
 type DishRow = {
   id: string;
+  status?: "pending" | "approved" | "rejected" | null;
   name_en?: string | null;
   name_th?: string | null;
   photo_url?: string | null;
@@ -162,6 +163,18 @@ function Index() {
     .slice(0, 8);
   const leader = ranked.find((dish) => dish.photo_url) ?? contenders.find((dish) => dish.photo_url);
   const categoryPhotos = categoryRows.filter((category) => category.reference_photo_url);
+  const publishedDishes = (bootstrap.data?.dishes ?? []) as DishRow[];
+  const categoryPostCounts = publishedDishes.reduce<Record<string, number>>((counts, dish) => {
+    if (dish.category?.id) counts[dish.category.id] = (counts[dish.category.id] ?? 0) + 1;
+    return counts;
+  }, {});
+  const activeBrowseCategories = categoryRows
+    .filter((category) => (categoryPostCounts[category.id] ?? 0) > 0)
+    .sort(
+      (a, b) =>
+        (categoryPostCounts[b.id] ?? 0) - (categoryPostCounts[a.id] ?? 0) ||
+        localizedName(a, lang).localeCompare(localizedName(b, lang)),
+    );
   const discoverFilters = { categorySlug, areaSlug };
 
   const changeCategory = (slug: string | undefined) => {
@@ -236,7 +249,7 @@ function Index() {
           ) ? (
             <DishSection
               eyebrow={t("section_recent")}
-              title={copy("Recently approved", "จานที่เพิ่งอนุมัติ")}
+              title={copy("Recently posted", "โพสต์ล่าสุด")}
               description={t("section_recent_body")}
               dishes={recent
                 .filter(
@@ -249,8 +262,12 @@ function Index() {
             />
           ) : null}
 
-          {categoryPhotos.length > 0 ? (
-            <CategoryBrowse categories={categoryPhotos.slice(0, 8)} onSelect={changeCategory} />
+          {activeBrowseCategories.length > 0 ? (
+            <CategoryBrowse
+              categories={activeBrowseCategories.slice(0, 8)}
+              dishes={publishedDishes}
+              onSelect={changeCategory}
+            />
           ) : null}
         </div>
       ) : shouldShowCategoryGallery(discoverFilters, categoryPhotos.length) ? (
@@ -281,9 +298,11 @@ function Index() {
 
 function CategoryBrowse({
   categories,
+  dishes,
   onSelect,
 }: {
   categories: CategoryRow[];
+  dishes: DishRow[];
   onSelect: (slug: string) => void;
 }) {
   const { t, lang } = useI18n();
@@ -304,7 +323,15 @@ function CategoryBrowse({
               onClick={() => onSelect(category.slug)}
               className="group relative min-h-64 overflow-hidden border border-white/10 text-left transition hover:border-primary"
             >
-              <NoirPhoto src={category.reference_photo_url ?? ""} alt="" />
+              <NoirPhoto
+                src={
+                  category.reference_photo_url ??
+                  dishes.find((dish) => dish.category?.id === category.id && dish.photo_url)
+                    ?.photo_url ??
+                  ""
+                }
+                alt=""
+              />
               <div className="absolute inset-x-0 bottom-0 z-10 p-5">
                 <h3 className="font-noir-display text-3xl uppercase leading-none text-white">
                   {localizedName(category, lang)}
@@ -386,14 +413,18 @@ function HeroDish({ dish, rank, poolReady }: { dish: DishRow; rank: number; pool
     <Link
       to="/dish/$id"
       params={{ id: dish.id }}
-      className="group relative block min-h-[62vh] overflow-hidden bg-black md:min-h-[760px]"
+      className="group relative block min-h-[62vh] overflow-hidden bg-black md:min-h-[68vh]"
     >
       <NoirPhoto src={dish.photo_url ?? ""} alt={name} priority />
       <div className="absolute inset-x-0 bottom-0 z-10 max-w-5xl p-6 md:p-12 lg:p-16">
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-          {ranked
-            ? `${t("trusted_rank")} · #${rank}`
-            : `${t("unranked_label")} · ${Number(dish.comparisons_count ?? 0)}/${PUBLIC_RANK_THRESHOLD}`}
+          {dish.status === "pending"
+            ? lang === "th"
+              ? "เผยแพร่แล้ว · รอตรวจสอบ"
+              : "Live · awaiting review"
+            : ranked
+              ? `${t("trusted_rank")} · #${rank}`
+              : `${t("unranked_label")} · ${Number(dish.comparisons_count ?? 0)}/${PUBLIC_RANK_THRESHOLD}`}
         </p>
         <h1 className="mt-3 break-words font-noir-display text-[clamp(3.25rem,14vw,8rem)] uppercase leading-[0.82] text-white">
           {name}
@@ -461,9 +492,13 @@ function CompactDish({ dish, rank }: { dish: DishRow; rank?: number }) {
       )}
       <div className="absolute inset-x-0 bottom-0 z-10 p-5">
         <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-primary">
-          {rank
-            ? `#${rank} · ${dish.comparisons_count ?? 0} ${t("comparisons_progress")}`
-            : `${t("gathering_progress")} · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`}
+          {dish.status === "pending"
+            ? lang === "th"
+              ? "เผยแพร่แล้ว · รอตรวจสอบ"
+              : "Live · awaiting review"
+            : rank
+              ? `#${rank} · ${dish.comparisons_count ?? 0} ${t("comparisons_progress")}`
+              : `${t("gathering_progress")} · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`}
         </p>
         <h3 className="mt-2 font-noir-display text-4xl uppercase leading-[0.86] text-white">
           {name}

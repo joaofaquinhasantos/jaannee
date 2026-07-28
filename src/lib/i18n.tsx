@@ -145,8 +145,8 @@ export const dict = {
   submit_required: { en: "Fill required fields", th: "กรอกข้อมูลที่จำเป็นให้ครบ" },
   submit_done_title: { en: "Submitted. Thank you.", th: "ส่งแล้ว ขอบคุณ" },
   submit_done_body: {
-    en: "Your dish is pending review. It will appear once approved.",
-    th: "จานของคุณรอตรวจสอบ และจะแสดงเมื่ออนุมัติแล้ว",
+    en: "Your post is live. Admin review follows, and approval makes it eligible for comparisons.",
+    th: "โพสต์ของคุณเผยแพร่แล้ว ผู้ดูแลจะตรวจสอบภายหลัง และเมื่ออนุมัติแล้วจานจะเข้าร่วมการเปรียบเทียบได้",
   },
   back_to_feed: { en: "Back to feed", th: "กลับไปหน้าค้นพบ" },
   add_another: { en: "Add another", th: "เพิ่มอีกจาน" },
@@ -157,7 +157,7 @@ export const dict = {
   },
   back_to_edit: { en: "Back to edit", th: "กลับไปแก้ไข" },
   submit_anyway: { en: "None of these. Submit anyway", th: "ไม่ใช่รายการเหล่านี้ ส่งต่อ" },
-  submit_for_review: { en: "Submit for review", th: "ส่งให้ตรวจสอบ" },
+  submit_for_review: { en: "Post now", th: "โพสต์เลย" },
   ranked_dishes: { en: "Ranked dishes", th: "จานที่จัดอันดับแล้ว" },
   ranked_dishes_body: {
     en: "Based on at least 5 diner comparisons.",
@@ -251,8 +251,8 @@ export const dict = {
   },
   section_recent: { en: "Recently added", th: "เพิ่มล่าสุด" },
   section_recent_body: {
-    en: "Freshly approved dishes waiting for their first comparisons.",
-    th: "จานที่เพิ่งได้รับอนุมัติ กำลังรอการเปรียบเทียบครั้งแรก",
+    en: "Fresh diner posts, with admin review and ranking eligibility clearly marked.",
+    th: "โพสต์ใหม่จากนักชิม พร้อมสถานะการตรวจสอบและสิทธิ์เข้าร่วมอันดับที่ชัดเจน",
   },
   choose_dish_type: { en: "Choose a dish type", th: "เลือกประเภทจาน" },
   choose_dish_type_body: {

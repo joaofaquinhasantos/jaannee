@@ -60,6 +60,7 @@ function PublicProfilePage() {
   const { username } = Route.useParams();
   const loadedProfile = Route.useLoaderData();
   const { lang, t } = useI18n();
+  const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<"posts" | "tried">("posts");
   const q = useQuery({
@@ -160,7 +161,7 @@ function PublicProfilePage() {
           </div>
           {isSelf ? (
             <Link to="/profile">
-              <Button variant="outline">Edit</Button>
+              <Button variant="outline">{copy("Edit", "แก้ไข")}</Button>
             </Link>
           ) : authed ? (
             <Button
@@ -168,11 +169,11 @@ function PublicProfilePage() {
               onClick={() => followMut.mutate({ targetId: profile.id, follow: !isFollowing })}
               disabled={followMut.isPending}
             >
-              {isFollowing ? "Following" : "Follow"}
+              {isFollowing ? copy("Following", "กำลังติดตาม") : copy("Follow", "ติดตาม")}
             </Button>
           ) : (
             <Link to="/auth">
-              <Button>Sign in to follow</Button>
+              <Button>{copy("Sign in to follow", "เข้าสู่ระบบเพื่อติดตาม")}</Button>
             </Link>
           )}
         </div>
