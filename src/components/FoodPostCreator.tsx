@@ -111,7 +111,7 @@ export function FoodPostCreator({
           {t("share")}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="max-h-[92dvh] overflow-y-auto sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
         <div className="mx-auto w-full max-w-2xl px-4 pb-8">
           <DrawerHeader className="px-0 text-left">
             <DrawerTitle>{t("food_post_title")}</DrawerTitle>
@@ -119,7 +119,7 @@ export function FoodPostCreator({
           </DrawerHeader>
 
           <div className="mb-5 overflow-hidden rounded-lg border border-border bg-card">
-            <div className="relative aspect-[4/3] bg-muted">
+            <div className="relative aspect-[4/3] bg-muted sm:aspect-[16/7]">
               {dish.photo_url ? (
                 <img src={dish.photo_url} alt="" className="h-full w-full object-cover" />
               ) : null}

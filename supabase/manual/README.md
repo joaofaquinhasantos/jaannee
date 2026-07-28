@@ -46,6 +46,11 @@ repeated.
   tried. Saved dishes never influence rankings.
 - `VERIFY_20260728_retention_foundation.sql` — read-only checks for the table,
   RLS, grants, policies, and tried-conversion trigger.
+- `20260728_submitter_tried_on_approval.sql` — marks a dish as tried by its
+  submitter when admin approval makes it comparison-eligible, and safely
+  backfills existing approved submissions.
+- `VERIFY_20260728_submitter_tried_on_approval.sql` — read-only checks for the
+  approval trigger, restricted function grants, and missing tried marks.
 
 ## Execution order
 
@@ -73,6 +78,9 @@ repeated.
 14. Paste `20260728_retention_foundation.sql` into the SQL editor.
 15. Run `VERIFY_20260728_retention_foundation.sql` and confirm every row
     reports `OK`.
+16. Paste `20260728_submitter_tried_on_approval.sql` into the SQL editor.
+17. Run `VERIFY_20260728_submitter_tried_on_approval.sql` and confirm every
+    row reports `OK`.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

@@ -6,7 +6,12 @@ import { DishBrowser } from "@/components/DishBrowser";
 import { DishCard } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { LeaderboardEntry } from "@/components/LeaderboardEntry";
-import { getPublicTaxonomy, listDishes, leaderboard } from "@/lib/dishes.functions";
+import {
+  getPublicTaxonomy,
+  listCategoryCounts,
+  listDishes,
+  leaderboard,
+} from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName } from "@/lib/names";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
@@ -39,6 +44,12 @@ const publicTaxonomyQuery = queryOptions({
   staleTime: 10 * 60_000,
 });
 
+const categoryCountsQuery = queryOptions({
+  queryKey: ["category-counts"],
+  queryFn: () => listCategoryCounts(),
+  staleTime: 5 * 60_000,
+});
+
 function Rankings() {
   const { t, lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
@@ -49,6 +60,14 @@ function Rankings() {
   });
   const categories = taxonomy.data?.categories ?? [];
   const areas = taxonomy.data?.areas ?? [];
+  const categoryCounts = useQuery(categoryCountsQuery);
+  const orderedCategories = [...categories].sort((a, b) => {
+    const counts = categoryCounts.data ?? {};
+    return (
+      Number(counts[b.id] ?? 0) - Number(counts[a.id] ?? 0) ||
+      localizedName(a, lang).localeCompare(localizedName(b, lang))
+    );
+  });
   const [cat, setCat] = useState<string | undefined>();
   const [subtype, setSubtype] = useState<string | undefined>();
   const [area, setArea] = useState<string | undefined>();
@@ -143,7 +162,9 @@ function Rankings() {
               )}
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {categories.slice(0, 18).map((category) => (
+              {orderedCategories.slice(0, 18).map((category) => {
+                const count = Number(categoryCounts.data?.[category.id] ?? 0);
+                return (
                 <button
                   key={category.id}
                   type="button"
@@ -151,11 +172,23 @@ function Rankings() {
                     setCat(category.slug);
                     setSubtype(undefined);
                   }}
-                  className="min-h-16 rounded-md border border-border bg-card px-4 py-3 text-left font-semibold transition hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={`min-h-16 rounded-md border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    count > 0 ? "border-border" : "border-border/60 text-muted-foreground"
+                  }`}
                 >
-                  {localizedName(category, lang)}
+                  <span className="block font-semibold">{localizedName(category, lang)}</span>
+                  <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                    {count > 0
+                      ? lang === "th"
+                        ? `${count} จาน`
+                        : `${count} ${count === 1 ? "dish" : "dishes"}`
+                      : lang === "th"
+                        ? "ยังไม่มีจาน"
+                        : "No dishes yet"}
+                  </span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </section>
         ) : subtypeScoped && !subtype ? (
