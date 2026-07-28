@@ -1,16 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Camera, ChevronDown, MapPin } from "lucide-react";
+import { Camera, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { CategoryPicker } from "@/components/CategoryPicker";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listAreas,
@@ -54,8 +48,6 @@ export const Route = createFileRoute("/_authenticated/submit")({
   }),
   component: Submit,
 });
-
-const PRICE_CHIPS = ["60", "80", "100", "120", "150"];
 
 type PlaceRow = {
   id: string;
@@ -112,12 +104,9 @@ function Submit() {
   const [categoryId, setCategoryId] = useState("");
   const [subtypeId, setSubtypeId] = useState("");
   const [price, setPrice] = useState("");
-  const [customPrice, setCustomPrice] = useState(false);
-  const [note, setNote] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [duplicates, setDuplicates] = useState<DuplicateResult | null>(null);
 
   const subtypes = useQuery({
@@ -129,8 +118,7 @@ function Submit() {
   const selectedCategory = (categories.data ?? []).find(
     (category: CategoryRow) => category.id === categoryId,
   ) as CategoryRow | undefined;
-  const categoryScoped =
-    Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
+  const categoryScoped = Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
   const categoryIncomplete =
     Boolean(selectedCategory?.requires_subtype) && activeSubtypes.length === 0;
 
@@ -142,8 +130,6 @@ function Submit() {
 
   const primaryName = lang === "th" ? nameTh : nameEn;
   const setPrimaryName = lang === "th" ? setNameTh : setNameEn;
-  const secondaryNameValue = lang === "th" ? nameEn : nameTh;
-  const setSecondaryName = lang === "th" ? setNameEn : setNameTh;
 
   const selectCategory = (value: string) => {
     setCategoryId(value);
@@ -160,7 +146,6 @@ function Submit() {
   const chooseNewPlace = () => {
     setSelectedPlace(null);
     setAddingPlace(true);
-    setDetailsOpen(true);
   };
 
   const validate = (): string | null => {
@@ -229,7 +214,6 @@ function Submit() {
           subtype_id: subtypeId || undefined,
           price_thb: price ? Number(price) : undefined,
           photo_url: photoUrl,
-          note: note.trim() || undefined,
         },
       });
       setStep("done");
@@ -280,10 +264,7 @@ function Submit() {
     setCategoryId("");
     setSubtypeId("");
     setPrice("");
-    setCustomPrice(false);
-    setNote("");
     setPhotoUrl("");
-    setDetailsOpen(false);
     setDuplicates(null);
   };
 
@@ -383,9 +364,7 @@ function Submit() {
       <AppShell>
         <section className="mx-auto max-w-xl text-center">
           <p className="editorial-kicker text-primary">{t("nav_submit")}</p>
-          <h1 className="type-page-title mt-3">
-            {copy("Start with the dish", "เริ่มจากรูปจาน")}
-          </h1>
+          <h1 className="type-page-title mt-3">{copy("Start with the dish", "เริ่มจากรูปจาน")}</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {copy(
               "Choose a clear photo. Place, category, dish type and name come next.",
@@ -413,7 +392,13 @@ function Submit() {
     <AppShell>
       <div className="mx-auto max-w-xl overflow-hidden rounded-lg border border-border bg-card">
         <div className="relative aspect-[4/5] bg-muted">
-          <img src={photoUrl} alt="" width={900} height={1125} className="h-full w-full object-cover" />
+          <img
+            src={photoUrl}
+            alt=""
+            width={900}
+            height={1125}
+            className="h-full w-full object-cover"
+          />
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -426,9 +411,7 @@ function Submit() {
         <form onSubmit={reviewBeforeSubmit} className="space-y-5 p-4 md:p-6">
           <div>
             <p className="editorial-kicker text-primary">{t("nav_submit")}</p>
-            <h1 className="type-page-title mt-2">
-              {copy("Post this dish", "ส่งจานนี้")}
-            </h1>
+            <h1 className="type-page-title mt-2">{copy("Post this dish", "ส่งจานนี้")}</h1>
           </div>
 
           <section>
@@ -497,17 +480,59 @@ function Submit() {
                 ) : null}
               </div>
             )}
+            {addingPlace && !selectedPlace ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>{t("choose_area")} *</Label>
+                  <Select value={areaId} onValueChange={setAreaId}>
+                    <SelectTrigger className="mt-2 min-h-11">
+                      <SelectValue placeholder={t("choose_area")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(areas.data ?? []).map(
+                        (area: { id: string; name_en?: string; name_th?: string }) => (
+                          <SelectItem key={area.id} value={area.id}>
+                            {localizedName(area, lang)}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>
+                    {copy("Address", "ที่อยู่")} ({t("optional")})
+                  </Label>
+                  <Input
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    maxLength={300}
+                    placeholder={copy("Street or landmark", "ถนนหรือจุดสังเกต")}
+                    className="mt-2 h-11"
+                  />
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section>
-            <Label>{copy("Category", "หมวด")} *</Label>
-            <div className="mt-2">
+            <Label>{copy("Dish", "จาน")} *</Label>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
               <CategoryPicker
                 categories={categories.data ?? []}
                 value={categoryId}
                 lang={lang}
                 placeholder={t("choose_category")}
                 onChange={(value) => selectCategory(value)}
+              />
+              <Input
+                value={primaryName}
+                onChange={(event) => setPrimaryName(event.target.value)}
+                placeholder={lang === "th" ? "ชื่อจาน" : "Dish name"}
+                aria-label={t("dish_name")}
+                maxLength={120}
+                required
+                className="h-12 text-base"
               />
             </div>
           </section>
@@ -522,10 +547,9 @@ function Submit() {
           ) : null}
 
           {categoryScoped && activeSubtypes.length > 0 ? (
-            <section>
-              <Label>{copy("Dish type", "ประเภทจาน")} *</Label>
+            <section className="-mt-2">
               <Select value={subtypeId} onValueChange={setSubtypeId}>
-                <SelectTrigger className="mt-2 min-h-11">
+                <SelectTrigger className="min-h-11">
                   <SelectValue placeholder={t("choose_dish_type")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -540,46 +564,8 @@ function Submit() {
           ) : null}
 
           <section>
-            <Label>{t("dish_name")} *</Label>
-            <Input
-              value={primaryName}
-              onChange={(event) => setPrimaryName(event.target.value)}
-              placeholder={lang === "th" ? "ชื่อจานภาษาไทย" : "Dish name in English"}
-              maxLength={120}
-              required
-              className="mt-2 h-12 text-base"
-            />
-          </section>
-
-          <section>
             <Label>{copy("Price (THB)", "ราคา (บาท)")}</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <PriceChip
-                active={!price && !customPrice}
-                onClick={() => {
-                  setPrice("");
-                  setCustomPrice(false);
-                }}
-              >
-                {copy("Skip", "ข้าม")}
-              </PriceChip>
-              {PRICE_CHIPS.map((value) => (
-                <PriceChip
-                  key={value}
-                  active={price === value && !customPrice}
-                  onClick={() => {
-                    setPrice(value);
-                    setCustomPrice(false);
-                  }}
-                >
-                  {value}
-                </PriceChip>
-              ))}
-              <PriceChip active={customPrice} onClick={() => setCustomPrice(true)}>
-                {copy("Custom", "กำหนดเอง")}
-              </PriceChip>
-            </div>
-            {customPrice ? (
+            <div className="relative mt-2">
               <Input
                 inputMode="numeric"
                 type="number"
@@ -587,80 +573,16 @@ function Submit() {
                 onChange={(event) => setPrice(event.target.value)}
                 min={0}
                 max={100000}
-                placeholder="THB"
-                className="mt-2 h-12 text-base"
+                placeholder={t("optional")}
+                className="h-12 pr-16 text-base"
               />
-            ) : null}
+              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-semibold text-muted-foreground">
+                THB
+              </span>
+            </div>
           </section>
 
-          <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-            <CollapsibleTrigger asChild>
-              <Button type="button" variant="outline" className="min-h-11 w-full justify-between">
-                {t("more_details")}
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
-                  aria-hidden="true"
-                />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4 space-y-4">
-              <div>
-                <Label>{lang === "th" ? t("dish_name_en") : t("dish_name_th")}</Label>
-                <Input
-                  value={secondaryNameValue}
-                  onChange={(event) => setSecondaryName(event.target.value)}
-                  maxLength={120}
-                  placeholder={t("optional")}
-                  className="mt-2"
-                />
-              </div>
-
-              {addingPlace && !selectedPlace ? (
-                <>
-                  <div>
-                    <Label>{t("choose_area")} *</Label>
-                    <Select value={areaId} onValueChange={setAreaId}>
-                      <SelectTrigger className="mt-2 min-h-11">
-                        <SelectValue placeholder={t("choose_area")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(areas.data ?? []).map((area: { id: string; name_en?: string; name_th?: string }) => (
-                          <SelectItem key={area.id} value={area.id}>
-                            {localizedName(area, lang)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{copy("Address", "ที่อยู่")} ({t("optional")})</Label>
-                    <Input
-                      value={address}
-                      onChange={(event) => setAddress(event.target.value)}
-                      maxLength={300}
-                      className="mt-2"
-                    />
-                  </div>
-                </>
-              ) : null}
-
-              <div>
-                <Label>{copy("Note", "หมายเหตุ")} ({t("optional")})</Label>
-                <Textarea
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  maxLength={500}
-                  className="mt-2"
-                />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Button
-            type="submit"
-            className="h-12 w-full"
-            disabled={submitting || categoryIncomplete}
-          >
+          <Button type="submit" className="h-12 w-full" disabled={submitting || categoryIncomplete}>
             {submitting ? t("saving") : copy("Submit for review", "ส่งให้ตรวจสอบ")}
           </Button>
         </form>
@@ -690,30 +612,6 @@ function PhotoInput({
         input.value = "";
       }}
     />
-  );
-}
-
-function PriceChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`min-h-11 rounded-full border px-4 py-2 text-sm font-bold ${
-        active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-card text-muted-foreground"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
