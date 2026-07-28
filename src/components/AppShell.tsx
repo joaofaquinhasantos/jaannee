@@ -1,11 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
 import { BarChart3, Home, PlusCircle, ShieldCheck, UserRound } from "lucide-react";
+import { useAuthUser } from "@/lib/use-auth";
 
 export function AppShell({
   children,
@@ -17,23 +16,13 @@ export function AppShell({
   fullBleed?: boolean;
 }) {
   const { t, lang, setLang } = useI18n();
-  const [email, setEmail] = useState<string | null>(null);
+  const auth = useAuthUser();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
-  useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => setEmail(data.session?.user?.email ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) =>
-      setEmail(s?.user?.email ?? null),
-    );
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
   const adminQ = useQuery({
-    queryKey: ["is-admin", email],
+    queryKey: ["is-admin", auth.userId],
     queryFn: () => amIAdmin(),
-    enabled: !!email,
+    enabled: auth.status === "in",
   });
   const isAdmin = !!adminQ.data?.admin;
   const noir = tone === "noir";
@@ -99,7 +88,7 @@ export function AppShell({
             >
               {lang === "en" ? "TH" : "EN"}
             </button>
-            {email ? (
+            {auth.status === "in" ? (
               <Link to="/profile">
                 <Button
                   variant="outline"
@@ -110,10 +99,12 @@ export function AppShell({
                   {t("nav_profile")}
                 </Button>
               </Link>
-            ) : (
+            ) : auth.status === "out" ? (
               <Link to="/auth">
                 <Button size="sm">{t("sign_in")}</Button>
               </Link>
+            ) : (
+              <span className="h-9 w-20 animate-pulse bg-white/10" aria-label={t("loading")} />
             )}
           </div>
         </div>

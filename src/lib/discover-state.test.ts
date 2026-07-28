@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hasActiveDiscoverFilters, shouldShowCategoryGallery } from "@/lib/discover-state";
+import {
+  discoverRows,
+  hasActiveDiscoverFilters,
+  shouldShowCategoryGallery,
+} from "@/lib/discover-state";
 
 describe("Discover empty-state selection", () => {
   it("shows the category gallery only before a filter is selected", () => {
@@ -16,5 +20,12 @@ describe("Discover empty-state selection", () => {
 
   it("does not show an empty category gallery", () => {
     expect(shouldShowCategoryGallery({}, 0)).toBe(false);
+  });
+
+  it("uses an empty list while a filtered query is still loading", () => {
+    expect(discoverRows(true, undefined, [{ id: "bootstrap" }])).toEqual([]);
+    expect(discoverRows(true, [{ id: "filtered" }], [{ id: "bootstrap" }])).toEqual([
+      { id: "filtered" },
+    ]);
   });
 });
