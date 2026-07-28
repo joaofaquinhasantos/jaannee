@@ -1041,11 +1041,15 @@ export const myProfile = createServerFn({ method: "GET" })
         .eq("dish.status", "approved")
         .order("created_at", { ascending: false }),
     ]);
+    const postedWithTriedCounts = await withTriedCounts(
+      publicClient(),
+      posted.data ?? [],
+    );
     return {
       profile: profile.data ?? null,
       tried: tried.data ?? [],
       compared: compared.data ?? [],
-      posted: posted.data ?? [],
+      posted: postedWithTriedCounts,
       want_to_try: wantToTry.data ?? [],
       followers_count: followers.data?.length ?? 0,
       following_count: following.data?.length ?? 0,
