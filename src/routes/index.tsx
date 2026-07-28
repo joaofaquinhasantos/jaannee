@@ -12,7 +12,7 @@ import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 import { hasActiveDiscoverFilters, shouldShowCategoryGallery } from "@/lib/discover-state";
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(discoverBootstrapQuery),
+  loader: () => getDiscoverBootstrap(),
   head: () => ({
     meta: [
       { title: "JaanNee — Bangkok dishes, ranked by diners" },
@@ -86,7 +86,11 @@ function Index() {
   const [subtypeSlug, setSubtypeSlug] = useState<string | undefined>();
   const [areaSlug, setAreaSlug] = useState<string | undefined>();
 
-  const bootstrap = useQuery(discoverBootstrapQuery);
+  const loadedBootstrap = Route.useLoaderData();
+  const bootstrap = useQuery({
+    ...discoverBootstrapQuery,
+    initialData: loadedBootstrap,
+  });
   const categoryRows = (bootstrap.data?.categories ?? []) as CategoryRow[];
   const areaRows = (bootstrap.data?.areas ?? []) as AreaRow[];
   const selectedCategory = categoryRows.find((item) => item.slug === categorySlug);

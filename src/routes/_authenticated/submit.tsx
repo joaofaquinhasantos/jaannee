@@ -34,7 +34,7 @@ import {
 import { useAuthUser } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/submit")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(submitTaxonomyQuery),
+  loader: () => getPublicTaxonomy(),
   head: () => ({
     meta: [
       { title: "Add a dish — JaanNee" },
@@ -95,7 +95,11 @@ function Submit() {
   const navigate = useNavigate();
   const auth = useAuthUser();
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const taxonomy = useQuery(submitTaxonomyQuery);
+  const loadedTaxonomy = Route.useLoaderData();
+  const taxonomy = useQuery({
+    ...submitTaxonomyQuery,
+    initialData: loadedTaxonomy,
+  });
   const categories = { data: taxonomy.data?.categories ?? [] };
   const areas = { data: taxonomy.data?.areas ?? [] };
 
