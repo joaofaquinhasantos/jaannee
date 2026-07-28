@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
@@ -20,6 +20,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryPicker } from "@/components/CategoryPicker";
 
+type CompareSearch = {
+  dish?: string;
+  other?: string;
+  category?: string;
+};
+
 export const Route = createFileRoute("/compare")({
   head: () => ({
     meta: [
@@ -27,39 +33,30 @@ export const Route = createFileRoute("/compare")({
       {
         name: "description",
         content:
-          "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the JaanNee ranking for that plate.",
+          "Pick two dishes you have tried in the same ranking pool and choose the one you prefer.",
       },
-      { property: "og:title", content: "Compare two dishes — JaanNee" },
-      {
-        property: "og:description",
-        content:
-          "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking.",
-      },
-      { property: "og:url", content: "https://jaannee.lovable.app/compare" },
-      { name: "twitter:title", content: "Compare two dishes — JaanNee" },
-      {
-        name: "twitter:description",
-        content:
-          "Pick two Thai dishes in the same category and choose the one you prefer. Every diner comparison shapes the ranking.",
-      },
+      { name: "robots", content: "noindex, follow" },
     ],
-    links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
   }),
-  validateSearch: (s: Record<string, unknown>): { dish?: string; category?: string } => {
-    const out: { dish?: string; category?: string } = {};
-    if (typeof s.dish === "string") out.dish = s.dish;
-    if (typeof s.category === "string") out.category = s.category;
+  validateSearch: (search: Record<string, unknown>): CompareSearch => {
+    const out: CompareSearch = {};
+    if (typeof search.dish === "string") out.dish = search.dish;
+    if (typeof search.other === "string") out.other = search.other;
+    if (typeof search.category === "string") out.category = search.category;
     return out;
+  },
+  beforeLoad: ({ search }) => {
+    if (!search.dish && !search.category) throw redirect({ to: "/" });
   },
   component: Compare,
 });
 
 function Compare() {
   const { t, lang } = useI18n();
-  const nav = useNavigate();
   const search = Route.useSearch();
   const qc = useQueryClient();
   const [authState, setAuthState] = useState<"loading" | "in" | "out">("loading");
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthState(data.user ? "in" : "out"));
   }, []);
@@ -78,49 +75,51 @@ function Compare() {
   const triedDishes = (triedQ.data ?? []) as any[];
   const categoriesById = useMemo(() => {
     const map = new Map<string, any>();
-    for (const c of (categoriesQ.data ?? []) as any[]) map.set(c.id, c);
+    for (const category of (categoriesQ.data ?? []) as any[]) map.set(category.id, category);
     return map;
   }, [categoriesQ.data]);
 
   const eligibleCategories = useMemo(() => {
     const byId = new Map<string, any>();
-    for (const d of triedDishes) {
-      if (!d.category?.id || byId.has(d.category.id)) continue;
-      byId.set(d.category.id, categoriesById.get(d.category.id) ?? d.category);
+    for (const dish of triedDishes) {
+      if (!dish.category?.id || byId.has(dish.category.id)) continue;
+      byId.set(dish.category.id, categoriesById.get(dish.category.id) ?? dish.category);
     }
     return [...byId.values()];
   }, [triedDishes, categoriesById]);
 
-  const [cat, setCat] = useState<string | undefined>(undefined);
-  const [subtype, setSubtype] = useState<string | undefined>(undefined);
-  const [aId, setAId] = useState<string | undefined>(undefined);
-  const [bId, setBId] = useState<string | undefined>(undefined);
+  const [cat, setCat] = useState<string | undefined>();
+  const [subtype, setSubtype] = useState<string | undefined>();
+  const [aId, setAId] = useState<string | undefined>();
+  const [bId, setBId] = useState<string | undefined>();
   const [preselectIgnored, setPreselectIgnored] = useState(false);
 
-  const selectedCat = eligibleCategories.find((c: any) => c.slug === cat);
+  const selectedCat = eligibleCategories.find((category: any) => category.slug === cat);
   const triedInCat = useMemo(
-    () => triedDishes.filter((d) => d.category?.slug === cat),
+    () => triedDishes.filter((dish) => dish.category?.slug === cat),
     [triedDishes, cat],
   );
   const activeCategorySubtypes = useMemo(() => {
-    const subs = ((selectedCat?.subtypes ?? []) as any[]).filter((s) => s.is_active === true);
-    return subs.sort(
+    const subtypes = ((selectedCat?.subtypes ?? []) as any[]).filter(
+      (item) => item.is_active === true,
+    );
+    return subtypes.sort(
       (a: any, b: any) =>
         (a.display_order ?? 0) - (b.display_order ?? 0) ||
         String(a.name_en).localeCompare(String(b.name_en)),
     );
   }, [selectedCat]);
-  const scoped = !!selectedCat?.requires_subtype || activeCategorySubtypes.length > 0;
+  const scoped = Boolean(selectedCat?.requires_subtype) || activeCategorySubtypes.length > 0;
+
   const eligibleSubtypes = useMemo(() => {
     const activeById = new Map<string, any>();
-    for (const s of activeCategorySubtypes) activeById.set(s.id, s);
+    for (const item of activeCategorySubtypes) activeById.set(item.id, item);
     const byId = new Map<string, any>();
-    for (const d of triedInCat) {
-      const sid = d.subtype?.id;
-      if (!sid || byId.has(sid)) continue;
-      const active = activeById.get(sid);
-      if (!active) continue;
-      byId.set(sid, active);
+    for (const dish of triedInCat) {
+      const subtypeId = dish.subtype?.id;
+      if (!subtypeId || byId.has(subtypeId)) continue;
+      const active = activeById.get(subtypeId);
+      if (active) byId.set(subtypeId, active);
     }
     return [...byId.values()].sort(
       (a: any, b: any) =>
@@ -130,55 +129,67 @@ function Compare() {
   }, [triedInCat, activeCategorySubtypes]);
 
   const list = useMemo(() => {
-    if (!cat) return [] as any[];
-    if (scoped && !subtype) return [];
+    if (!cat || (scoped && !subtype)) return [] as any[];
     if (scoped) {
-      const activeSlugs = new Set(activeCategorySubtypes.map((s: any) => s.slug));
+      const activeSlugs = new Set(activeCategorySubtypes.map((item: any) => item.slug));
       return triedInCat.filter(
-        (d) => d.subtype?.slug === subtype && activeSlugs.has(d.subtype?.slug),
+        (dish) => dish.subtype?.slug === subtype && activeSlugs.has(dish.subtype?.slug),
       );
     }
-    return triedInCat.filter((d) => !d.subtype_id);
+    return triedInCat.filter((dish) => !dish.subtype_id);
   }, [cat, subtype, scoped, triedInCat, activeCategorySubtypes]);
 
   useEffect(() => {
     if (cat || eligibleCategories.length === 0) return;
-    const pre = search.category
-      ? eligibleCategories.find((c: any) => c.slug === search.category)
+    const requested = search.category
+      ? eligibleCategories.find((category: any) => category.slug === search.category)
       : undefined;
-    setCat((pre ?? eligibleCategories[0]).slug);
+    setCat((requested ?? eligibleCategories[0]).slug);
   }, [eligibleCategories, cat, search.category]);
 
   useEffect(() => {
     if (!search.dish || authState !== "in" || !triedQ.isSuccess) return;
-    const match = triedDishes.find((d) => d.id === search.dish);
-    if (!match) {
+    const first = triedDishes.find((dish) => dish.id === search.dish);
+    if (!first) {
       setPreselectIgnored(true);
       return;
     }
-    setCat(match.category?.slug);
-    if (match.subtype?.slug) setSubtype(match.subtype.slug);
-    setAId(match.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triedQ.isSuccess]);
 
-  const a = useMemo(() => list.find((d) => d.id === aId), [list, aId]);
-  const b = useMemo(() => list.find((d) => d.id === bId), [list, bId]);
+    setCat(first.category?.slug);
+    setSubtype(first.subtype?.slug);
+    setAId(first.id);
+
+    if (!search.other) return;
+    const second = triedDishes.find((dish) => dish.id === search.other);
+    const sameCategory = second?.category?.id === first.category?.id;
+    const sameSubtype = (second?.subtype?.id ?? null) === (first.subtype?.id ?? null);
+    if (second && sameCategory && sameSubtype) setBId(second.id);
+    else setPreselectIgnored(true);
+  }, [authState, search.dish, search.other, triedDishes, triedQ.isSuccess]);
+
+  const a = useMemo(() => list.find((dish) => dish.id === aId), [list, aId]);
+  const b = useMemo(() => list.find((dish) => dish.id === bId), [list, bId]);
 
   const mut = useMutation({
     mutationFn: async (winnerId: string) => {
       if (!a || !b)
         throw new Error(lang === "th" ? "เลือกจานทั้งสองจาน" : "Choose both dishes");
       if (a.id === b.id)
-        throw new Error(lang === "th" ? "เลือกจานที่แตกต่างกันสองจาน" : "Choose two different dishes");
+        throw new Error(
+          lang === "th" ? "เลือกจานที่แตกต่างกันสองจาน" : "Choose two different dishes",
+        );
       if (a.category?.id !== b.category?.id)
-        throw new Error(lang === "th" ? "จานต้องอยู่ในหมวดเดียวกัน" : "Dishes must be in the same category");
+        throw new Error(
+          lang === "th" ? "จานต้องอยู่ในหมวดเดียวกัน" : "Dishes must be in the same category",
+        );
       if (scoped && a.subtype?.id !== b.subtype?.id)
-        throw new Error(lang === "th" ? "จานต้องเป็นประเภทเดียวกัน" : "Dishes must be the same dish type");
+        throw new Error(
+          lang === "th" ? "จานต้องเป็นประเภทเดียวกัน" : "Dishes must be the same dish type",
+        );
       return submitComparison({ data: { dishAId: a.id, dishBId: b.id, winnerId } });
     },
-    onSuccess: (res: any) => {
-      if (res?.ok === false) return;
+    onSuccess: (result: any) => {
+      if (result?.ok === false) return;
       toast.success(t("comparison_saved"));
       setAId(undefined);
       setBId(undefined);
@@ -188,8 +199,14 @@ function Compare() {
       qc.invalidateQueries({ queryKey: ["dish"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: any) => toast.error(error.message),
   });
+
+  const returnParams = new URLSearchParams();
+  if (search.dish) returnParams.set("dish", search.dish);
+  if (search.other) returnParams.set("other", search.other);
+  if (search.category) returnParams.set("category", search.category);
+  const returnTo = `/compare?${returnParams.toString()}`;
 
   if (authState === "loading") {
     return (
@@ -205,7 +222,7 @@ function Compare() {
         <section className="mt-10 max-w-lg rounded-lg border border-border bg-card p-6">
           <h1 className="type-page-title">{t("sign_in_to_compare")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">{t("sign_in_compare_body")}</p>
-          <Link to="/auth" search={{ redirect: "/compare" }}>
+          <Link to="/auth" search={{ redirect: returnTo }}>
             <Button className="mt-5">{t("sign_in")}</Button>
           </Link>
         </section>
@@ -220,14 +237,10 @@ function Compare() {
     <AppShell>
       <section className="editorial-rule pb-5 pt-4 md:pb-7">
         <p className="editorial-kicker text-primary">{t("head_to_head")}</p>
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <div>
-            <h1 className="type-page-title mt-3">{t("nav_compare")}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
-              {t("compare_page_intro")}
-            </p>
-          </div>
-        </div>
+        <h1 className="type-page-title mt-3">{t("nav_compare")}</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:mt-3 md:text-base md:leading-7">
+          {t("compare_page_intro")}
+        </p>
       </section>
 
       {preselectIgnored && (
@@ -269,19 +282,21 @@ function Compare() {
               }}
             />
           </div>
+
           {scoped && eligibleSubtypes.length > 0 && (
             <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-              {eligibleSubtypes.map((s: any) => (
+              {eligibleSubtypes.map((item: any) => (
                 <button
-                  key={s.id}
+                  key={item.id}
+                  type="button"
                   onClick={() => {
-                    setSubtype(s.slug);
+                    setSubtype(item.slug);
                     setAId(undefined);
                     setBId(undefined);
                   }}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${subtype === item.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                 >
-                  {lang === "th" ? s.name_th || s.name_en : s.name_en}
+                  {lang === "th" ? item.name_th || item.name_en : item.name_en}
                 </button>
               ))}
             </div>
@@ -305,14 +320,14 @@ function Compare() {
                 label={t("dish_a")}
                 value={aId}
                 onChange={setAId}
-                options={list.filter((d) => d.id !== bId)}
+                options={list.filter((dish) => dish.id !== bId)}
                 lang={lang}
               />
               <DishPicker
                 label={t("dish_b")}
                 value={bId}
                 onChange={setBId}
-                options={list.filter((d) => d.id !== aId)}
+                options={list.filter((dish) => dish.id !== aId)}
                 lang={lang}
               />
             </div>
@@ -371,7 +386,7 @@ function DishPicker({
 }: {
   label: string;
   value?: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   options: any[];
   lang: string;
 }) {
@@ -384,9 +399,9 @@ function DishPicker({
           <SelectValue placeholder={t("pick_dish")} />
         </SelectTrigger>
         <SelectContent>
-          {options.map((d) => (
-            <SelectItem key={d.id} value={d.id}>
-              {(lang === "th" && d.name_th) || d.name_en} - {d.place?.name}
+          {options.map((dish) => (
+            <SelectItem key={dish.id} value={dish.id}>
+              {(lang === "th" && dish.name_th) || dish.name_en} - {dish.place?.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -409,6 +424,7 @@ function PickCard({
   const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
   return (
     <button
+      type="button"
       onClick={onPick}
       disabled={disabled}
       className="group relative min-h-[24rem] overflow-hidden bg-ink text-left transition-[filter,transform] hover:z-10 hover:scale-[1.01] hover:brightness-110 disabled:opacity-60 md:min-h-[34rem]"
