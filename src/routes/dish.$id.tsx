@@ -14,7 +14,6 @@ import { DishCard, statusLabel, toneClass } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
 import { FoodPostCreator } from "@/components/FoodPostCreator";
-import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -451,11 +450,6 @@ function DishPage() {
                   {isSaved ? t("saved_for_later") : t("want_to_try")}
                 </Button>
               ) : null}
-              <ShareButton
-                url={shareUrl}
-                title={name}
-                text={`${dish.place?.name ?? ""}${dish.price_thb != null ? ` · THB ${Number(dish.price_thb).toFixed(0)}` : ""} · ${status.text}`}
-              />
               <FoodPostCreator dish={dish} url={shareUrl} isTried={isTried} isSaved={isSaved} />
               {rank > 0 ? <RankingShare dish={dish} rank={rank} /> : null}
               {auth.status === "in" && auth.userId === dish.submitted_by ? (
@@ -653,7 +647,7 @@ function ReportDialog({ dishId }: { dishId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" className="min-h-11">
+        <Button variant="outline" className="min-h-11">
           {t("report")}
         </Button>
       </DialogTrigger>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ImagePlus } from "lucide-react";
+import { Facebook, Instagram, Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import { ShareCardActions } from "@/components/ShareCardActions";
 import { useI18n } from "@/lib/i18n";
-import { buildFoodPostCard, type FoodPostMode, type ShareDish } from "@/lib/share-card";
+import { buildFoodPostCard, shareText, type FoodPostMode, type ShareDish } from "@/lib/share-card";
 import type { Bilingual } from "@/lib/names";
 
 type FoodPostDish = ShareDish & {
@@ -34,7 +35,9 @@ export function FoodPostCreator({
   isSaved: boolean;
 }) {
   const { t, lang } = useI18n();
+  const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const [mode, setMode] = useState<FoodPostMode>(isTried ? "tried" : isSaved ? "saved" : "find");
+  const [sharing, setSharing] = useState<"instagram" | "facebook" | null>(null);
 
   const options = useMemo(
     () =>
@@ -49,12 +52,63 @@ export function FoodPostCreator({
   const activeMode = options.some((option) => option.mode === mode) ? mode : options[0].mode;
   const model = buildFoodPostCard({ lang, dish, mode: activeMode, url });
 
+  const shareToInstagram = async () => {
+    setSharing("instagram");
+    try {
+      const { renderShareCard, downloadBlob } = await import("@/lib/share-card-canvas");
+      const blob = await renderShareCard(model, "post");
+      if (!blob) throw new Error("Image could not be created");
+      const file = new File([blob], `jaannee-food-${dish.id.slice(0, 8)}.png`, {
+        type: "image/png",
+      });
+      if (
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file], text: shareText(model), url: model.url });
+        return;
+      }
+      downloadBlob(blob, file.name);
+      toast.success(
+        copy(
+          "Post image saved. Open Instagram to share it.",
+          "บันทึกรูปโพสต์แล้ว เปิด Instagram เพื่อแชร์ได้เลย",
+        ),
+      );
+    } catch (error) {
+      if ((error as { name?: string } | null)?.name !== "AbortError") {
+        toast.error(t("image_failed"));
+      }
+    } finally {
+      setSharing(null);
+    }
+  };
+
+  const shareToFacebook = async () => {
+    setSharing("facebook");
+    const popup = window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(model.url)}`,
+      "_blank",
+      "noopener,noreferrer,width=720,height=640",
+    );
+    if (!popup) {
+      try {
+        await navigator.clipboard.writeText(model.url);
+        toast.success(t("link_copied"));
+      } catch {
+        toast.error(t("error_generic"));
+      }
+    }
+    setSharing(null);
+  };
+
   return (
     <Drawer>
       <DrawerTrigger asChild>
         <Button type="button" variant="outline" className="min-h-11 gap-2">
-          <ImagePlus className="h-4 w-4" aria-hidden="true" />
-          {t("create_food_post")}
+          <Share2 className="h-4 w-4" aria-hidden="true" />
+          {t("share")}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
@@ -100,6 +154,29 @@ export function FoodPostCreator({
                 {option.label}
               </Button>
             ))}
+          </div>
+
+          <div className="mb-5 grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={shareToInstagram}
+              disabled={sharing !== null}
+              className="min-h-12 gap-2"
+            >
+              <Instagram className="h-5 w-5" aria-hidden="true" />
+              Instagram
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={shareToFacebook}
+              disabled={sharing !== null}
+              className="min-h-12 gap-2"
+            >
+              <Facebook className="h-5 w-5" aria-hidden="true" />
+              Facebook
+            </Button>
           </div>
 
           <ShareCardActions
