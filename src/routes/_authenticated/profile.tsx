@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
 import { ReadyToComparePanel } from "@/components/ContextualCompare";
+import { PostActivity, PostProgressTimeline } from "@/components/PostActivity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -115,6 +116,8 @@ function Profile() {
         <ReadyToComparePanel />
       </div>
 
+      <PostActivity dishes={posted} />
+
       <section className="mt-8 rounded-lg border border-border bg-secondary/35 p-4 md:p-6">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
           {copy("Plan your next meal", "วางแผนมื้อต่อไป")}
@@ -159,7 +162,12 @@ function Profile() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {posted.map((dish: any) =>
               dish.status === "approved" ? (
-                <DishCard key={dish.id} dish={dish} />
+                <div key={dish.id} className="overflow-hidden rounded-lg border border-border bg-card">
+                  <DishCard dish={dish} />
+                  <div className="border-t border-border px-4 pb-4">
+                    <PostProgressTimeline dish={dish} />
+                  </div>
+                </div>
               ) : (
                 <PrivateSubmissionCard key={dish.id} dish={dish} />
               ),
@@ -294,6 +302,7 @@ function PrivateSubmissionCard({ dish }: { dish: any }) {
         {dish.place?.name ? (
           <p className="mt-1 text-sm text-muted-foreground">{dish.place.name}</p>
         ) : null}
+        <PostProgressTimeline dish={dish} />
       </div>
     </article>
   );
