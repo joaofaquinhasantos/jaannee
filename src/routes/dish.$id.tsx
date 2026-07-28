@@ -13,6 +13,7 @@ import {
 import { DishCard, statusLabel, toneClass } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
+import { FoodPostCreator } from "@/components/FoodPostCreator";
 import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import {
@@ -431,6 +432,7 @@ function DishPage() {
                 title={name}
                 text={`${dish.place?.name ?? ""}${dish.price_thb != null ? ` · THB ${Number(dish.price_thb).toFixed(0)}` : ""} · ${status.text}`}
               />
+              <FoodPostCreator dish={dish} url={shareUrl} isTried={isTried} isSaved={isSaved} />
               {rank > 0 ? <RankingShare dish={dish} rank={rank} /> : null}
               {dish.place ? (
                 <a href={mapsDirectionsUrl(dish.place)} target="_blank" rel="noreferrer">

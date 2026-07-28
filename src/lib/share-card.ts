@@ -9,11 +9,12 @@ import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 
 export type ShareFormat = "story" | "post" | "square";
 
-export const SHARE_FORMATS: Record<ShareFormat, { width: number; height: number; label: string }> = {
-  story: { width: 1080, height: 1920, label: "9:16" },
-  post: { width: 1080, height: 1350, label: "4:5" },
-  square: { width: 1080, height: 1080, label: "1:1" },
-};
+export const SHARE_FORMATS: Record<ShareFormat, { width: number; height: number; label: string }> =
+  {
+    story: { width: 1080, height: 1920, label: "9:16" },
+    post: { width: 1080, height: 1350, label: "4:5" },
+    square: { width: 1080, height: 1080, label: "1:1" },
+  };
 
 export type ShareDish = Bilingual & {
   id: string;
@@ -32,6 +33,12 @@ const COPY = {
   tagline: { en: "Rank the dish, not the restaurant.", th: "จัดอันดับที่จาน ไม่ใช่ที่ร้าน" },
   comparisons: { en: "diner comparisons", th: "การเปรียบเทียบจากนักชิม" },
   rank_prefix: { en: "RANK", th: "อันดับ" },
+  kicker_food_find: { en: "BANGKOK FOOD FIND", th: "จานน่าลองในกรุงเทพฯ" },
+  kicker_food_tried: { en: "WHAT I ATE", th: "จานที่ฉันกิน" },
+  kicker_food_saved: { en: "ON MY LIST", th: "จานที่อยากลอง" },
+  food_find: { en: "Discovered on JaanNee", th: "ค้นพบจาก JaanNee" },
+  food_tried: { en: "Tried by me", th: "ฉันเคยกินจานนี้" },
+  food_saved: { en: "I want to try this", th: "ฉันอยากลองจานนี้" },
 } as const;
 
 function copy(key: keyof typeof COPY, lang: Lang): string {
@@ -106,6 +113,65 @@ export type RankingCardModel = {
   url: string;
 };
 
+export type FoodPostMode = "find" | "tried" | "saved";
+
+export type FoodPostCardModel = {
+  kind: "food-post";
+  mode: FoodPostMode;
+  lang: Lang;
+  kicker: string;
+  dishName: string;
+  alternateName: string;
+  placeName: string;
+  areaName: string;
+  photo: string | null;
+  pool: string;
+  priceLabel: string | null;
+  personalLabel: string;
+  tagline: string;
+  url: string;
+};
+
+export function buildFoodPostCard(input: {
+  lang: Lang;
+  dish: ShareDish & {
+    price_thb?: number | null;
+    place?: ({ name?: string | null; area?: Bilingual | null } & Record<string, unknown>) | null;
+  };
+  mode: FoodPostMode;
+  url: string;
+}): FoodPostCardModel {
+  const { dish, lang, mode } = input;
+  const primaryName = localizedName(dish, lang);
+  const secondaryLang: Lang = lang === "en" ? "th" : "en";
+  const alternateName = localizedName(dish, secondaryLang);
+  const areaName = localizedName(dish.place?.area ?? null, lang);
+  const price = Number(dish.price_thb);
+  const kickerKey =
+    mode === "tried"
+      ? "kicker_food_tried"
+      : mode === "saved"
+        ? "kicker_food_saved"
+        : "kicker_food_find";
+  const labelKey = mode === "tried" ? "food_tried" : mode === "saved" ? "food_saved" : "food_find";
+  return {
+    kind: "food-post",
+    mode,
+    lang,
+    kicker: copy(kickerKey, lang),
+    dishName: primaryName,
+    alternateName: alternateName !== primaryName ? alternateName : "",
+    placeName: placeDisplayName(dish.place),
+    areaName,
+    photo: dish.photo_url ?? null,
+    pool: poolLabel(dish, lang),
+    priceLabel: Number.isFinite(price) && price >= 0 ? `THB ${Math.round(price)}` : null,
+    personalLabel: copy(labelKey, lang),
+    tagline: copy("tagline", lang),
+    url: input.url,
+  };
+}
+
 /**
  * Returns null when the dish is not genuinely ranked. A contender must never
  * be able to produce a card that shows a numeric rank.
@@ -138,7 +204,9 @@ export function buildRankingCard(input: {
 }
 
 /** Plain-text body used for the Web Share API and clipboard fallback. */
-export function shareText(model: ComparisonCardModel | RankingCardModel): string {
+export function shareText(
+  model: ComparisonCardModel | RankingCardModel | FoodPostCardModel,
+): string {
   if (model.kind === "comparison") {
     const lines = [
       `${model.winnerName} — ${model.winnerPlace}`.trim(),
@@ -146,6 +214,11 @@ export function shareText(model: ComparisonCardModel | RankingCardModel): string
       model.question,
     ];
     return lines.filter(Boolean).join("\n");
+  }
+  if (model.kind === "food-post") {
+    return [model.dishName, model.placeName, model.areaName, model.personalLabel]
+      .filter(Boolean)
+      .join("\n");
   }
   return [
     `${model.rankPrefix} #${model.rank} — ${model.dishName}`,

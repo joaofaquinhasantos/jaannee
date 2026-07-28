@@ -61,6 +61,19 @@ export const dict = {
   empty_feed: { en: "No dishes yet. Be the first to add one.", th: "ยังไม่มีจาน มาเพิ่มเป็นคนแรก" },
   loading: { en: "Loading…", th: "กำลังโหลด…" },
   share: { en: "Share", th: "แชร์" },
+  create_food_post: { en: "Create food post", th: "สร้างโพสต์อาหาร" },
+  food_post_title: { en: "Make this your food post", th: "สร้างโพสต์อาหารของคุณ" },
+  food_post_body: {
+    en: "Create a branded image for Instagram Stories, feed posts, or anywhere you share food.",
+    th: "สร้างภาพสำหรับ Instagram Story โพสต์ฟีด หรือแชร์จานนี้ได้ทุกที่",
+  },
+  food_post_find: { en: "Food find", th: "จานน่าลอง" },
+  food_post_tried: { en: "What I ate", th: "จานที่ฉันกิน" },
+  food_post_saved: { en: "On my list", th: "จานที่อยากลอง" },
+  food_post_hint: {
+    en: "Choose the message, then share or download the format you need.",
+    th: "เลือกข้อความ แล้วแชร์หรือดาวน์โหลดขนาดที่ต้องการ",
+  },
   hero_title: {
     en: "Find the best version of every dish.",
     th: "หาจานที่ดีที่สุดของแต่ละเมนู",
