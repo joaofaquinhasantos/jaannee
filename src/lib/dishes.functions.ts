@@ -1095,6 +1095,56 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const listMyInterestFollows = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [categories, areas] = await Promise.all([
+      (context.supabase as any)
+        .from("category_follows")
+        .select("category_id")
+        .eq("user_id", context.userId),
+      (context.supabase as any)
+        .from("area_follows")
+        .select("area_id")
+        .eq("user_id", context.userId),
+    ]);
+    const error = categories.error || areas.error;
+    if (error) {
+      if (error.code === "42P01") return { category_ids: [], area_ids: [], available: false };
+      throw new Error(error.message);
+    }
+    return {
+      category_ids: (categories.data ?? []).map((row: { category_id: string }) => row.category_id),
+      area_ids: (areas.data ?? []).map((row: { area_id: string }) => row.area_id),
+      available: true,
+    };
+  });
+
+export const toggleInterestFollow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { kind: "category" | "area"; targetId: string; follow: boolean }) =>
+    z
+      .object({
+        kind: z.enum(["category", "area"]),
+        targetId: z.string().uuid(),
+        follow: z.boolean(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const table = data.kind === "category" ? "category_follows" : "area_follows";
+    const column = data.kind === "category" ? "category_id" : "area_id";
+    const query = (context.supabase as any).from(table);
+    const result = data.follow
+      ? await query.upsert(
+          { user_id: context.userId, [column]: data.targetId },
+          { onConflict: `user_id,${column}` },
+        )
+      : await query.delete().eq("user_id", context.userId).eq(column, data.targetId);
+    if (result.error) throw new Error(result.error.message);
+    return { ok: true };
+  });
+
 export const publicProfile = createServerFn({ method: "GET" })
   .inputValidator((i: { username: string }) =>
     z

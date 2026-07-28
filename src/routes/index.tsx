@@ -6,6 +6,10 @@ import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
 import { ReturnHub } from "@/components/ReturnHub";
+import {
+  InterestFollowControls,
+  useInterestFollows,
+} from "@/components/InterestFollowing";
 import { getDiscoverBootstrap, listDishes } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, secondaryName } from "@/lib/names";
@@ -96,6 +100,7 @@ function Index() {
   const [categorySlug, setCategorySlug] = useState<string | undefined>(search.category);
   const [subtypeSlug, setSubtypeSlug] = useState<string | undefined>();
   const [areaSlug, setAreaSlug] = useState<string | undefined>(search.area);
+  const { auth: interestAuth, follows } = useInterestFollows();
 
   const loadedBootstrap = Route.useLoaderData();
   const bootstrap = useQuery({
@@ -165,6 +170,20 @@ function Index() {
   const leader = ranked.find((dish) => dish.photo_url) ?? contenders.find((dish) => dish.photo_url);
   const categoryPhotos = categoryRows.filter((category) => category.reference_photo_url);
   const publishedDishes = (bootstrap.data?.dishes ?? []) as DishRow[];
+  const followedDishes =
+    interestAuth.status === "in" && follows.available
+      ? publishedDishes
+          .filter(
+            (dish) =>
+              (dish.category?.id && follows.category_ids.includes(dish.category.id)) ||
+              (dish.place?.area?.id && follows.area_ids.includes(dish.place.area.id)),
+          )
+          .sort(
+            (a, b) =>
+              dateValue(b.created_at) - dateValue(a.created_at) || a.id.localeCompare(b.id),
+          )
+          .slice(0, 6)
+      : [];
   const categoryPostCounts = publishedDishes.reduce<Record<string, number>>((counts, dish) => {
     if (dish.category?.id) counts[dish.category.id] = (counts[dish.category.id] ?? 0) + 1;
     return counts;
@@ -201,6 +220,7 @@ function Index() {
             onSubtypeChange={setSubtypeSlug}
             onAreaChange={setAreaSlug}
           />
+          <InterestFollowControls category={selectedCategory} area={selectedArea} />
         </div>
       </div>
 
@@ -261,6 +281,18 @@ function Index() {
                     !contenders.slice(0, 6).some((item) => item.id === dish.id),
                 )
                 .slice(0, 6)}
+            />
+          ) : null}
+
+          {!hasFilters && followedDishes.length > 0 ? (
+            <DishSection
+              eyebrow={copy("Following", "กำลังติดตาม")}
+              title={copy("New for you", "จานใหม่สำหรับคุณ")}
+              description={copy(
+                "Recent dishes from categories and Bangkok areas you follow.",
+                "จานล่าสุดจากหมวดหมู่และย่านในกรุงเทพฯ ที่คุณติดตาม",
+              )}
+              dishes={followedDishes}
             />
           ) : null}
 
