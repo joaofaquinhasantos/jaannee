@@ -410,6 +410,7 @@ function PendingPlaces() {
       areaId: string;
       address?: string;
       status: "approved" | "pending" | "rejected";
+      googleMapsUrl?: string | null;
       lat?: number | null;
       lng?: number | null;
     }) => updatePlaceAdmin({ data: v }),
@@ -448,7 +449,7 @@ function PendingPlaces() {
       areaId: p.area?.id ?? "",
       address: p.address ?? "",
       status: p.status ?? "pending",
-      mapsUrl: "",
+      mapsUrl: p.google_maps_url ?? "",
     });
   };
   const savePlace = async () => {
@@ -463,6 +464,7 @@ function PendingPlaces() {
         areaId: placeForm.areaId,
         address: placeForm.address || undefined,
         status: placeForm.status as "approved" | "pending" | "rejected",
+        googleMapsUrl: placeForm.mapsUrl.trim() || null,
         ...coords,
       });
     } catch (e: any) {
@@ -556,9 +558,7 @@ function PendingPlaces() {
                   {p.address ? ` / ${p.address}` : ""} / {p.status}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {p.lat != null && p.lng != null
-                    ? "Google Maps location saved"
-                    : "Location needed"}
+                  {p.google_maps_url ? "Google Maps link saved" : "Google Maps link needed"}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -914,6 +914,7 @@ function DishAdmin() {
   const [missingPhotoOnly, setMissingPhotoOnly] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [adminPrice, setAdminPrice] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingDish, setDeletingDish] = useState<any | null>(null);
   const [mergeSource, setMergeSource] = useState<any | null>(null);
@@ -931,11 +932,18 @@ function DishAdmin() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-dishes"] });
   const photoMut = useMutation({
     mutationFn: () =>
-      updateDishAdmin({ data: { id: editingPhoto.id, photo_url: photoUrl || undefined } }),
+      updateDishAdmin({
+        data: {
+          id: editingPhoto.id,
+          photo_url: photoUrl || undefined,
+          price_thb: adminPrice.trim() ? Number(adminPrice) : null,
+        },
+      }),
     onSuccess: () => {
-      toast.success("Photo updated");
+      toast.success("Dish updated");
       setEditingPhoto(null);
       setPhotoUrl("");
+      setAdminPrice("");
       invalidate();
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
@@ -1044,9 +1052,10 @@ function DishAdmin() {
                   onClick={() => {
                     setEditingPhoto(d);
                     setPhotoUrl(d.photo_url ?? "");
+                    setAdminPrice(d.price_thb != null ? String(Math.round(d.price_thb)) : "");
                   }}
                 >
-                  Photo
+                  Edit
                 </Button>
                 <Button
                   size="sm"
@@ -1095,7 +1104,7 @@ function DishAdmin() {
       <Dialog open={!!editingPhoto} onOpenChange={(o) => !o && setEditingPhoto(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Update photo</DialogTitle>
+            <DialogTitle>Update dish</DialogTitle>
           </DialogHeader>
           {editingPhoto && (
             <div className="space-y-3">
@@ -1106,6 +1115,19 @@ function DishAdmin() {
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
                   placeholder="/photos/dish.jpg"
+                />
+              </div>
+              <div>
+                <Label>Price (THB)</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100000}
+                  step={1}
+                  value={adminPrice}
+                  onChange={(event) => setAdminPrice(event.target.value)}
+                  placeholder="Optional"
                 />
               </div>
               <div>

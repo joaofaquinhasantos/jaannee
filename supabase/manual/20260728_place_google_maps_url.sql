@@ -1,11 +1,19 @@
--- JaanNee: safely merge duplicate places.
--- Run manually in the Supabase SQL editor before using the Admin merge-place action.
+-- JaanNee: persist the admin-managed Google Maps link for each place.
+-- Run manually in the Supabase SQL editor.
 
 BEGIN;
 
 ALTER TABLE public.places
   ADD COLUMN IF NOT EXISTS google_maps_url text;
 
+ALTER TABLE public.places
+  DROP CONSTRAINT IF EXISTS places_google_maps_url_length;
+
+ALTER TABLE public.places
+  ADD CONSTRAINT places_google_maps_url_length
+  CHECK (google_maps_url IS NULL OR char_length(google_maps_url) <= 2000);
+
+-- Keep the saved link when duplicate places are merged.
 CREATE OR REPLACE FUNCTION public.admin_merge_places(
   _keep_id uuid,
   _remove_id uuid
@@ -29,7 +37,6 @@ BEGIN
   FROM public.places
   WHERE id = _keep_id
   FOR UPDATE;
-
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Place to keep was not found.';
   END IF;
@@ -38,7 +45,6 @@ BEGIN
   FROM public.places
   WHERE id = _remove_id
   FOR UPDATE;
-
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Place to remove was not found.';
   END IF;
@@ -71,7 +77,6 @@ BEGIN
   UPDATE public.dishes
   SET place_id = _keep_id
   WHERE place_id = _remove_id;
-
   GET DIAGNOSTICS moved_count = ROW_COUNT;
 
   DELETE FROM public.places
