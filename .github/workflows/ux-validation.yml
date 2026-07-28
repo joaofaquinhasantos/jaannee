@@ -20,10 +20,28 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --loglevel=error
       - name: Unit tests
-        run: npm run test -- --run
+        shell: bash
+        run: |
+          set +e
+          npm run test -- --run > /tmp/tests.log 2>&1
+          status=$?
+          tail -80 /tmp/tests.log
+          exit $status
       - name: Typecheck
-        run: npm run typecheck
+        shell: bash
+        run: |
+          set +e
+          npm run typecheck > /tmp/typecheck.log 2>&1
+          status=$?
+          tail -120 /tmp/typecheck.log
+          exit $status
       - name: Production build
-        run: npm run build
+        shell: bash
+        run: |
+          set +e
+          npm run build > /tmp/build.log 2>&1
+          status=$?
+          tail -120 /tmp/build.log
+          exit $status
