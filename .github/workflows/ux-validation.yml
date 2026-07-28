@@ -22,26 +22,55 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund --loglevel=error
       - name: Unit tests
+        id: tests
+        continue-on-error: true
         shell: bash
         run: |
           set +e
-          npm run test -- --run > /tmp/tests.log 2>&1
+          npm run test -- --run > tests.log 2>&1
           status=$?
-          tail -80 /tmp/tests.log
+          echo "$status" > tests.status
+          tail -80 tests.log
           exit $status
       - name: Typecheck
+        id: typecheck
+        continue-on-error: true
         shell: bash
         run: |
           set +e
-          npm run typecheck > /tmp/typecheck.log 2>&1
+          npm run typecheck > typecheck.log 2>&1
           status=$?
-          tail -120 /tmp/typecheck.log
+          echo "$status" > typecheck.status
+          tail -120 typecheck.log
           exit $status
       - name: Production build
+        id: build
+        continue-on-error: true
         shell: bash
         run: |
           set +e
-          npm run build > /tmp/build.log 2>&1
+          npm run build > build.log 2>&1
           status=$?
-          tail -120 /tmp/build.log
+          echo "$status" > build.status
+          tail -120 build.log
           exit $status
+      - name: Upload validation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-diagnostics
+          path: |
+            tests.log
+            tests.status
+            typecheck.log
+            typecheck.status
+            build.log
+            build.status
+          retention-days: 3
+      - name: Validation gate
+        if: always()
+        shell: bash
+        run: |
+          test "$(cat tests.status)" = "0"
+          test "$(cat typecheck.status)" = "0"
+          test "$(cat build.status)" = "0"
