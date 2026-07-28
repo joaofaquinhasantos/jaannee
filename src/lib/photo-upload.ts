@@ -13,6 +13,13 @@ export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 // MIME set the server accepts.
 export const PHOTO_ACCEPT_ATTR = ALLOWED_PHOTO_MIME.join(",");
 
+export function storagePathFromPhotoUrl(url: string | null | undefined): string | null {
+  if (!url?.startsWith("/photos/")) return null;
+  const path = url.slice("/photos/".length);
+  if (!path || path.includes("..")) return null;
+  return path;
+}
+
 export function validatePhotoFile(file: File) {
   if (!file) throw new Error("Choose a photo to upload.");
   if (file.size === 0) throw new Error("This file is empty. Pick a different photo.");

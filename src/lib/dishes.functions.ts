@@ -152,7 +152,17 @@ const optionalUuidSchema = z.preprocess(
 );
 
 export const listDishes = createServerFn({ method: "GET" })
-  .inputValidator((i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string }) => i ?? {})
+  .inputValidator(
+    (i: { categorySlug?: string; areaSlug?: string; subtypeSlug?: string; limit?: number }) =>
+      z
+        .object({
+          categorySlug: z.string().optional(),
+          areaSlug: z.string().optional(),
+          subtypeSlug: z.string().optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+        })
+        .parse(i ?? {}),
+  )
   .handler(async ({ data }) => {
     const supabase = publicClient();
     if (data.subtypeSlug && !data.categorySlug) return [];
@@ -204,6 +214,7 @@ export const listDishes = createServerFn({ method: "GET" })
     // Category-only pool: exclude any legacy subtype-bearing dishes at the DB.
     else if (catRes.data && !scoped) q = q.is("subtype_id", null);
     if (areaRes.data) q = q.eq("place.area_id", areaRes.data.id);
+    q = q.limit(data.limit ?? 60);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     type Row = {
@@ -611,14 +622,14 @@ export const listActivityFeed = createServerFn({ method: "GET" })
         .select(`user_id, dish_id, created_at, dish:dishes(${dishSelect})`)
         .eq("dish.status", "approved")
         .order("created_at", { ascending: false })
-        .limit(10),
+        .limit(50),
       (supabase as any)
         .from("dishes")
         .select(dishSelect)
         .eq("status", "approved")
         .not("category_id", "is", null)
         .order("created_at", { ascending: false })
-        .limit(10),
+        .limit(50),
     ]);
     const raw = [
       ...((triesRes.data ?? []) as any[]).map((r) => ({ type: "tried", user_id: r.user_id, created_at: r.created_at, dish: r.dish })),

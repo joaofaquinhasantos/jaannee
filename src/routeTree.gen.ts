@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUsernameRouteImport } from './routes/u.$username'
 import { Route as PhotosSplatRouteImport } from './routes/photos.$'
 import { Route as DishIdRouteImport } from './routes/dish.$id'
+import { Route as ChallengeDishAIdDishBIdRouteImport } from './routes/challenge.$dishAId.$dishBId'
 import { Route as AuthenticatedSubmitRouteImport } from './routes/_authenticated/submit'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -66,6 +67,11 @@ const DishIdRoute = DishIdRouteImport.update({
   path: '/dish/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChallengeDishAIdDishBIdRoute = ChallengeDishAIdDishBIdRouteImport.update({
+  id: '/challenge/$dishAId/$dishBId',
+  path: '/challenge/$dishAId/$dishBId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSubmitRoute = AuthenticatedSubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
+  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
   '/photos/$': typeof PhotosSplatRoute
   '/u/$username': typeof UUsernameRoute
 }
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
+  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
   '/photos/$': typeof PhotosSplatRoute
   '/u/$username': typeof UUsernameRoute
 }
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
+  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
   '/photos/$': typeof PhotosSplatRoute
   '/u/$username': typeof UUsernameRoute
 }
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/submit'
     | '/dish/$id'
+    | '/challenge/$dishAId/$dishBId'
     | '/photos/$'
     | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/submit'
     | '/dish/$id'
+    | '/challenge/$dishAId/$dishBId'
     | '/photos/$'
     | '/u/$username'
   id:
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/submit'
     | '/dish/$id'
+    | '/challenge/$dishAId/$dishBId'
     | '/photos/$'
     | '/u/$username'
   fileRoutesById: FileRoutesById
@@ -174,6 +186,7 @@ export interface RootRouteChildren {
   RankingsRoute: typeof RankingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DishIdRoute: typeof DishIdRoute
+  ChallengeDishAIdDishBIdRoute: typeof ChallengeDishAIdDishBIdRoute
   PhotosSplatRoute: typeof PhotosSplatRoute
   UUsernameRoute: typeof UUsernameRoute
 }
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DishIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/challenge/$dishAId/$dishBId': {
+      id: '/challenge/$dishAId/$dishBId'
+      path: '/challenge/$dishAId/$dishBId'
+      fullPath: '/challenge/$dishAId/$dishBId'
+      preLoaderRoute: typeof ChallengeDishAIdDishBIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/submit': {
       id: '/_authenticated/submit'
       path: '/submit'
@@ -290,6 +310,7 @@ const rootRouteChildren: RootRouteChildren = {
   RankingsRoute: RankingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DishIdRoute: DishIdRoute,
+  ChallengeDishAIdDishBIdRoute: ChallengeDishAIdDishBIdRoute,
   PhotosSplatRoute: PhotosSplatRoute,
   UUsernameRoute: UUsernameRoute,
 }
