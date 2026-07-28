@@ -41,7 +41,7 @@ function Profile() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["profile"], queryFn: () => myProfile() });
   const tried = useMemo(
-    () => (q.data?.tried ?? []).map((r: any) => r.dish).filter(Boolean),
+    () => (q.data?.tried ?? []).map((row: any) => row.dish).filter(Boolean),
     [q.data?.tried],
   );
   const compared = useMemo(() => q.data?.compared ?? [], [q.data?.compared]);
@@ -69,15 +69,15 @@ function Profile() {
 
     for (let i = 0; i < tried.length; i += 1) {
       for (let j = i + 1; j < tried.length; j += 1) {
-        const a = tried[i];
-        const b = tried[j];
-        if (!a?.id || !b?.id || a.category?.id !== b.category?.id) continue;
-        const aSubtype = a.subtype_id ?? a.subtype?.id ?? null;
-        const bSubtype = b.subtype_id ?? b.subtype?.id ?? null;
-        if (aSubtype !== bSubtype) continue;
-        const key = [a.id, b.id].sort().join(":");
+        const first = tried[i];
+        const second = tried[j];
+        if (!first?.id || !second?.id || first.category?.id !== second.category?.id) continue;
+        const firstSubtype = first.subtype_id ?? first.subtype?.id ?? null;
+        const secondSubtype = second.subtype_id ?? second.subtype?.id ?? null;
+        if (firstSubtype !== secondSubtype) continue;
+        const key = [first.id, second.id].sort().join(":");
         if (comparedKeys.has(key)) continue;
-        return [a, b] as const;
+        return [first, second] as const;
       }
     }
     return null;
@@ -107,7 +107,7 @@ function Profile() {
       qc.invalidateQueries({ queryKey: ["profile"] });
       toast.success(lang === "th" ? "บันทึกโปรไฟล์แล้ว" : "Profile saved");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: any) => toast.error(error.message),
   });
 
   const signOut = async () => {
@@ -146,7 +146,7 @@ function Profile() {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             {t("compare_page_intro")}
           </p>
-          <InlineTriedCompare dish={readyPair[0]} other={readyPair[1]} />
+          <InlineTriedCompare dish={readyPair[0]} other={readyPair[1]} onCompared={() => q.refetch()} />
         </section>
       ) : null}
 
@@ -163,19 +163,19 @@ function Profile() {
             <span>{lang === "th" ? "ชื่อผู้ใช้" : "Username"}</span>
             <Input
               value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              onChange={(event) => setUsername(event.target.value.toLowerCase())}
               placeholder="joao_eats"
             />
           </label>
           <label className="space-y-1 text-sm font-semibold">
             <span>{lang === "th" ? "ชื่อ" : "Name"}</span>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Joao" />
+            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Joao" />
           </label>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
             <span>{lang === "th" ? "ลิงก์รูปโปรไฟล์" : "Avatar URL"}</span>
             <Input
               value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
+              onChange={(event) => setAvatarUrl(event.target.value)}
               placeholder="https://..."
             />
           </label>
@@ -183,7 +183,7 @@ function Profile() {
             <span>{lang === "th" ? "แนะนำตัว" : "Bio"}</span>
             <Textarea
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              onChange={(event) => setBio(event.target.value)}
               maxLength={160}
               placeholder={lang === "th" ? "คุณเป็นนักชิมแบบไหน?" : "What kind of eater are you?"}
             />
@@ -197,7 +197,7 @@ function Profile() {
             <input
               type="checkbox"
               checked={triedPublic}
-              onChange={(e) => setTriedPublic(e.target.checked)}
+              onChange={(event) => setTriedPublic(event.target.checked)}
               className="h-5 w-5 accent-primary"
             />
           </label>
@@ -225,8 +225,8 @@ function Profile() {
           <EmptyNote text={lang === "th" ? "ยังไม่มีโพสต์" : "No posts yet."} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {posted.map((d: any) => (
-              <DishCard key={d.id} dish={d} linkToDetail={d.status === "approved"} />
+            {posted.map((dish: any) => (
+              <DishCard key={dish.id} dish={dish} linkToDetail={dish.status === "approved"} />
             ))}
           </div>
         )}
@@ -240,8 +240,8 @@ function Profile() {
           />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {tried.map((d: any) => (
-              <DishCard key={d.id} dish={d} />
+            {tried.map((dish: any) => (
+              <DishCard key={dish.id} dish={dish} />
             ))}
           </div>
         )}
@@ -253,23 +253,41 @@ function Profile() {
           <EmptyNote text={lang === "th" ? "ยังไม่มีการเปรียบเทียบ" : "No comparisons yet."} />
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-            {compared.map((c: any) => {
-              const loName = lang === "th" && c.lo?.name_th ? c.lo.name_th : c.lo?.name_en;
-              const hiName = lang === "th" && c.hi?.name_th ? c.hi.name_th : c.hi?.name_en;
+            {compared.map((comparison: any) => {
+              const loName =
+                lang === "th" && comparison.lo?.name_th
+                  ? comparison.lo.name_th
+                  : comparison.lo?.name_en;
+              const hiName =
+                lang === "th" && comparison.hi?.name_th
+                  ? comparison.hi.name_th
+                  : comparison.hi?.name_en;
               return (
-                <li key={c.id} className="flex items-center justify-between gap-4 p-4 text-sm">
+                <li key={comparison.id} className="flex items-center justify-between gap-4 p-4 text-sm">
                   <span
-                    className={c.winner_id === c.lo?.id ? "font-medium" : "text-muted-foreground"}
+                    className={
+                      comparison.winner_id === comparison.lo?.id
+                        ? "font-medium"
+                        : "text-muted-foreground"
+                    }
                   >
                     {loName}{" "}
-                    <span className="text-xs text-muted-foreground">({c.lo?.place?.name})</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({comparison.lo?.place?.name})
+                    </span>
                   </span>
                   <span className="text-muted-foreground">{lang === "th" ? "เทียบกับ" : "vs"}</span>
                   <span
-                    className={c.winner_id === c.hi?.id ? "font-medium" : "text-muted-foreground"}
+                    className={
+                      comparison.winner_id === comparison.hi?.id
+                        ? "font-medium"
+                        : "text-muted-foreground"
+                    }
                   >
                     {hiName}{" "}
-                    <span className="text-xs text-muted-foreground">({c.hi?.place?.name})</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({comparison.hi?.place?.name})
+                    </span>
                   </span>
                 </li>
               );
