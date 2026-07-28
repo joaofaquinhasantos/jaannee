@@ -1,3 +1,5 @@
+import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
+
 // Pure helpers for contextual comparison eligibility.
 //
 // Ranking-pool rule (product invariant): a pool is category-only unless the
@@ -15,6 +17,7 @@ export type PairSubtype = { id?: string | null; is_active?: boolean | null } | n
 export type PairDish = {
   id: string;
   status?: string | null;
+  comparisons_count?: number | null;
   subtype_id?: string | null;
   category?: { id?: string | null; requires_subtype?: boolean | null } | null;
   subtype?: PairSubtype;
@@ -91,6 +94,58 @@ export function firstEligiblePair<T extends PairDish>(
   comparedPairKeys: Iterable<string> = [],
 ): EligiblePair<T> | null {
   return findEligiblePairs(dishes, comparedPairKeys)[0] ?? null;
+}
+
+/**
+ * Prefer the eligible pair with the greatest real ranking impact. A
+ * comparison increments both dishes, so a pair containing a dish at four
+ * comparisons can immediately unlock its public rank. Ties remain
+ * deterministic and never use provisional Elo.
+ */
+export function bestEligiblePair<T extends PairDish>(
+  dishes: readonly T[],
+  comparedPairKeys: Iterable<string> = [],
+): EligiblePair<T> | null {
+  const pairs = findEligiblePairs(dishes, comparedPairKeys);
+  return (
+    pairs.sort((left, right) => {
+      const rightCounts = [
+        Number(right.a.comparisons_count ?? 0),
+        Number(right.b.comparisons_count ?? 0),
+      ].sort((a, b) => b - a);
+      const leftCounts = [
+        Number(left.a.comparisons_count ?? 0),
+        Number(left.b.comparisons_count ?? 0),
+      ].sort((a, b) => b - a);
+      return (
+        rightCounts[0] - leftCounts[0] ||
+        rightCounts[1] - leftCounts[1] ||
+        pairKey(left.a.id, left.b.id).localeCompare(pairKey(right.a.id, right.b.id))
+      );
+    })[0] ?? null
+  );
+}
+
+export type PairRankOpportunity = {
+  comparisonsRemaining: number;
+  unlocksRankNow: boolean;
+  almostRanked: boolean;
+};
+
+export function pairRankOpportunity<T extends PairDish>(
+  pair: EligiblePair<T> | null | undefined,
+): PairRankOpportunity | null {
+  if (!pair) return null;
+  const closestCount = Math.max(
+    Number(pair.a.comparisons_count ?? 0),
+    Number(pair.b.comparisons_count ?? 0),
+  );
+  const comparisonsRemaining = Math.max(0, PUBLIC_RANK_THRESHOLD - closestCount);
+  return {
+    comparisonsRemaining,
+    unlocksRankNow: comparisonsRemaining === 1,
+    almostRanked: comparisonsRemaining > 0 && comparisonsRemaining <= 2,
+  };
 }
 
 /**

@@ -691,7 +691,7 @@ export const listCurrentUserTriedDishes = createServerFn({ method: "GET" })
       .from("dish_tries")
       .select(
         `dish:dishes!inner(
-          id, name_en, name_th, photo_url, status, subtype_id,
+          id, name_en, name_th, photo_url, status, subtype_id, comparisons_count,
           category:categories!inner(id, slug, name_en, name_th, requires_subtype),
           subtype:dish_subtypes(id, slug, name_en, name_th, is_active),
           place:places(id, name)

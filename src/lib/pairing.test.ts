@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { eligiblePartnersFor, findEligiblePairs, isSamePool, pairKey, poolKey } from "@/lib/pairing";
+import {
+  bestEligiblePair,
+  eligiblePartnersFor,
+  findEligiblePairs,
+  isSamePool,
+  pairKey,
+  pairRankOpportunity,
+  poolKey,
+} from "@/lib/pairing";
 
 const category = { id: "cat-1", requires_subtype: true };
 const subtypeA = { id: "sub-a", is_active: true };
@@ -39,5 +47,34 @@ describe("comparison ranking pools", () => {
     expect(eligiblePartnersFor("a", dishes, [pairKey("a", "b")]).map((item) => item.id)).toEqual([
       "c",
     ]);
+  });
+
+  it("prioritizes the pair closest to unlocking a public rank", () => {
+    const dishes = [
+      { ...dish("a"), comparisons_count: 0 },
+      { ...dish("b"), comparisons_count: 1 },
+      { ...dish("c"), comparisons_count: 4 },
+    ];
+    const pair = bestEligiblePair(dishes);
+
+    expect(pairKey(pair!.a.id, pair!.b.id)).toBe(pairKey("b", "c"));
+    expect(pairRankOpportunity(pair)).toEqual({
+      comparisonsRemaining: 1,
+      unlocksRankNow: true,
+      almostRanked: true,
+    });
+  });
+
+  it("never treats a sub-threshold dish as already ranked", () => {
+    const pair = {
+      a: { ...dish("a"), comparisons_count: 3 },
+      b: { ...dish("b"), comparisons_count: 1 },
+      poolKey: "cat-1|sub-a",
+    };
+    expect(pairRankOpportunity(pair)).toMatchObject({
+      comparisonsRemaining: 2,
+      unlocksRankNow: false,
+      almostRanked: true,
+    });
   });
 });

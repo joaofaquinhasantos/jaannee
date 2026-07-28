@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   ComparePromptDrawer,
+  PairProgress,
   useComparePairs,
   type TriedDish,
 } from "@/components/ContextualCompare";
@@ -89,6 +90,7 @@ export function ReturnHub() {
                 <span className="text-xs font-bold text-white/40">VS</span>
                 <PairThumb dish={nextPair.b as TriedDish} />
               </div>
+              <PairProgress pair={nextPair} />
               <Button className="mt-4 w-full" onClick={() => setCompareOpen(true)}>
                 {copy("Choose your preferred dish", "เลือกจานที่คุณชอบ")}
               </Button>
