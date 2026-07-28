@@ -341,6 +341,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       typeof window !== "undefined" ? (localStorage.getItem("jn_lang") as Lang | null) : null;
     if (saved === "en" || saved === "th") setLangState(saved);
   }, []);
+  // Keep <html lang> in sync so screen readers and search engines see the
+  // language the diner is actually reading.
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = lang;
+  }, [lang]);
   const setLang = (l: Lang) => {
     setLangState(l);
     if (typeof window !== "undefined") localStorage.setItem("jn_lang", l);
