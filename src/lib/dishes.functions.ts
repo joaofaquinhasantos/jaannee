@@ -337,6 +337,74 @@ export const listAreas = createServerFn({ method: "GET" }).handler(async () => {
   return data ?? [];
 });
 
+async function fetchTaxonomy(supabase: ReturnType<typeof publicClient>) {
+  const [categoriesResult, areasResult] = await Promise.all([
+    supabase
+      .from("categories")
+      .select(
+        "*, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, display_order, is_active)",
+      )
+      .order("name_en"),
+    supabase.from("areas").select("*").order("name_en"),
+  ]);
+  if (areasResult.error) throw new Error(areasResult.error.message);
+  if (!categoriesResult.error) {
+    return {
+      categories: categoriesResult.data ?? [],
+      areas: areasResult.data ?? [],
+    };
+  }
+  const fallback = await supabase
+    .from("categories")
+    .select("*, subtypes:dish_subtypes(id, slug, name_en, name_th, display_order, is_active)")
+    .order("name_en");
+  if (fallback.error) throw new Error(fallback.error.message);
+  return {
+    categories: (fallback.data ?? []).map((category: any) => ({
+      ...category,
+      cuisine_ref: null,
+    })),
+    areas: areasResult.data ?? [],
+  };
+}
+
+/** Stable filters needed across Discover, Rankings, and Add Dish in one request. */
+export const getPublicTaxonomy = createServerFn({ method: "GET" }).handler(async () =>
+  fetchTaxonomy(publicClient()),
+);
+
+/**
+ * Initial Discover payload in one server request. This avoids a client-side
+ * waterfall across categories, areas, dishes, and tried-count hydration.
+ */
+export const getDiscoverBootstrap = createServerFn({ method: "GET" }).handler(async () => {
+  const supabase = publicClient();
+  const [taxonomy, dishResult] = await Promise.all([
+    fetchTaxonomy(supabase),
+    supabase
+      .from("dishes")
+      .select(dishSelect)
+      .eq("status", "approved")
+      .not("category_id", "is", null)
+      .order("elo", { ascending: false })
+      .limit(60),
+  ]);
+  if (dishResult.error) throw new Error(dishResult.error.message);
+  type BootstrapRow = {
+    id: string;
+    subtype_id: string | null;
+    subtype?: { is_active?: boolean | null } | null;
+    elo?: number | null;
+    comparisons_count?: number | null;
+    created_at?: string | null;
+  };
+  const validDishes = ((dishResult.data ?? []) as unknown as BootstrapRow[]).filter(
+    (dish) => !dish.subtype_id || dish.subtype?.is_active,
+  );
+  const dishes = orderDiscoveryDishes(await withTriedCounts(supabase, validDishes));
+  return { ...taxonomy, dishes };
+});
+
 export const listCategoryCounts = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await publicClient()
     .from("dishes")

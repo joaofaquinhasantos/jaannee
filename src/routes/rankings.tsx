@@ -1,16 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { DishCard } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { LeaderboardEntry } from "@/components/LeaderboardEntry";
-import { listAreas, listCategories, listDishes, leaderboard } from "@/lib/dishes.functions";
+import { getPublicTaxonomy, listDishes, leaderboard } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 
 export const Route = createFileRoute("/rankings")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(publicTaxonomyQuery),
   head: () => ({
     meta: [
       { title: "Dish rankings — JaanNee" },
@@ -31,16 +32,23 @@ export const Route = createFileRoute("/rankings")({
   component: Rankings,
 });
 
+const publicTaxonomyQuery = queryOptions({
+  queryKey: ["public-taxonomy"],
+  queryFn: () => getPublicTaxonomy(),
+  staleTime: 10 * 60_000,
+});
+
 function Rankings() {
   const { t, lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
-  const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
-  const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
+  const taxonomy = useQuery(publicTaxonomyQuery);
+  const categories = taxonomy.data?.categories ?? [];
+  const areas = taxonomy.data?.areas ?? [];
   const [cat, setCat] = useState<string | undefined>();
   const [subtype, setSubtype] = useState<string | undefined>();
   const [area, setArea] = useState<string | undefined>();
 
-  const selectedCat = (categories.data ?? []).find((category: any) => category.slug === cat) as any;
+  const selectedCat = categories.find((category: any) => category.slug === cat) as any;
   const subtypes = ((selectedCat?.subtypes ?? []) as any[])
     .filter((item) => item.is_active)
     .sort(
@@ -101,8 +109,8 @@ function Rankings() {
 
       <div className="mt-5">
         <DishBrowser
-          categories={categories.data ?? []}
-          areas={areas.data ?? []}
+          categories={categories}
+          areas={areas}
           category={cat}
           subtype={subtype}
           area={area}
@@ -113,7 +121,7 @@ function Rankings() {
       </div>
 
       <div className="mt-7">
-        {categories.isSuccess && (categories.data ?? []).length === 0 ? (
+        {taxonomy.isSuccess && categories.length === 0 ? (
           <EmptyBoard title={copy("No rankings yet.", "ยังไม่มีอันดับ")} />
         ) : !cat ? (
           <p className="py-10 text-sm text-muted-foreground">

@@ -67,9 +67,9 @@ function PublicProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthed(!!data.user);
-      setUserId(data.user?.id ?? null);
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthed(!!data.session?.user);
+      setUserId(data.session?.user?.id ?? null);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setAuthed(!!s?.user);

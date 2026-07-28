@@ -21,7 +21,9 @@ export function AppShell({
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setEmail(data.session?.user?.email ?? null));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) =>
       setEmail(s?.user?.email ?? null),
     );

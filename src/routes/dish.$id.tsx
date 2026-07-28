@@ -154,13 +154,18 @@ export const Route = createFileRoute("/dish/$id")({
 
 function DishPage() {
   const { id } = Route.useParams();
-  const { origin } = Route.useLoaderData();
+  const { origin, dish: loadedDish } = Route.useLoaderData();
   const { t, lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
   const auth = useAuthUser();
   const comparison = useComparePairs();
-  const dishQuery = useQuery({ queryKey: ["dish", id], queryFn: () => getDish({ data: { id } }) });
+  const dishQuery = useQuery({
+    queryKey: ["dish", id],
+    queryFn: () => getDish({ data: { id } }),
+    initialData: loadedDish,
+    staleTime: 60_000,
+  });
   const dish = dishQuery.data as DishDetail | undefined;
   const tried = useQuery({
     queryKey: ["tried-ids", auth.userId],
