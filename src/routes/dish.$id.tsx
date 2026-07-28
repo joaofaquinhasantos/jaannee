@@ -53,6 +53,8 @@ import { useAuthUser } from "@/lib/use-auth";
 
 type DishDetail = TriedDish & {
   status?: string | null;
+  requested_category_en?: string | null;
+  requested_category_th?: string | null;
   note?: string | null;
   price_thb?: number | null;
   created_at?: string | null;
@@ -303,7 +305,13 @@ function DishPage() {
   const days = dish.created_at
     ? Math.max(0, Math.floor((Date.now() - new Date(dish.created_at).getTime()) / 86400000))
     : 0;
-  const status = statusLabel(dish, t);
+  const isApproved = dish.status === "approved";
+  const status = isApproved
+    ? statusLabel(dish, t)
+    : {
+        text: copy("Awaiting review", "รอตรวจสอบ"),
+        tone: "amber" as const,
+      };
   const triedCount = Number(dish.tried_count ?? 0);
   const shareUrl = origin
     ? `${origin}/dish/${id}`
@@ -344,7 +352,10 @@ function DishPage() {
           <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
             <div>
               <p className="editorial-kicker text-white/75">
-                {localizedName(dish.category, lang)}
+                {localizedName(dish.category, lang) ||
+                  (lang === "th"
+                    ? dish.requested_category_th || dish.requested_category_en
+                    : dish.requested_category_en || dish.requested_category_th)}
                 {dish.subtype ? ` · ${localizedName(dish.subtype, lang)}` : ""}
               </p>
               <h1 className="type-page-title mt-4 max-w-5xl">{name}</h1>
@@ -425,7 +436,7 @@ function DishPage() {
             ) : null}
 
             <div className="mt-7 flex flex-wrap gap-2">
-              {auth.status === "in" ? (
+              {isApproved && auth.status === "in" ? (
                 <Button
                   variant={isTried ? "secondary" : "default"}
                   onClick={() => tryMutation.mutate(!isTried)}
@@ -434,14 +445,14 @@ function DishPage() {
                 >
                   {isTried ? t("tried_marked") : t("tried_it")}
                 </Button>
-              ) : (
+              ) : isApproved ? (
                 <Link to="/auth" search={{ redirect: `/dish/${id}` }}>
                   <Button className="min-h-11">
                     {copy("Sign in to mark tried", "เข้าสู่ระบบเพื่อทำเครื่องหมายว่าเคยกิน")}
                   </Button>
                 </Link>
-              )}
-              {auth.status === "in" && !isTried ? (
+              ) : null}
+              {isApproved && auth.status === "in" && !isTried ? (
                 <Button
                   variant={isSaved ? "secondary" : "outline"}
                   onClick={() => wantMutation.mutate(!isSaved)}

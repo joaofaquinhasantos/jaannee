@@ -195,7 +195,7 @@ function PublicProfilePage() {
             <ProfileDishGrid
               dishes={posted}
               lang={lang}
-              emptyText={lang === "th" ? "ยังไม่มีโพสต์ที่ได้รับอนุมัติ" : "No approved posts yet."}
+              emptyText={lang === "th" ? "ยังไม่มีโพสต์" : "No posts yet."}
             />
           ) : !profile.tried_public ? (
             <Empty

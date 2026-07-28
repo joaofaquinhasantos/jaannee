@@ -1,10 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
-import { Camera, MapPin } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Camera, Check, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { CategoryPicker } from "@/components/CategoryPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,20 +93,19 @@ function Submit() {
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
 
   const [step, setStep] = useState<"form" | "duplicates" | "done">("form");
-  const [nameEn, setNameEn] = useState("");
-  const [nameTh, setNameTh] = useState("");
+  const [dishTerm, setDishTerm] = useState("");
+  const [dishFocused, setDishFocused] = useState(false);
   const [placeTerm, setPlaceTerm] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<PlaceRow | null>(null);
   const [addingPlace, setAddingPlace] = useState(false);
   const [areaId, setAreaId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subtypeId, setSubtypeId] = useState("");
-  const [requestingCategory, setRequestingCategory] = useState(false);
-  const [requestedCategory, setRequestedCategory] = useState("");
   const [price, setPrice] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [postedDishId, setPostedDishId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateResult | null>(null);
 
   const subtypes = useQuery({
@@ -122,6 +120,17 @@ function Submit() {
   const categoryScoped = Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
   const categoryIncomplete =
     Boolean(selectedCategory?.requires_subtype) && activeSubtypes.length === 0;
+  const categorySuggestions = useMemo(() => {
+    const term = dishTerm.trim().toLocaleLowerCase();
+    if (!term) return [];
+    return (categories.data ?? [])
+      .filter((category: CategoryRow) =>
+        [category.name_en, category.name_th]
+          .filter(Boolean)
+          .some((name) => String(name).toLocaleLowerCase().includes(term)),
+      )
+      .slice(0, 6) as CategoryRow[];
+  }, [categories.data, dishTerm]);
 
   const placeMatches = useQuery({
     queryKey: ["place-search", placeTerm],
@@ -129,14 +138,30 @@ function Submit() {
     enabled: placeTerm.trim().length >= 2 && !selectedPlace && !addingPlace,
   });
 
-  const primaryName = lang === "th" ? nameTh : nameEn;
-  const setPrimaryName = lang === "th" ? setNameTh : setNameEn;
-
-  const selectCategory = (value: string) => {
-    setCategoryId(value);
+  const selectCategory = (categoryOrId: CategoryRow | string) => {
+    const category =
+      typeof categoryOrId === "string"
+        ? ((categories.data ?? []).find(
+            (item: CategoryRow) => item.id === categoryOrId,
+          ) as CategoryRow | undefined)
+        : categoryOrId;
+    if (!category) return;
+    setCategoryId(category.id);
+    setDishTerm(localizedName(category, lang));
     setSubtypeId("");
-    setRequestingCategory(false);
-    setRequestedCategory("");
+    setDishFocused(false);
+  };
+
+  const updateDishTerm = (value: string) => {
+    setDishTerm(value);
+    setSubtypeId("");
+    const normalized = value.trim().toLocaleLowerCase();
+    const exact = (categories.data ?? []).find(
+      (category: CategoryRow) =>
+        category.name_en.toLocaleLowerCase() === normalized ||
+        category.name_th?.toLocaleLowerCase() === normalized,
+    ) as CategoryRow | undefined;
+    setCategoryId(exact?.id ?? "");
   };
 
   const selectPlace = (place: PlaceRow) => {
@@ -152,8 +177,7 @@ function Submit() {
   };
 
   const validate = (): string | null => {
-    if (!nameEn.trim() && !nameTh.trim()) return t("submit_required");
-    if (!categoryId && !requestedCategory.trim()) return t("submit_required");
+    if (!dishTerm.trim()) return t("submit_required");
     if (categoryIncomplete) {
       return copy(
         "This category is not ready because it has no active dish types.",
@@ -179,7 +203,7 @@ function Submit() {
       const result = await searchSimilar({
         data: {
           placeName: selectedPlace?.name ?? placeTerm.trim(),
-          dishName: nameEn.trim() || nameTh.trim(),
+          dishName: dishTerm.trim(),
         },
       });
       const duplicateResult: DuplicateResult = {
@@ -205,22 +229,26 @@ function Submit() {
     }
     setSubmitting(true);
     try {
-      await submitDish({
+      const result = await submitDish({
         data: {
-          name_en: nameEn.trim() || undefined,
-          name_th: nameTh.trim() || undefined,
+          name_en:
+            selectedCategory?.name_en ?? (lang === "en" ? dishTerm.trim() : undefined),
+          name_th:
+            selectedCategory?.name_th ?? (lang === "th" ? dishTerm.trim() : undefined),
           place_id: selectedPlace?.id,
           place_name: selectedPlace ? undefined : placeTerm.trim(),
           area_id: selectedPlace?.area_id || areaId,
           category_id: categoryId || undefined,
-          requested_category_en: categoryId ? undefined : requestedCategory.trim(),
+          requested_category_en:
+            categoryId || lang === "th" ? undefined : dishTerm.trim(),
           requested_category_th:
-            !categoryId && lang === "th" ? requestedCategory.trim() : undefined,
+            !categoryId && lang === "th" ? dishTerm.trim() : undefined,
           subtype_id: subtypeId || undefined,
           price_thb: price ? Number(price) : undefined,
           photo_url: photoUrl,
         },
       });
+      setPostedDishId(result.id);
       setStep("done");
     } catch (error) {
       toast.error((error as Error).message);
@@ -259,18 +287,17 @@ function Submit() {
 
   const reset = () => {
     setStep("form");
-    setNameEn("");
-    setNameTh("");
+    setDishTerm("");
+    setDishFocused(false);
     setPlaceTerm("");
     setSelectedPlace(null);
     setAddingPlace(false);
     setAreaId("");
     setCategoryId("");
     setSubtypeId("");
-    setRequestingCategory(false);
-    setRequestedCategory("");
     setPrice("");
     setPhotoUrl("");
+    setPostedDishId(null);
     setDuplicates(null);
   };
 
@@ -307,9 +334,22 @@ function Submit() {
         <section className="mx-auto max-w-lg rounded-lg border border-border bg-card p-8 text-center">
           <p className="font-display text-7xl text-primary">OK</p>
           <h1 className="type-page-title mt-4">{t("submit_done_title")}</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("submit_done_body")}</p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {copy(
+              "Your post is live now. JaanNee will review its category and ranking eligibility afterward.",
+              "โพสต์ของคุณเผยแพร่แล้ว JaanNee จะตรวจสอบหมวดและสิทธิ์ในการจัดอันดับภายหลัง",
+            )}
+          </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Button onClick={() => navigate({ to: "/" })}>{t("back_to_feed")}</Button>
+            {postedDishId ? (
+              <Button
+                onClick={() =>
+                  navigate({ to: "/dish/$id", params: { id: postedDishId } })
+                }
+              >
+                {copy("View your post", "ดูโพสต์ของคุณ")}
+              </Button>
+            ) : null}
             <Button variant="outline" onClick={reset}>
               {t("add_another")}
             </Button>
@@ -509,58 +549,68 @@ function Submit() {
 
           <section>
             <Label>{copy("Dish", "จาน")} *</Label>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              {requestingCategory ? (
-                <Input
-                  autoFocus
-                  value={requestedCategory}
-                  onChange={(event) => setRequestedCategory(event.target.value)}
-                  placeholder={copy("Category you need", "หมวดที่ต้องการ")}
-                  aria-label={copy("Requested category", "หมวดที่ขอเพิ่ม")}
-                  maxLength={80}
-                  className="h-12 text-base"
-                />
-              ) : (
-                <CategoryPicker
-                  categories={categories.data ?? []}
-                  value={categoryId}
-                  lang={lang}
-                  placeholder={t("choose_category")}
-                  onChange={(value) => selectCategory(value)}
-                />
-              )}
+            <div className="relative mt-2">
               <Input
-                value={primaryName}
-                onChange={(event) => setPrimaryName(event.target.value)}
-                placeholder={lang === "th" ? "ชื่อจาน" : "Dish name"}
-                aria-label={t("dish_name")}
-                maxLength={120}
+                value={dishTerm}
+                onFocus={() => setDishFocused(true)}
+                onBlur={() => window.setTimeout(() => setDishFocused(false), 150)}
+                onChange={(event) => updateDishTerm(event.target.value)}
+                placeholder={copy("Start typing the dish", "เริ่มพิมพ์ชื่อจาน")}
+                aria-label={copy("Dish or category", "จานหรือหมวด")}
+                maxLength={80}
                 required
                 className="h-12 text-base"
               />
+              {dishFocused && dishTerm.trim() ? (
+                <div className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-md border border-border bg-background shadow-xl">
+                  {categorySuggestions.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectCategory(category)}
+                      className="flex min-h-12 w-full items-center justify-between gap-3 border-b border-border px-3 py-2 text-left text-sm last:border-b-0 hover:bg-secondary"
+                    >
+                      <span>
+                        <strong>{localizedName(category, lang)}</strong>
+                        {lang === "en" && category.name_th ? (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {category.name_th}
+                          </span>
+                        ) : null}
+                      </span>
+                      {categoryId === category.id ? (
+                        <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      ) : null}
+                    </button>
+                  ))}
+                  {!categoryId ? (
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => setDishFocused(false)}
+                      className="min-h-12 w-full px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary"
+                    >
+                      {copy(`Post “${dishTerm.trim()}”`, `โพสต์ “${dishTerm.trim()}”`)}
+                      <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                        {copy(
+                          "No match? Keep your wording and continue.",
+                          "ไม่พบ? ใช้ชื่อนี้แล้วดำเนินการต่อ",
+                        )}
+                      </span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-            <button
-              type="button"
-              className="mt-2 text-xs font-semibold text-primary underline-offset-4 hover:underline"
-              onClick={() => {
-                setRequestingCategory((value) => !value);
-                setCategoryId("");
-                setSubtypeId("");
-                setRequestedCategory("");
-              }}
-            >
-              {requestingCategory
-                ? copy("Choose an existing category", "เลือกหมวดที่มีอยู่")
-                : copy("Category missing? Request it", "ไม่มีหมวดนี้? ขอเพิ่มหมวด")}
-            </button>
-            {requestingCategory ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {copy(
-                  "An admin will review the category before the dish is approved.",
-                  "ผู้ดูแลจะตรวจสอบหมวดก่อนอนุมัติจาน",
-                )}
-              </p>
-            ) : null}
+            <p className="mt-2 text-xs text-muted-foreground">
+              {categoryId
+                ? copy("Existing dish category selected.", "เลือกหมวดจานที่มีอยู่แล้ว")
+                : copy(
+                    "If there is no match, your wording will be posted and reviewed later.",
+                    "หากไม่พบ ชื่อที่คุณพิมพ์จะถูกโพสต์และตรวจสอบภายหลัง",
+                  )}
+            </p>
           </section>
 
           {categoryIncomplete ? (
@@ -609,7 +659,7 @@ function Submit() {
           </section>
 
           <Button type="submit" className="h-12 w-full" disabled={submitting || categoryIncomplete}>
-            {submitting ? t("saving") : copy("Submit for review", "ส่งให้ตรวจสอบ")}
+            {submitting ? t("saving") : copy("Post now", "โพสต์เลย")}
           </Button>
         </form>
         <PhotoInput fileRef={fileRef} onFile={onFile} />
