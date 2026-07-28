@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
-import { BarChart3, Home, PlusCircle, Swords, ShieldCheck, UserRound } from "lucide-react";
+import { BarChart3, Home, PlusCircle, ShieldCheck, UserRound } from "lucide-react";
 
 export function AppShell({
   children,
@@ -36,10 +36,12 @@ export function AppShell({
   const isAdmin = !!adminQ.data?.admin;
   const noir = tone === "noir";
 
+  // Compare is deliberately NOT a primary destination. Comparisons are
+  // reached contextually (My Dishes, Dish Detail, the tried drawer and
+  // challenge links), never from a generic nav entry.
   const nav = [
     { to: "/", label: t("nav_feed"), Icon: Home },
     { to: "/rankings", label: t("nav_rankings"), Icon: BarChart3 },
-    { to: "/compare", label: t("nav_compare"), Icon: Swords },
     { to: "/submit", label: t("nav_submit"), Icon: PlusCircle },
     ...(isAdmin ? [{ to: "/admin", label: t("nav_admin"), Icon: ShieldCheck }] : []),
   ];

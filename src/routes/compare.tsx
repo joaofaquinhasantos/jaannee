@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -19,11 +19,13 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryPicker } from "@/components/CategoryPicker";
+import { isSamePool } from "@/lib/pairing";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({
     meta: [
       { title: "Compare two dishes — JaanNee" },
+      { name: "robots", content: "noindex, nofollow" },
       {
         name: "description",
         content:
@@ -45,11 +47,19 @@ export const Route = createFileRoute("/compare")({
     ],
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/compare" }],
   }),
-  validateSearch: (s: Record<string, unknown>): { dish?: string; category?: string } => {
-    const out: { dish?: string; category?: string } = {};
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { dish?: string; other?: string; category?: string } => {
+    const out: { dish?: string; other?: string; category?: string } = {};
     if (typeof s.dish === "string") out.dish = s.dish;
+    if (typeof s.other === "string") out.other = s.other;
     if (typeof s.category === "string") out.category = s.category;
     return out;
+  },
+  // Compare is not a destination. Without a dish or category context there is
+  // nothing meaningful to compare, so send the diner back to Discover.
+  beforeLoad: ({ search }) => {
+    if (!search.dish && !search.category) throw redirect({ to: "/" });
   },
   component: Compare,
 });
@@ -60,6 +70,15 @@ function Compare() {
   const search = Route.useSearch();
   const qc = useQueryClient();
   const [authState, setAuthState] = useState<"loading" | "in" | "out">("loading");
+  // Preserve the exact comparison context across authentication.
+  const returnPath = useMemo(() => {
+    const params = new URLSearchParams();
+    if (search.dish) params.set("dish", search.dish);
+    if (search.other) params.set("other", search.other);
+    if (search.category) params.set("category", search.category);
+    const qs = params.toString();
+    return qs ? `/compare?${qs}` : "/compare";
+  }, [search.dish, search.other, search.category]);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthState(data.user ? "in" : "out"));
   }, []);
@@ -170,6 +189,12 @@ function Compare() {
     setCat(match.category?.slug);
     if (match.subtype?.slug) setSubtype(match.subtype.slug);
     setAId(match.id);
+    // Optional second dish from a contextual link, only when the diner has
+    // also tried it and it sits in the same ranking pool.
+    if (search.other && search.other !== match.id) {
+      const partner = triedDishes.find((d) => d.id === search.other);
+      if (partner && isSamePool(match, partner)) setBId(partner.id);
+    }
     // Only run once when tried data is ready.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triedQ.isSuccess]);
@@ -214,7 +239,7 @@ function Compare() {
         <section className="mt-10 max-w-lg rounded-lg border border-border bg-card p-6">
           <h1 className="type-page-title">{t("sign_in_to_compare")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">{t("sign_in_compare_body")}</p>
-          <Link to="/auth" search={{ redirect: "/compare" }}>
+          <Link to="/auth" search={{ redirect: returnPath }}>
             <Button className="mt-5">{t("sign_in")}</Button>
           </Link>
         </section>

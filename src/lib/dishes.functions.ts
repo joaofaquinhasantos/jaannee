@@ -413,7 +413,7 @@ export const submitDish = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (i: {
-      name_en: string;
+      name_en?: string;
       name_th?: string;
       place_id?: string;
       place_name?: string;
@@ -429,7 +429,7 @@ export const submitDish = createServerFn({ method: "POST" })
     }) =>
       z
         .object({
-          name_en: z.string().trim().min(1).max(120),
+          name_en: z.string().trim().max(120).optional(),
           name_th: z.string().trim().max(120).optional(),
           place_id: optionalUuidSchema,
           place_name: z.string().trim().max(160).optional(),
@@ -443,10 +443,20 @@ export const submitDish = createServerFn({ method: "POST" })
           photo_url: imageUrlSchema,
           note: z.string().trim().max(500).optional(),
         })
+        .refine((v) => Boolean(v.name_en?.trim() || v.name_th?.trim()), {
+          message: "A dish name is required.",
+          path: ["name_en"],
+        })
         .parse(i),
   )
   .handler(async ({ data, context }) => {
     if (!data.category_id && !data.requested_category_en) throw new Error("Category required");
+    // The `dishes.name_en` column is NOT NULL. A Thai-first submission stores
+    // the Thai name as a provisional English value so moderation can refine
+    // it later; no schema change is made here.
+    const nameTh = data.name_th?.trim() || undefined;
+    const nameEn = data.name_en?.trim() || nameTh;
+    if (!nameEn) throw new Error("A dish name is required.");
     let placeId = data.place_id;
     if (!placeId) {
       if (!data.place_name) throw new Error("Place required");
@@ -466,8 +476,8 @@ export const submitDish = createServerFn({ method: "POST" })
     const { data: dish, error } = await context.supabase
       .from("dishes")
       .insert({
-        name_en: data.name_en,
-        name_th: data.name_th,
+        name_en: nameEn,
+        name_th: nameTh,
         place_id: placeId,
         category_id: data.category_id ?? null,
         requested_category_en: data.category_id ? null : data.requested_category_en,
@@ -946,4 +956,72 @@ export const leaderboard = createServerFn({ method: "GET" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return withTriedCounts(supabase, rows ?? []);
+  });
+
+// Pair keys (`lo:hi`) for every comparison the signed-in diner has already
+// submitted. Used to exclude completed pairs from contextual comparison
+// prompts. Comparison history itself is never modified here.
+export const myComparedPairKeys = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("comparisons")
+      .select("dish_lo_id, dish_hi_id")
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as { dish_lo_id: string; dish_hi_id: string }[]).map((row) =>
+      row.dish_lo_id < row.dish_hi_id
+        ? `${row.dish_lo_id}:${row.dish_hi_id}`
+        : `${row.dish_hi_id}:${row.dish_lo_id}`,
+    );
+  });
+
+// Public challenge pair. Loads only approved dishes and refuses to return a
+// pair that is not in the exact same ranking pool, so a crafted URL can never
+// present a cross-pool challenge.
+export const getChallengePair = createServerFn({ method: "GET" })
+  .inputValidator((i: { dishAId: string; dishBId: string }) =>
+    z.object({ dishAId: z.string().uuid(), dishBId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    if (data.dishAId === data.dishBId) return { ok: false as const, reason: "same_dish" as const };
+    const supabase = publicClient();
+    const { data: rows, error } = await supabase
+      .from("dishes")
+      .select(dishSelect)
+      .eq("status", "approved")
+      .not("category_id", "is", null)
+      .in("id", [data.dishAId, data.dishBId]);
+    if (error) throw new Error(error.message);
+    const list = (rows ?? []) as any[];
+    if (list.length !== 2) return { ok: false as const, reason: "not_found" as const };
+    const a = list.find((d) => d.id === data.dishAId);
+    const b = list.find((d) => d.id === data.dishBId);
+    if (!a || !b) return { ok: false as const, reason: "not_found" as const };
+
+    const categoryId = a.category?.id;
+    if (!categoryId || categoryId !== b.category?.id)
+      return { ok: false as const, reason: "different_pool" as const };
+
+    const [{ data: catRow }, { data: subs }] = await Promise.all([
+      supabase.from("categories").select("id, requires_subtype").eq("id", categoryId).maybeSingle(),
+      supabase.from("dish_subtypes").select("id, is_active").eq("category_id", categoryId),
+    ]);
+    const activeSubtypes = ((subs ?? []) as any[]).filter((s) => s.is_active);
+    const scoped = Boolean((catRow as any)?.requires_subtype) || activeSubtypes.length > 0;
+    if (scoped) {
+      if (!a.subtype_id || a.subtype_id !== b.subtype_id)
+        return { ok: false as const, reason: "different_pool" as const };
+      if (!activeSubtypes.some((s) => s.id === a.subtype_id))
+        return { ok: false as const, reason: "different_pool" as const };
+    } else if (a.subtype_id || b.subtype_id) {
+      return { ok: false as const, reason: "different_pool" as const };
+    }
+
+    const hydrated = await withTriedCounts(supabase, [a, b]);
+    return {
+      ok: true as const,
+      a: hydrated.find((d: any) => d.id === data.dishAId),
+      b: hydrated.find((d: any) => d.id === data.dishBId),
+    };
   });
