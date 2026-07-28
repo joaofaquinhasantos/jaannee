@@ -49,7 +49,7 @@ export function HowRankingWorks({
           {t("how_ranking_works")}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
         <div className="mx-auto w-full max-w-lg">
           <DrawerHeader className="text-left">
             <DrawerTitle>{t("how_ranking_works")}</DrawerTitle>

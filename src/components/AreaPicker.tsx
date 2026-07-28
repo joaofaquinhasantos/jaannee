@@ -62,7 +62,7 @@ export function AreaPicker({
         />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-w-lg">
+        <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-h-[72dvh] sm:max-w-md">
           <DialogHeader className="border-b border-border px-4 py-4">
             <DialogTitle>{t("more_areas")}</DialogTitle>
           </DialogHeader>
@@ -74,7 +74,7 @@ export function AreaPicker({
               placeholder={t("search_areas")}
             />
           </div>
-          <div className="max-h-[60dvh] overflow-y-auto p-2">
+          <div className="max-h-[60dvh] overflow-y-auto p-2 sm:max-h-[48dvh]">
             <div className="space-y-1">
               {matches.map((area) => (
                 <button

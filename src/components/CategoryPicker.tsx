@@ -92,7 +92,7 @@ export function CategoryPicker({
         />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-w-lg">
+        <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-h-[72dvh] sm:max-w-md">
           <DialogHeader className="border-b border-border px-4 py-4">
             <DialogTitle>{placeholder}</DialogTitle>
           </DialogHeader>
@@ -104,7 +104,7 @@ export function CategoryPicker({
               placeholder={t("search_categories")}
             />
           </div>
-          <div className="max-h-[60dvh] overflow-y-auto p-2">
+          <div className="max-h-[60dvh] overflow-y-auto p-2 sm:max-h-[48dvh]">
             {groups.map(([cuisine, items]) => (
               <div key={cuisine} className="py-2">
                 <p className="px-2 text-xs font-bold uppercase text-muted-foreground">
