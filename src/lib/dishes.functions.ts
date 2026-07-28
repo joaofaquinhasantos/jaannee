@@ -44,7 +44,12 @@ const dishSelectInner = `
   place:places!inner(id, name, address, lat, lng, area:areas(id, slug, name_en, name_th))
 `;
 
-export function mapsDirectionsUrl(place: { name?: string | null; address?: string | null; lat?: number | null; lng?: number | null }) {
+export function mapsDirectionsUrl(place: {
+  name?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+}) {
   const query =
     place.lat != null && place.lng != null
       ? `${place.lat},${place.lng}`
@@ -59,7 +64,9 @@ async function withTriedCounts<T extends { id: string }>(
   if (rows.length === 0) return rows as Array<T & { tried_count: number }>;
   const ids = rows.map((row) => row.id).filter(Boolean);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await (supabaseAdmin as any).rpc("get_dish_tried_counts", { _dish_ids: ids });
+  const { data, error } = await (supabaseAdmin as any).rpc("get_dish_tried_counts", {
+    _dish_ids: ids,
+  });
   if (error) throw new Error(error.message);
   const counts: Record<string, number> = {};
   for (const row of (data ?? []) as { dish_id: string; tries_count: number }[]) {
@@ -169,7 +176,11 @@ export const listDishes = createServerFn({ method: "GET" })
     // Resolve slug filters to ids so filtering runs in Postgres, not JS.
     const [catRes, areaRes] = await Promise.all([
       data.categorySlug
-        ? supabase.from("categories").select("id, requires_subtype").eq("slug", data.categorySlug).maybeSingle()
+        ? supabase
+            .from("categories")
+            .select("id, requires_subtype")
+            .eq("slug", data.categorySlug)
+            .maybeSingle()
         : Promise.resolve({ data: null, error: null } as any),
       data.areaSlug
         ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
@@ -208,7 +219,10 @@ export const listDishes = createServerFn({ method: "GET" })
     let q = data.areaSlug
       ? supabase.from("dishes").select(dishSelectInner)
       : supabase.from("dishes").select(dishSelect);
-    q = q.eq("status", "approved").not("category_id", "is", null).order("elo", { ascending: false });
+    q = q
+      .eq("status", "approved")
+      .not("category_id", "is", null)
+      .order("elo", { ascending: false });
     if (catRes.data) q = q.eq("category_id", catRes.data.id);
     if (subtypeRes.data) q = q.eq("subtype_id", subtypeRes.data.id);
     // Category-only pool: exclude any legacy subtype-bearing dishes at the DB.
@@ -258,7 +272,9 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
   const supabase = publicClient();
   const { data, error } = await supabase
     .from("categories")
-    .select("*, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, display_order, is_active)")
+    .select(
+      "*, cuisine_ref:cuisines(slug, name_en, name_th), subtypes:dish_subtypes(id, slug, name_en, name_th, display_order, is_active)",
+    )
     .order("name_en");
   if (error) {
     const fallback = await supabase
@@ -279,7 +295,9 @@ export const listCuisines = createServerFn({ method: "GET" }).handler(async () =
 
 export const listDishSubtypes = createServerFn({ method: "GET" })
   .inputValidator((i: { categoryId?: string; categorySlug?: string }) =>
-    z.object({ categoryId: z.string().uuid().optional(), categorySlug: z.string().optional() }).parse(i ?? {}),
+    z
+      .object({ categoryId: z.string().uuid().optional(), categorySlug: z.string().optional() })
+      .parse(i ?? {}),
   )
   .handler(async ({ data }) => {
     const supabase = publicClient();
@@ -358,7 +376,9 @@ export const searchSimilar = createServerFn({ method: "GET" })
   });
 
 export const searchPlaces = createServerFn({ method: "GET" })
-  .inputValidator((i: { term: string }) => z.object({ term: z.string().trim().min(2).max(120) }).parse(i))
+  .inputValidator((i: { term: string }) =>
+    z.object({ term: z.string().trim().min(2).max(120) }).parse(i),
+  )
   .handler(async ({ data }) => {
     const supabase = publicClient();
     const { data: matches, error } = await supabase.rpc("search_places_by_similarity", {
@@ -371,7 +391,10 @@ export const searchPlaces = createServerFn({ method: "GET" })
       : { data: [], error: null };
     if (areaError) throw new Error(areaError.message);
     const areaById = new Map((areas ?? []).map((area: any) => [area.id, area]));
-    const rows = (matches ?? []).map((place: any) => ({ ...place, area: areaById.get(place.area_id) ?? null }));
+    const rows = (matches ?? []).map((place: any) => ({
+      ...place,
+      area: areaById.get(place.area_id) ?? null,
+    }));
     return rows ?? [];
   });
 
@@ -399,7 +422,10 @@ export const listNearbyPlaces = createServerFn({ method: "GET" })
     // Hydrate area for parity with previous callers.
     const areaIds = [...new Set(((rows ?? []) as any[]).map((r) => r.area_id).filter(Boolean))];
     const { data: areas } = areaIds.length
-      ? await (supabaseAdmin as any).from("areas").select("id, slug, name_en, name_th").in("id", areaIds)
+      ? await (supabaseAdmin as any)
+          .from("areas")
+          .select("id, slug, name_en, name_th")
+          .in("id", areaIds)
       : { data: [] };
     const byId = new Map(((areas ?? []) as any[]).map((a) => [a.id, a]));
     return ((rows ?? []) as any[]).map((r) => ({
@@ -567,10 +593,7 @@ export const listCurrentUserTriedDishes = createServerFn({ method: "GET" })
       .map((row) => row.dish)
       .filter(
         (d) =>
-          d &&
-          d.status === "approved" &&
-          d.category &&
-          (!d.subtype_id || d.subtype?.is_active),
+          d && d.status === "approved" && d.category && (!d.subtype_id || d.subtype?.is_active),
       );
     // De-dupe just in case (unique index makes this defensive).
     const seen = new Set<string>();
@@ -587,7 +610,10 @@ export const followUser = createServerFn({ method: "POST" })
     if (data.follow) {
       const { error } = await (context.supabase as any)
         .from("follows")
-        .upsert({ follower_id: context.userId, following_id: data.userId }, { onConflict: "follower_id,following_id" });
+        .upsert(
+          { follower_id: context.userId, following_id: data.userId },
+          { onConflict: "follower_id,following_id" },
+        );
       if (error) throw new Error(error.message);
     } else {
       const { error } = await (context.supabase as any)
@@ -632,8 +658,18 @@ export const listActivityFeed = createServerFn({ method: "GET" })
         .limit(50),
     ]);
     const raw = [
-      ...((triesRes.data ?? []) as any[]).map((r) => ({ type: "tried", user_id: r.user_id, created_at: r.created_at, dish: r.dish })),
-      ...((dishesRes.data ?? []) as any[]).map((d) => ({ type: "posted", user_id: d.submitted_by, created_at: d.created_at, dish: d })),
+      ...((triesRes.data ?? []) as any[]).map((r) => ({
+        type: "tried",
+        user_id: r.user_id,
+        created_at: r.created_at,
+        dish: r.dish,
+      })),
+      ...((dishesRes.data ?? []) as any[]).map((d) => ({
+        type: "posted",
+        user_id: d.submitted_by,
+        created_at: d.created_at,
+        dish: d,
+      })),
     ].filter((item) => item.dish?.id);
     const userIds = [...new Set(raw.map((r) => r.user_id).filter(Boolean))];
     const { data: profiles } = userIds.length
@@ -679,8 +715,18 @@ export const listFollowingActivityFeed = createServerFn({ method: "GET" })
         .limit(20),
     ]);
     const raw = [
-      ...((triesRes.data ?? []) as any[]).map((r) => ({ type: "tried", user_id: r.user_id, created_at: r.created_at, dish: r.dish })),
-      ...((dishesRes.data ?? []) as any[]).map((d) => ({ type: "posted", user_id: d.submitted_by, created_at: d.created_at, dish: d })),
+      ...((triesRes.data ?? []) as any[]).map((r) => ({
+        type: "tried",
+        user_id: r.user_id,
+        created_at: r.created_at,
+        dish: r.dish,
+      })),
+      ...((dishesRes.data ?? []) as any[]).map((d) => ({
+        type: "posted",
+        user_id: d.submitted_by,
+        created_at: d.created_at,
+        dish: d,
+      })),
     ].filter((item) => item.dish?.id);
     const { data: profiles } = await (supabase as any)
       .from("profiles")
@@ -702,6 +748,65 @@ export const myTriedIds = createServerFn({ method: "GET" })
       .select("dish_id")
       .eq("user_id", context.userId);
     return (data ?? []).map((r) => r.dish_id);
+  });
+
+export const myWantToTryIds = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await (context.supabase as any)
+      .from("dish_wants")
+      .select("dish_id")
+      .eq("user_id", context.userId)
+      .order("created_at", { ascending: false });
+    if (error) {
+      if (error.code === "42P01") return [];
+      throw new Error(error.message);
+    }
+    return (data ?? []).map((row: { dish_id: string }) => row.dish_id);
+  });
+
+export const setWantToTry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { dishId: string; saved: boolean }) =>
+    z.object({ dishId: z.string().uuid(), saved: z.boolean() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.saved) {
+      const [{ data: dish, error: dishError }, { data: tried, error: triedError }] =
+        await Promise.all([
+          context.supabase
+            .from("dishes")
+            .select("id")
+            .eq("id", data.dishId)
+            .eq("status", "approved")
+            .maybeSingle(),
+          context.supabase
+            .from("dish_tries")
+            .select("dish_id")
+            .eq("user_id", context.userId)
+            .eq("dish_id", data.dishId)
+            .maybeSingle(),
+        ]);
+      if (dishError) throw new Error(dishError.message);
+      if (triedError) throw new Error(triedError.message);
+      if (!dish) throw new Error("Only approved dishes can be saved.");
+      if (tried) throw new Error("This dish is already in your tried dishes.");
+      const { error } = await (context.supabase as any)
+        .from("dish_wants")
+        .upsert(
+          { user_id: context.userId, dish_id: data.dishId },
+          { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+        );
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await (context.supabase as any)
+        .from("dish_wants")
+        .delete()
+        .eq("user_id", context.userId)
+        .eq("dish_id", data.dishId);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
   });
 
 export const submitComparison = createServerFn({ method: "POST" })
@@ -788,7 +893,7 @@ export const submitComparison = createServerFn({ method: "POST" })
 export const myProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [tried, compared, profile, posted, followers, following] = await Promise.all([
+    const [tried, compared, profile, posted, followers, following, wantToTry] = await Promise.all([
       context.supabase
         .from("dish_tries")
         .select(`dish_id, created_at, dish:dishes(${dishSelect})`)
@@ -813,14 +918,27 @@ export const myProfile = createServerFn({ method: "GET" })
         .select(dishSelect)
         .eq("submitted_by", context.userId)
         .order("created_at", { ascending: false }),
-      (context.supabase as any).from("follows").select("follower_id").eq("following_id", context.userId),
-      (context.supabase as any).from("follows").select("following_id").eq("follower_id", context.userId),
+      (context.supabase as any)
+        .from("follows")
+        .select("follower_id")
+        .eq("following_id", context.userId),
+      (context.supabase as any)
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", context.userId),
+      (context.supabase as any)
+        .from("dish_wants")
+        .select(`dish_id, created_at, dish:dishes!inner(${dishSelect})`)
+        .eq("user_id", context.userId)
+        .eq("dish.status", "approved")
+        .order("created_at", { ascending: false }),
     ]);
     return {
       profile: profile.data ?? null,
       tried: tried.data ?? [],
       compared: compared.data ?? [],
       posted: posted.data ?? [],
+      want_to_try: wantToTry.data ?? [],
       followers_count: followers.data?.length ?? 0,
       following_count: following.data?.length ?? 0,
     };
@@ -828,21 +946,28 @@ export const myProfile = createServerFn({ method: "GET" })
 
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { username?: string; displayName?: string; avatarUrl?: string; bio?: string; triedPublic?: boolean }) =>
-    z
-      .object({
-        username: z
-          .string()
-          .trim()
-          .toLowerCase()
-          .regex(/^[a-z0-9_]{3,24}$/, "Use 3-24 lowercase letters, numbers, or underscores.")
-          .optional(),
-        displayName: z.string().trim().max(80).optional(),
-        avatarUrl: z.string().trim().url().max(500).or(z.literal("")).optional(),
-        bio: z.string().trim().max(160).optional(),
-        triedPublic: z.boolean().optional(),
-      })
-      .parse(i),
+  .inputValidator(
+    (i: {
+      username?: string;
+      displayName?: string;
+      avatarUrl?: string;
+      bio?: string;
+      triedPublic?: boolean;
+    }) =>
+      z
+        .object({
+          username: z
+            .string()
+            .trim()
+            .toLowerCase()
+            .regex(/^[a-z0-9_]{3,24}$/, "Use 3-24 lowercase letters, numbers, or underscores.")
+            .optional(),
+          displayName: z.string().trim().max(80).optional(),
+          avatarUrl: z.string().trim().url().max(500).or(z.literal("")).optional(),
+          bio: z.string().trim().max(160).optional(),
+          triedPublic: z.boolean().optional(),
+        })
+        .parse(i),
   )
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = {};
@@ -860,7 +985,15 @@ export const updateMyProfile = createServerFn({ method: "POST" })
 
 export const publicProfile = createServerFn({ method: "GET" })
   .inputValidator((i: { username: string }) =>
-    z.object({ username: z.string().trim().toLowerCase().regex(/^[a-z0-9_]{3,24}$/) }).parse(i),
+    z
+      .object({
+        username: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .regex(/^[a-z0-9_]{3,24}$/),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
     const supabase = publicClient();
@@ -916,20 +1049,30 @@ export const submitReport = createServerFn({ method: "POST" })
   });
 
 export const leaderboard = createServerFn({ method: "GET" })
-  .inputValidator((i: { categorySlug: string; subtypeSlug?: string; areaSlug?: string; minimumComparisons?: number }) =>
-    z
-      .object({
-        categorySlug: z.string(),
-        subtypeSlug: z.string().optional(),
-        areaSlug: z.string().optional(),
-        minimumComparisons: z.number().min(0).max(100).optional(),
-      })
-      .parse(i),
+  .inputValidator(
+    (i: {
+      categorySlug: string;
+      subtypeSlug?: string;
+      areaSlug?: string;
+      minimumComparisons?: number;
+    }) =>
+      z
+        .object({
+          categorySlug: z.string(),
+          subtypeSlug: z.string().optional(),
+          areaSlug: z.string().optional(),
+          minimumComparisons: z.number().min(0).max(100).optional(),
+        })
+        .parse(i),
   )
   .handler(async ({ data }) => {
     const supabase = publicClient();
     const [catRes, areaRes] = await Promise.all([
-      supabase.from("categories").select("id, requires_subtype").eq("slug", data.categorySlug).maybeSingle(),
+      supabase
+        .from("categories")
+        .select("id, requires_subtype")
+        .eq("slug", data.categorySlug)
+        .maybeSingle(),
       data.areaSlug
         ? supabase.from("areas").select("id").eq("slug", data.areaSlug).maybeSingle()
         : Promise.resolve({ data: null, error: null } as any),
@@ -942,7 +1085,8 @@ export const leaderboard = createServerFn({ method: "GET" })
       .eq("category_id", catRes.data.id)
       .eq("is_active", true);
     if (subErr) throw new Error(subErr.message);
-    const scoped = Boolean((catRes.data as any).requires_subtype) || (activeSubtypes ?? []).length > 0;
+    const scoped =
+      Boolean((catRes.data as any).requires_subtype) || (activeSubtypes ?? []).length > 0;
     const subtype = data.subtypeSlug
       ? (activeSubtypes ?? []).find((s: any) => s.slug === data.subtypeSlug)
       : null;
