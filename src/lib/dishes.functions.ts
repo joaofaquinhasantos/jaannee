@@ -1039,7 +1039,14 @@ export const publicProfile = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error || !profile?.username) return null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [tried, compared, counts] = await Promise.all([
+    const [posted, tried, compared, counts] = await Promise.all([
+      (supabaseAdmin as any)
+        .from("dishes")
+        .select(dishSelect)
+        .eq("submitted_by", profile.id)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(60),
       profile.tried_public
         ? (supabaseAdmin as any)
             .from("dish_tries")
@@ -1054,6 +1061,7 @@ export const publicProfile = createServerFn({ method: "GET" })
     ]);
     return {
       profile,
+      posted: posted.data ?? [],
       tried: tried.data ?? [],
       comparisons_count: compared.data?.length ?? 0,
       followers_count: Number((counts as any)?.data?.followers_count ?? 0),
