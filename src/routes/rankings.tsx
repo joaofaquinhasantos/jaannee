@@ -11,7 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 
 export const Route = createFileRoute("/rankings")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(publicTaxonomyQuery),
+  loader: () => getPublicTaxonomy(),
   head: () => ({
     meta: [
       { title: "Dish rankings — JaanNee" },
@@ -41,7 +41,11 @@ const publicTaxonomyQuery = queryOptions({
 function Rankings() {
   const { t, lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
-  const taxonomy = useQuery(publicTaxonomyQuery);
+  const loadedTaxonomy = Route.useLoaderData();
+  const taxonomy = useQuery({
+    ...publicTaxonomyQuery,
+    initialData: loadedTaxonomy,
+  });
   const categories = taxonomy.data?.categories ?? [];
   const areas = taxonomy.data?.areas ?? [];
   const [cat, setCat] = useState<string | undefined>();

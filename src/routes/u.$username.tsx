@@ -10,8 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$username")({
-  loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(publicProfileQuery(params.username)),
+  loader: ({ params }) => publicProfile({ data: { username: params.username } }),
   head: ({ params }) => {
     const url = `https://jaannee.lovable.app/u/${params.username}`;
     const title = `@${params.username} on JaanNee`;
@@ -59,10 +58,14 @@ function publicProfileQuery(username: string) {
 
 function PublicProfilePage() {
   const { username } = Route.useParams();
+  const loadedProfile = Route.useLoaderData();
   const { lang, t } = useI18n();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<"posts" | "tried">("posts");
-  const q = useQuery(publicProfileQuery(username));
+  const q = useQuery({
+    ...publicProfileQuery(username),
+    initialData: loadedProfile,
+  });
   const [authed, setAuthed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
