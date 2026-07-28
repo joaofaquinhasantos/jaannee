@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
@@ -37,14 +37,16 @@ type CategoryRow = {
   name_th?: string | null;
   reference_photo_url?: string | null;
   requires_subtype?: boolean | null;
-  subtypes?: Array<{
-    id: string;
-    slug: string;
-    name_en: string;
-    name_th?: string | null;
-    is_active?: boolean | null;
-    display_order?: number | null;
-  }>;
+  subtypes?: DishSubtypeRow[];
+};
+
+type DishSubtypeRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_th?: string | null;
+  is_active?: boolean | null;
+  display_order?: number | null;
 };
 
 type DishRow = {
@@ -74,14 +76,20 @@ function Index() {
     queryFn: () =>
       listDishes({ data: { categorySlug: cat, subtypeSlug: subtype, areaSlug: area } }),
   });
+
   const categoryRows = (categories.data ?? []) as CategoryRow[];
   const selectedCategory = categoryRows.find((item) => item.slug === cat);
-  const activeSubtypes = [...(selectedCategory?.subtypes ?? [])]
-    .filter((item) => item.is_active)
-    .sort(
-      (a, b) =>
-        (a.display_order ?? 0) - (b.display_order ?? 0) || a.name_en.localeCompare(b.name_en),
-    );
+  const activeSubtypes = useMemo(
+    () =>
+      [...(selectedCategory?.subtypes ?? [])]
+        .filter((item) => item.is_active)
+        .sort(
+          (a, b) =>
+            (a.display_order ?? 0) - (b.display_order ?? 0) ||
+            a.name_en.localeCompare(b.name_en),
+        ),
+    [selectedCategory],
+  );
   const subtypeScoped = Boolean(selectedCategory?.requires_subtype) || activeSubtypes.length > 0;
   const dishRows = (dishes.data ?? []) as unknown as DishRow[];
   const photoCategories = categoryRows.filter((item) => item.reference_photo_url);
@@ -89,6 +97,11 @@ function Index() {
   const heroCategory = selectedCategory?.reference_photo_url
     ? selectedCategory
     : photoCategories[0];
+
+  useEffect(() => {
+    if (!cat || subtype || !subtypeScoped || activeSubtypes.length !== 1) return;
+    setSubtype(activeSubtypes[0].slug);
+  }, [cat, subtype, subtypeScoped, activeSubtypes]);
 
   return (
     <AppShell tone="noir" fullBleed>
@@ -112,16 +125,13 @@ function Index() {
       </div>
 
       {cat && subtypeScoped && !subtype ? (
-        <section className="flex min-h-[70vh] items-center justify-center px-6 text-center">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-              {t("dish_type")}
-            </p>
-            <h1 className="mt-4 font-noir-display text-5xl uppercase text-white md:text-7xl">
-              {t("choose_dish_type")}
-            </h1>
-          </div>
-        </section>
+        <DishTypeChooser
+          category={selectedCategory}
+          subtypes={activeSubtypes}
+          lang={lang}
+          onSelect={setSubtype}
+          onBack={() => setCat(undefined)}
+        />
       ) : dishes.isLoading ? (
         <div className="min-h-[70vh] px-6 py-16 text-sm text-white/45">{t("loading")}</div>
       ) : heroDish ? (
@@ -154,6 +164,86 @@ function Index() {
         <Plus className="h-5 w-5" />
       </Link>
     </AppShell>
+  );
+}
+
+function DishTypeChooser({
+  category,
+  subtypes,
+  lang,
+  onSelect,
+  onBack,
+}: {
+  category?: CategoryRow;
+  subtypes: DishSubtypeRow[];
+  lang: string;
+  onSelect: (slug: string) => void;
+  onBack: () => void;
+}) {
+  const { t } = useI18n();
+  const categoryName = category
+    ? lang === "th"
+      ? category.name_th || category.name_en
+      : category.name_en
+    : t("choose_dish_type");
+
+  return (
+    <section className="relative min-h-[58vh] overflow-hidden bg-[#111111] px-5 py-10 md:min-h-[68vh] md:px-12 md:py-16">
+      {category?.reference_photo_url ? (
+        <>
+          <img
+            src={category.reference_photo_url}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-30 saturate-[0.75]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-black/45" />
+        </>
+      ) : null}
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 transition-colors hover:text-white"
+        >
+          {lang === "th" ? "เปลี่ยนหมวด" : "Change category"}
+        </button>
+        <p className="mt-10 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+          {t("dish_type")}
+        </p>
+        <h1 className="mt-3 max-w-4xl font-noir-display text-5xl uppercase leading-[0.86] text-white md:text-7xl">
+          {categoryName}
+        </h1>
+        <p className="mt-4 max-w-xl text-sm leading-6 text-white/60 md:text-base">
+          {lang === "th"
+            ? "เลือกประเภทจานเพื่อดูจานที่แข่งขันกันในอันดับเดียวกัน"
+            : "Choose the exact dish type to see dishes competing in the same ranking."}
+        </p>
+
+        {subtypes.length > 0 ? (
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {subtypes.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelect(item.slug)}
+                className="group flex min-h-24 items-end justify-between border border-white/20 bg-black/35 p-4 text-left transition-colors hover:border-primary hover:bg-primary"
+              >
+                <span className="font-noir-display text-3xl uppercase leading-none text-white">
+                  {lang === "th" ? item.name_th || item.name_en : item.name_en}
+                </span>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-white/60 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 border border-white/15 bg-black/35 p-5 text-sm text-white/60">
+            {lang === "th"
+              ? "หมวดนี้ยังไม่มีประเภทจานที่เปิดใช้งาน"
+              : "This category does not have an active dish type yet."}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -252,22 +342,23 @@ function DishFeed({ dishes, singlePool }: { dishes: DishRow[]; singlePool: boole
       </div>
       {withoutPhotos.length > 0 ? (
         <div className="grid border-t border-white/10 md:grid-cols-2 lg:grid-cols-3">
-          {withoutPhotos.map((dish) => (
-            <Link
-              key={dish.id}
-              to="/dish/$id"
-              params={{ id: dish.id }}
-              className="border-b border-r border-white/10 p-7 transition-colors hover:bg-white/[0.04]"
-            >
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
-                {t("photo_needed")}
-              </p>
-              <h2 className="mt-3 font-noir-display text-4xl uppercase text-white">
-                {lang === "th" && dish.name_th ? dish.name_th : dish.name_en}
-              </h2>
-              <p className="mt-3 text-xs text-white/45">{dish.place?.name}</p>
-            </Link>
-          ))}
+          {withoutPhotos.map((dish) => {
+            const dishName = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
+            return (
+              <Link
+                key={dish.id}
+                to="/dish/$id"
+                params={{ id: dish.id }}
+                className="border-b border-r border-white/10 p-7 transition-colors hover:bg-white/[0.04]"
+              >
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
+                  {t("photo_needed")}
+                </p>
+                <h2 className="mt-3 font-noir-display text-4xl uppercase text-white">{dishName}</h2>
+                <p className="mt-3 text-xs text-white/45">{dish.place?.name}</p>
+              </Link>
+            );
+          })}
         </div>
       ) : null}
     </div>
