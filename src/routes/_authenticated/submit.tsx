@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Camera, Check, MapPin } from "lucide-react";
 import { toast } from "sonner";
@@ -16,9 +16,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  listAreas,
-  listCategories,
   listDishSubtypes,
+  getPublicTaxonomy,
   searchPlaces,
   searchSimilar,
   submitDish,
@@ -35,6 +34,7 @@ import {
 import { useAuthUser } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/submit")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(submitTaxonomyQuery),
   head: () => ({
     meta: [
       { title: "Add a dish — JaanNee" },
@@ -46,6 +46,12 @@ export const Route = createFileRoute("/_authenticated/submit")({
     ],
   }),
   component: Submit,
+});
+
+const submitTaxonomyQuery = queryOptions({
+  queryKey: ["public-taxonomy"],
+  queryFn: () => getPublicTaxonomy(),
+  staleTime: 10 * 60_000,
 });
 
 type PlaceRow = {
@@ -89,8 +95,9 @@ function Submit() {
   const navigate = useNavigate();
   const auth = useAuthUser();
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
-  const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
+  const taxonomy = useQuery(submitTaxonomyQuery);
+  const categories = { data: taxonomy.data?.categories ?? [] };
+  const areas = { data: taxonomy.data?.areas ?? [] };
 
   const [step, setStep] = useState<"form" | "duplicates" | "done">("form");
   const [dishTerm, setDishTerm] = useState("");

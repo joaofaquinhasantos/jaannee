@@ -1,17 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
-import { listAreas, listCategories, listDishes } from "@/lib/dishes.functions";
+import { getDiscoverBootstrap, listDishes } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, secondaryName } from "@/lib/names";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 import { hasActiveDiscoverFilters, shouldShowCategoryGallery } from "@/lib/discover-state";
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(discoverBootstrapQuery),
   head: () => ({
     meta: [
       { title: "JaanNee — Bangkok dishes, ranked by diners" },
@@ -30,6 +31,12 @@ export const Route = createFileRoute("/")({
     links: [{ rel: "canonical", href: "https://jaannee.lovable.app/" }],
   }),
   component: Index,
+});
+
+const discoverBootstrapQuery = queryOptions({
+  queryKey: ["discover-bootstrap"],
+  queryFn: () => getDiscoverBootstrap(),
+  staleTime: 5 * 60_000,
 });
 
 type SubtypeRow = {
@@ -79,10 +86,9 @@ function Index() {
   const [subtypeSlug, setSubtypeSlug] = useState<string | undefined>();
   const [areaSlug, setAreaSlug] = useState<string | undefined>();
 
-  const categories = useQuery({ queryKey: ["categories"], queryFn: () => listCategories() });
-  const areas = useQuery({ queryKey: ["areas"], queryFn: () => listAreas() });
-  const categoryRows = (categories.data ?? []) as CategoryRow[];
-  const areaRows = (areas.data ?? []) as AreaRow[];
+  const bootstrap = useQuery(discoverBootstrapQuery);
+  const categoryRows = (bootstrap.data?.categories ?? []) as CategoryRow[];
+  const areaRows = (bootstrap.data?.areas ?? []) as AreaRow[];
   const selectedCategory = categoryRows.find((item) => item.slug === categorySlug);
   const selectedArea = areaRows.find((item) => item.slug === areaSlug);
   const activeSubtypes = useMemo(
@@ -104,7 +110,8 @@ function Index() {
     setSubtypeSlug(activeSubtypes[0].slug);
   }, [activeSubtypes, categorySlug, subtypeSlug]);
 
-  const dishes = useQuery({
+  const hasFilters = Boolean(categorySlug || areaSlug);
+  const filteredDishes = useQuery({
     queryKey: ["dishes", categorySlug, subtypeSlug, areaSlug],
     queryFn: () =>
       listDishes({
@@ -114,10 +121,10 @@ function Index() {
           areaSlug,
         },
       }),
-    enabled: !categorySlug || !subtypeScoped || Boolean(subtypeSlug),
+    enabled: hasFilters && (!categorySlug || !subtypeScoped || Boolean(subtypeSlug)),
   });
 
-  const dishRows = (dishes.data ?? []) as DishRow[];
+  const dishRows = (hasFilters ? filteredDishes.data : bootstrap.data?.dishes ?? []) as DishRow[];
   const ranked = poolReady
     ? dishRows.filter((dish) => Number(dish.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD)
     : [];
@@ -151,7 +158,7 @@ function Index() {
           </p>
           <DishBrowser
             categories={categoryRows}
-            areas={areas.data ?? []}
+            areas={areaRows}
             category={categorySlug}
             subtype={subtypeSlug}
             area={areaSlug}
@@ -172,7 +179,8 @@ function Index() {
           onSelect={setSubtypeSlug}
           onChangeCategory={() => changeCategory(undefined)}
         />
-      ) : dishes.isLoading ||
+      ) : bootstrap.isLoading ||
+        filteredDishes.isLoading ||
         (categorySlug && subtypeScoped && activeSubtypes.length === 1 && !subtypeSlug) ? (
         <div className="min-h-[40vh] px-6 py-16 text-sm text-white/45">{t("loading")}</div>
       ) : leader ? (
