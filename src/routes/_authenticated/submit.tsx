@@ -100,7 +100,6 @@ function Submit() {
   const [selectedPlace, setSelectedPlace] = useState<PlaceRow | null>(null);
   const [addingPlace, setAddingPlace] = useState(false);
   const [areaId, setAreaId] = useState("");
-  const [address, setAddress] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subtypeId, setSubtypeId] = useState("");
   const [price, setPrice] = useState("");
@@ -209,7 +208,6 @@ function Submit() {
           place_id: selectedPlace?.id,
           place_name: selectedPlace ? undefined : placeTerm.trim(),
           area_id: selectedPlace?.area_id || areaId,
-          address: selectedPlace ? undefined : address.trim() || undefined,
           category_id: categoryId,
           subtype_id: subtypeId || undefined,
           price_thb: price ? Number(price) : undefined,
@@ -260,7 +258,6 @@ function Submit() {
     setSelectedPlace(null);
     setAddingPlace(false);
     setAreaId("");
-    setAddress("");
     setCategoryId("");
     setSubtypeId("");
     setPrice("");
@@ -481,36 +478,22 @@ function Submit() {
               </div>
             )}
             {addingPlace && !selectedPlace ? (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>{t("choose_area")} *</Label>
-                  <Select value={areaId} onValueChange={setAreaId}>
-                    <SelectTrigger className="mt-2 min-h-11">
-                      <SelectValue placeholder={t("choose_area")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(areas.data ?? []).map(
-                        (area: { id: string; name_en?: string; name_th?: string }) => (
-                          <SelectItem key={area.id} value={area.id}>
-                            {localizedName(area, lang)}
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>
-                    {copy("Address", "ที่อยู่")} ({t("optional")})
-                  </Label>
-                  <Input
-                    value={address}
-                    onChange={(event) => setAddress(event.target.value)}
-                    maxLength={300}
-                    placeholder={copy("Street or landmark", "ถนนหรือจุดสังเกต")}
-                    className="mt-2 h-11"
-                  />
-                </div>
+              <div className="mt-3">
+                <Label>{t("choose_area")} *</Label>
+                <Select value={areaId} onValueChange={setAreaId}>
+                  <SelectTrigger className="mt-2 min-h-11">
+                    <SelectValue placeholder={t("choose_area")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(areas.data ?? []).map(
+                      (area: { id: string; name_en?: string; name_th?: string }) => (
+                        <SelectItem key={area.id} value={area.id}>
+                          {localizedName(area, lang)}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
           </section>
