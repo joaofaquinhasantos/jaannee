@@ -190,7 +190,6 @@ function Index() {
         </div>
       </div>
 
-      <RankingPrimer />
       <TriedActivation dishes={dishRows} />
 
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
@@ -273,25 +272,6 @@ function Index() {
         <Plus className="h-5 w-5" aria-hidden="true" />
       </Link>
     </AppShell>
-  );
-}
-
-function RankingPrimer() {
-  const { t } = useI18n();
-  return (
-    <section className="border-b border-white/10 bg-[#171717] px-5 py-5 text-white md:px-8">
-      <div className="mx-auto grid max-w-[90rem] gap-4 md:grid-cols-[auto_1fr_1fr_1fr] md:items-start">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
-          {t("how_ranking_works")}
-        </p>
-        {[t("how_rule_tried"), t("how_rule_pool"), t("how_rule_threshold")].map((rule, index) => (
-          <p key={rule} className="flex gap-3 text-xs leading-5 text-white/60">
-            <span className="font-bold text-white">{index + 1}</span>
-            <span>{rule}</span>
-          </p>
-        ))}
-      </div>
-    </section>
   );
 }
 
