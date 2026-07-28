@@ -1,32 +1,35 @@
 import { Link } from "@tanstack/react-router";
+import { RankingShare } from "@/components/RankingShare";
 import { useI18n } from "@/lib/i18n";
+import { localizedName, secondaryName } from "@/lib/names";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
-import { ShareButton } from "@/components/ShareButton";
+import type { ShareDish } from "@/lib/share-card";
 
-/**
- * Editorial leaderboard entry. Presentation only — every number shown here is
- * real data already loaded for the dish (Elo ordering position,
- * comparisons_count, tried_count, price). No derived or invented stats.
- */
+type LeaderboardDish = ShareDish & {
+  price_thb?: number | null;
+  tried_count?: number | null;
+  place?: {
+    name?: string | null;
+    area?: { name_en?: string | null; name_th?: string | null } | null;
+  } | null;
+};
+
+/** Editorial leaderboard entry using only real ranking and diner data. */
 export function LeaderboardEntry({
   dish,
   rank,
   featured = false,
 }: {
-  dish: any;
+  dish: LeaderboardDish;
   rank?: number;
   featured?: boolean;
 }) {
   const { t, lang } = useI18n();
-  const primaryName = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
-  const secondaryName = lang === "th" && dish.name_th ? dish.name_en : dish.name_th;
-  const areaName = dish.place?.area
-    ? lang === "th"
-      ? dish.place.area.name_th
-      : dish.place.area.name_en
-    : null;
-  const comparisons = dish.comparisons_count ?? 0;
-  const tried = dish.tried_count ?? 0;
+  const primaryName = localizedName(dish, lang);
+  const alternateName = secondaryName(dish, lang);
+  const areaName = localizedName(dish.place?.area, lang);
+  const comparisons = Number(dish.comparisons_count ?? 0);
+  const tried = Number(dish.tried_count ?? 0);
   const isRanked = comparisons >= PUBLIC_RANK_THRESHOLD;
   const showRank = isRanked && rank != null;
   const numeral = rank != null ? String(rank).padStart(2, "0") : null;
@@ -45,7 +48,13 @@ export function LeaderboardEntry({
       ) : null}
 
       <div
-        className={`relative z-10 ${showRank ? (featured ? "pl-10 pt-14 md:pl-24 md:pt-20" : "pl-8 pt-10 md:pl-16 md:pt-12") : ""}`}
+        className={`relative z-10 ${
+          showRank
+            ? featured
+              ? "pl-10 pt-14 md:pl-24 md:pt-20"
+              : "pl-8 pt-10 md:pl-16 md:pt-12"
+            : ""
+        }`}
       >
         <Link
           to="/dish/$id"
@@ -53,19 +62,23 @@ export function LeaderboardEntry({
           className="group block focus-visible:rounded-sm"
         >
           <div
-            className={`relative w-full overflow-hidden border-2 border-foreground bg-muted ${featured ? "aspect-[4/3] md:aspect-[16/9]" : "aspect-[4/3]"}`}
+            className={`relative w-full overflow-hidden border-2 border-foreground bg-muted ${
+              featured ? "aspect-[4/3] md:aspect-[16/9]" : "aspect-[4/3]"
+            }`}
           >
             {dish.photo_url ? (
               <img
                 src={dish.photo_url}
                 alt={primaryName}
+                width={1200}
+                height={900}
                 loading="lazy"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center bg-secondary text-muted-foreground">
-                <span className="type-card-title opacity-70">Photo needed</span>
-                <span className="label-caps mt-2 opacity-70">Help this dish look alive</span>
+                <span className="type-card-title opacity-70">{t("photo_needed")}</span>
+                <span className="label-caps mt-2 opacity-70">{t("photo_needed_body")}</span>
               </div>
             )}
             <div className="photo-scrim pointer-events-none absolute inset-0" />
@@ -87,9 +100,9 @@ export function LeaderboardEntry({
               >
                 {primaryName}
               </h3>
-              {secondaryName ? (
+              {alternateName ? (
                 <p className="mt-1 line-clamp-1 font-thai text-base font-medium text-white/85">
-                  {secondaryName}
+                  {alternateName}
                 </p>
               ) : null}
               <p className="label-caps mt-2 text-white/80">
@@ -100,8 +113,7 @@ export function LeaderboardEntry({
           </div>
         </Link>
 
-        {/* Stats strip — real values only */}
-        <div className="mt-0 flex flex-wrap items-center gap-x-6 gap-y-2 border-x-2 border-b-2 border-foreground bg-card px-4 py-3">
+        <div className="mt-0 flex flex-wrap items-center gap-x-6 gap-y-3 border-x-2 border-b-2 border-foreground bg-card px-4 py-3">
           <Stat value={String(comparisons)} label={t("comparisons_progress")} />
           {tried > 0 ? <Stat value={String(tried)} label={t("diners")} /> : null}
           {showRank ? (
@@ -109,16 +121,11 @@ export function LeaderboardEntry({
               {t("trusted_rank")}
             </span>
           ) : null}
-          <span className="ml-auto">
-            <ShareButton
-              url={
-                (typeof window !== "undefined" ? window.location.origin : "") + `/dish/${dish.id}`
-              }
-              title={dish.name_en ?? dish.name_th ?? "Dish"}
-              text={`${dish.place?.name ?? ""}${dish.price_thb != null ? ` / THB ${Number(dish.price_thb).toFixed(0)}` : ""}${showRank ? ` / Currently ranked #${rank}` : ""}`}
-              label={t("share")}
-            />
-          </span>
+          {showRank ? (
+            <span className="ml-auto">
+              <RankingShare dish={dish} rank={rank} />
+            </span>
+          ) : null}
         </div>
       </div>
     </article>
