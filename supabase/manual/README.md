@@ -99,6 +99,9 @@ repeated.
 25. Run `VERIFY_20260729_restaurant_growth_profile.sql` and confirm the profile
     fields, gallery/update tables, RLS policies, Growth guards, and frequency
     limit triggers are present.
+26. Paste `20260729_secure_voucher_numbers.sql` into the SQL editor.
+27. Run `VERIFY_20260729_secure_voucher_numbers.sql`; confirm the unique index
+    reports `OK` and the duplicate-security-number query returns no rows.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { generateVoucherNumber } from "@/lib/voucher";
 
 const missingRestaurantSchema = (error: any) => error?.code === "42P01";
 const optionalUrl = z.string().trim().url().max(500).or(z.literal(""));
@@ -459,7 +460,6 @@ export const sendRestaurantOutreach = createServerFn({ method: "POST" })
       kind: "message" | "voucher";
       subject: string;
       body: string;
-      voucherCode?: string;
       voucherTerms?: string;
       expiresAt?: string;
     }) =>
@@ -470,13 +470,12 @@ export const sendRestaurantOutreach = createServerFn({ method: "POST" })
           kind: z.enum(["message", "voucher"]),
           subject: z.string().trim().min(1).max(100),
           body: z.string().trim().min(1).max(1000),
-          voucherCode: z.string().trim().min(3).max(60).optional(),
           voucherTerms: z.string().trim().max(500).optional(),
           expiresAt: z.string().datetime().optional(),
         })
         .superRefine((value, issue) => {
-          if (value.kind === "voucher" && (!value.voucherCode || !value.expiresAt)) {
-            issue.addIssue({ code: "custom", message: "Voucher code and expiry are required." });
+          if (value.kind === "voucher" && !value.expiresAt) {
+            issue.addIssue({ code: "custom", message: "Voucher expiry is required." });
           }
         })
         .parse(input),
@@ -490,7 +489,7 @@ export const sendRestaurantOutreach = createServerFn({ method: "POST" })
       kind: data.kind,
       subject: data.subject,
       body: data.body,
-      voucher_code: data.kind === "voucher" ? data.voucherCode : null,
+      voucher_code: data.kind === "voucher" ? generateVoucherNumber() : null,
       voucher_terms: data.kind === "voucher" ? data.voucherTerms || null : null,
       expires_at: data.kind === "voucher" ? data.expiresAt : null,
     });

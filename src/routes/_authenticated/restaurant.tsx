@@ -21,6 +21,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { VoucherCard } from "@/components/VoucherCard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   addRestaurantGalleryPhoto,
@@ -41,6 +42,7 @@ import {
 } from "@/lib/photo-upload";
 import { useAuthUser } from "@/lib/use-auth";
 import { useI18n } from "@/lib/i18n";
+import { generateVoucherNumber } from "@/lib/voucher";
 
 export const Route = createFileRoute("/_authenticated/restaurant")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -371,7 +373,6 @@ function VerifiedRestaurantPanel({
   const [kind, setKind] = useState<"message" | "voucher">("message");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [code, setCode] = useState("");
   const [terms, setTerms] = useState("");
   const [expiry, setExpiry] = useState("");
   const [uploading, setUploading] = useState("");
@@ -510,13 +511,12 @@ function VerifiedRestaurantPanel({
       kind,
       subject,
       body,
-      voucherCode: kind === "voucher" ? code : undefined,
       voucherTerms: kind === "voucher" ? terms : undefined,
       expiresAt: kind === "voucher" && expiry ? new Date(expiry).toISOString() : undefined,
     } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["restaurant-workspace"] });
-      setSubject(""); setBody(""); setCode(""); setTerms(""); setExpiry("");
+      setSubject(""); setBody(""); setTerms(""); setExpiry("");
       toast.success(copy("Sent to the consenting diner", "ส่งให้นักชิมที่อนุญาตแล้ว"));
     },
     onError: (error: Error) => toast.error(error.message),
@@ -530,13 +530,13 @@ function VerifiedRestaurantPanel({
         kind,
         subject: subject.trim(),
         body: body.trim(),
-        voucherCode: kind === "voucher" ? code.trim() : null,
+        voucherCode: kind === "voucher" ? generateVoucherNumber() : null,
+        voucherTerms: kind === "voucher" ? terms.trim() : null,
         expiresAt: kind === "voucher" ? expiry : null,
       };
       setDemoSent((current) => [item, ...current]);
       setSubject("");
       setBody("");
-      setCode("");
       setTerms("");
       setExpiry("");
       toast.success(copy(
@@ -778,13 +778,33 @@ function VerifiedRestaurantPanel({
             <Input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={100} placeholder={copy("Subject", "หัวข้อ")} />
             <Textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} placeholder={copy("Write a respectful message", "เขียนข้อความอย่างสุภาพ")} />
             {kind === "voucher" ? (
-              <div className="grid gap-3 md:grid-cols-3">
-                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder={copy("Voucher code", "รหัสบัตรกำนัล")} />
+              <div className="grid gap-3 md:grid-cols-2">
                 <Input value={expiry} onChange={(e) => setExpiry(e.target.value)} type="datetime-local" />
                 <Input value={terms} onChange={(e) => setTerms(e.target.value)} placeholder={copy("Terms", "เงื่อนไข")} />
+                <p className="text-xs text-muted-foreground md:col-span-2">
+                  {copy(
+                    "JaanNee generates a unique security number automatically. The offer text appears inside the voucher message.",
+                    "JaanNee จะสร้างหมายเลขความปลอดภัยที่ไม่ซ้ำโดยอัตโนมัติ ข้อความข้อเสนอจะแสดงอยู่ในบัตรกำนัล",
+                  )}
+                </p>
               </div>
             ) : null}
-            <Button className="w-fit" disabled={!subject.trim() || !body.trim() || (kind === "voucher" && (!code.trim() || !expiry)) || send.isPending} onClick={handleSend}>
+            {kind === "voucher" && subject.trim() && body.trim() ? (
+              <VoucherCard
+                restaurantName={restaurant.place?.name || copy("Restaurant", "ร้านอาหาร")}
+                title={subject.trim()}
+                message={body.trim()}
+                securityNumber={copy("Generated when sent", "สร้างเมื่อส่ง")}
+                terms={terms.trim() || null}
+                expiresAt={
+                  expiry && !Number.isNaN(new Date(expiry).getTime())
+                    ? new Date(expiry).toISOString()
+                    : null
+                }
+                language={lang}
+              />
+            ) : null}
+            <Button className="w-fit" disabled={!subject.trim() || !body.trim() || (kind === "voucher" && !expiry) || send.isPending} onClick={handleSend}>
               {demo ? copy("Send demo", "ส่งตัวอย่าง") : copy("Send", "ส่ง")}
             </Button>
           </div>
@@ -803,12 +823,17 @@ function VerifiedRestaurantPanel({
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{copy("Delivered to", "ส่งถึง")} {item.recipient}</p>
-                    <p className="mt-3 text-sm">{item.body}</p>
                     {item.voucherCode ? (
-                      <p className="mt-3 rounded bg-secondary p-3 font-mono text-sm">
-                        {copy("Code", "รหัส")}: {item.voucherCode}
-                      </p>
-                    ) : null}
+                      <VoucherCard
+                        restaurantName={restaurant.place?.name || copy("Restaurant", "ร้านอาหาร")}
+                        title={item.subject}
+                        message={item.body}
+                        securityNumber={item.voucherCode}
+                        terms={item.voucherTerms}
+                        expiresAt={item.expiresAt}
+                        language={lang}
+                      />
+                    ) : <p className="mt-3 text-sm">{item.body}</p>}
                   </article>
                 ))}
               </div>
