@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as RankingsRouteImport } from './routes/rankings'
+import { Route as RestaurantDemoRouteImport } from './routes/restaurant-demo'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -47,6 +48,11 @@ const CompareRoute = CompareRouteImport.update({
 const RankingsRoute = RankingsRouteImport.update({
   id: '/rankings',
   path: '/rankings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestaurantDemoRoute = RestaurantDemoRouteImport.update({
+  id: '/restaurant-demo',
+  path: '/restaurant-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/compare': typeof CompareRoute
   '/rankings': typeof RankingsRoute
+  '/restaurant-demo': typeof RestaurantDemoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/compare': typeof CompareRoute
   '/rankings': typeof RankingsRoute
+  '/restaurant-demo': typeof RestaurantDemoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/compare': typeof CompareRoute
   '/rankings': typeof RankingsRoute
+  '/restaurant-demo': typeof RestaurantDemoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/compare'
     | '/rankings'
+    | '/restaurant-demo'
     | '/sitemap.xml'
     | '/admin'
     | '/profile'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/compare'
     | '/rankings'
+    | '/restaurant-demo'
     | '/sitemap.xml'
     | '/admin'
     | '/profile'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/compare'
     | '/rankings'
+    | '/restaurant-demo'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/profile'
@@ -208,6 +220,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CompareRoute: typeof CompareRoute
   RankingsRoute: typeof RankingsRoute
+  RestaurantDemoRoute: typeof RestaurantDemoRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DishIdRoute: typeof DishIdRoute
   PhotosSplatRoute: typeof PhotosSplatRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/rankings'
       fullPath: '/rankings'
       preLoaderRoute: typeof RankingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restaurant-demo': {
+      id: '/restaurant-demo'
+      path: '/restaurant-demo'
+      fullPath: '/restaurant-demo'
+      preLoaderRoute: typeof RestaurantDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -349,6 +369,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CompareRoute: CompareRoute,
   RankingsRoute: RankingsRoute,
+  RestaurantDemoRoute: RestaurantDemoRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DishIdRoute: DishIdRoute,
   PhotosSplatRoute: PhotosSplatRoute,

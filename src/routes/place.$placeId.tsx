@@ -25,6 +25,10 @@ export const Route = createFileRoute("/place/$placeId")({
 
 function PublicRestaurantProfile() {
   const data = Route.useLoaderData();
+  return <RestaurantProfileView data={data} />;
+}
+
+export function RestaurantProfileView({ data }: { data: any }) {
   const { lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   if (!data) {

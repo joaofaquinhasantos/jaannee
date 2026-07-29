@@ -6,8 +6,11 @@ import {
   Building2,
   Camera,
   Gift,
+  Images,
+  Info,
   LockKeyhole,
   MessageCircle,
+  Newspaper,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -374,6 +377,16 @@ function VerifiedRestaurantPanel({
   const [updateCtaLabel, setUpdateCtaLabel] = useState("");
   const [updateCtaUrl, setUpdateCtaUrl] = useState("");
   const [updateExpiry, setUpdateExpiry] = useState("");
+  const [workspaceTab, setWorkspaceTab] = useState<
+    "overview" | "profile" | "photos" | "updates" | "audience"
+  >("overview");
+  const workspaceTabs = [
+    { value: "overview", Icon: Sparkles, label: copy("Overview", "ภาพรวม") },
+    { value: "profile", Icon: Info, label: copy("Profile", "โปรไฟล์") },
+    { value: "photos", Icon: Images, label: copy("Photos", "รูปภาพ") },
+    { value: "updates", Icon: Newspaper, label: copy("Updates", "อัปเดต") },
+    { value: "audience", Icon: Users, label: copy("Diners", "นักชิม") },
+  ] as const;
   const audience = restaurant.audience ?? [];
   const gallery = restaurant.gallery ?? [];
   const updates = restaurant.updates ?? [];
@@ -518,6 +531,45 @@ function VerifiedRestaurantPanel({
         ) : null}
       </section>
 
+      <nav className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-card p-1" aria-label={copy("Restaurant workspace", "พื้นที่จัดการร้าน")}>
+        {workspaceTabs.map(({ value, Icon, label }) => (
+          <button
+            key={String(value)}
+            type="button"
+            onClick={() => setWorkspaceTab(value)}
+            className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md px-4 text-sm font-semibold transition ${
+              workspaceTab === value
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Icon size={16} />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {workspaceTab === "overview" ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <button type="button" onClick={() => setWorkspaceTab("profile")} className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60">
+            <Info className="text-primary" size={21} />
+            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">{copy("Public profile", "โปรไฟล์สาธารณะ")}</p>
+            <p className="mt-1 font-display text-2xl uppercase">{copy("Edit restaurant details", "แก้ไขข้อมูลร้าน")}</p>
+          </button>
+          <button type="button" onClick={() => setWorkspaceTab("updates")} className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60">
+            <Newspaper className="text-primary" size={21} />
+            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">{copy("Official updates", "อัปเดตทางการ")}</p>
+            <p className="mt-1 font-display text-2xl uppercase">{updates.length} {copy("published", "รายการ")}</p>
+          </button>
+          <button type="button" onClick={() => setWorkspaceTab("audience")} className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60">
+            <Users className="text-primary" size={21} />
+            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">{copy("Consenting diners", "นักชิมที่อนุญาต")}</p>
+            <p className="mt-1 font-display text-2xl uppercase">{audience.length} {copy("available", "คน")}</p>
+          </button>
+        </div>
+      ) : null}
+
+      {workspaceTab === "overview" ? (
       <section className={`rounded-lg border p-5 ${growthActive ? "border-gold/50 bg-gold/10" : "border-border bg-card"}`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -542,8 +594,9 @@ function VerifiedRestaurantPanel({
           ) : null}
         </div>
       </section>
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {workspaceTab === "profile" ? (
         <section className="rounded-lg border border-border bg-card p-5">
           <h2 className="type-section-title">{copy("Official information", "ข้อมูลทางการ")}</h2>
           <div className="mt-4 space-y-3">
@@ -582,7 +635,9 @@ function VerifiedRestaurantPanel({
             <Button onClick={() => save.mutate()} disabled={demo || save.isPending}>{copy("Save profile", "บันทึกโปรไฟล์")}</Button>
           </div>
         </section>
+      ) : null}
 
+      {workspaceTab === "audience" ? (
         <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
           <h2 className="type-section-title">{copy("Consenting diners", "นักชิมที่อนุญาต")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{copy("Only diners who marked one of your dishes and explicitly opted in appear here.", "แสดงเฉพาะนักชิมที่ทำเครื่องหมายจานของร้านและอนุญาตอย่างชัดเจน")}</p>
@@ -603,8 +658,9 @@ function VerifiedRestaurantPanel({
             {!audience.length ? <p className="text-sm text-muted-foreground">{copy("No diners have opted in yet.", "ยังไม่มีนักชิมอนุญาต")}</p> : null}
           </div>}
         </section>
-      </div>
+      ) : null}
 
+      {workspaceTab === "photos" ? (
       <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -631,7 +687,9 @@ function VerifiedRestaurantPanel({
         </div>
         {!growthActive ? <p className="mt-4 text-sm text-muted-foreground">{copy("Start Growth to add up to 12 official photos.", "เริ่ม Growth เพื่อเพิ่มภาพทางการสูงสุด 12 ภาพ")}</p> : null}
       </section>
+      ) : null}
 
+      {workspaceTab === "updates" ? (
       <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
         <p className="editorial-kicker text-primary">{copy("Official updates", "อัปเดตทางการ")}</p>
         <h2 className="type-section-title mt-2">{copy("Give diners a reason to return", "สร้างเหตุผลให้นักชิมกลับมา")}</h2>
@@ -675,8 +733,9 @@ function VerifiedRestaurantPanel({
           </div>
         ) : null}
       </section>
+      ) : null}
 
-      {selectedDiner ? (
+      {workspaceTab === "audience" && selectedDiner ? (
         <section className="rounded-lg border border-border bg-secondary/30 p-5">
           <h2 className="type-section-title">{copy("Send manually", "ส่งด้วยตนเอง")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{copy("Messages are limited to one per 7 days; gift vouchers to one per 30 days for each diner.", "ข้อความจำกัด 1 ครั้งต่อ 7 วัน และบัตรกำนัล 1 ครั้งต่อ 30 วันต่อนักชิม")}</p>
