@@ -62,7 +62,7 @@ function PublicProfilePage() {
   const { lang, t } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"posts" | "tried">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "tried">("tried");
   const q = useQuery({
     ...publicProfileQuery(username),
     initialData: loadedProfile,
@@ -178,30 +178,25 @@ function PublicProfilePage() {
             </Link>
           )}
         </div>
-        <div className="mx-auto mt-8 grid max-w-5xl grid-cols-4 border-y border-white/10 py-5 text-center">
-          <Stat label={t("profile_posts")} value={posted.length} />
+        <div className="stitch-profile-stats mt-8 grid border-y border-white/10 py-5 text-center">
           <Stat label={t("profile_tried")} value={tried.length} />
-          <Stat label={t("profile_comparisons")} value={q.data.comparisons_count ?? 0} />
-          <Stat
-            label={lang === "th" ? "ผู้ติดตาม" : "Followers"}
-            value={q.data.followers_count ?? 0}
-          />
+          <Stat label={lang === "th" ? "เปรียบเทียบ" : "Versus"} value={q.data.comparisons_count ?? 0} />
         </div>
       </section>
 
       <section className="mx-auto mt-8 max-w-5xl">
         <div className="grid grid-cols-2 border-b border-border" role="tablist">
           <ProfileTab
-            active={activeTab === "posts"}
-            label={t("profile_posts")}
-            icon={<Grid3X3 className="h-4 w-4" />}
-            onClick={() => setActiveTab("posts")}
-          />
-          <ProfileTab
             active={activeTab === "tried"}
             label={t("profile_tried")}
             icon={<Utensils className="h-4 w-4" />}
             onClick={() => setActiveTab("tried")}
+          />
+          <ProfileTab
+            active={activeTab === "posts"}
+            label={t("profile_submitted")}
+            icon={<Grid3X3 className="h-4 w-4" />}
+            onClick={() => setActiveTab("posts")}
           />
         </div>
 

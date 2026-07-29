@@ -53,7 +53,7 @@ function Profile() {
   const [bio, setBio] = useState("");
   const [triedPublic, setTriedPublic] = useState(true);
   const [profileSection, setProfileSection] = useState<
-    "tried" | "submissions" | "settings"
+    "tried" | "submissions" | "saved" | "settings"
   >("tried");
 
   useEffect(() => {
@@ -148,30 +148,30 @@ function Profile() {
           <p className="stitch-profile-vertical" aria-hidden="true">
             Bangkok taste / JaanNee
           </p>
-          <Button variant="ghost" onClick={signOut} className="min-h-11">
-            {t("sign_out")}
-          </Button>
+          <div>
+            <Button variant="outline" onClick={() => setProfileSection("settings")} className="min-h-11">
+              {copy("Edit", "แก้ไข")}
+            </Button>
+          </div>
         </div>
       </section>
 
-      <div className="stitch-profile-stats grid grid-cols-4 border-b border-white/10 bg-[#181717] py-5 text-center">
-        <Stat label={t("profile_posts")} value={posted.length} />
+      <div className="stitch-profile-stats grid border-b border-white/10 bg-[#181717] py-5 text-center">
         <Stat label={t("profile_tried")} value={tried.length} />
-        <Stat label={t("profile_comparisons")} value={compared.length} />
-        <Stat label={copy("Followers", "ผู้ติดตาม")} value={q.data?.followers_count ?? 0} />
+        <Stat label={copy("Versus", "เปรียบเทียบ")} value={compared.length} />
       </div>
 
       <nav className="stitch-profile-tabs" aria-label={copy("Profile sections", "ส่วนต่าง ๆ ของโปรไฟล์")}>
         {[
           ["tried", t("profile_tried")],
           ["submissions", t("profile_submitted")],
-          ["settings", t("profile_settings")],
+          ["saved", t("want_to_try")],
         ].map(([value, label]) => (
           <button
             key={value}
             type="button"
             onClick={() =>
-              setProfileSection(value as "tried" | "submissions" | "settings")
+              setProfileSection(value as "tried" | "submissions" | "saved")
             }
             className={profileSection === value ? "is-active" : undefined}
           >
@@ -180,27 +180,11 @@ function Profile() {
         ))}
       </nav>
 
-      <div className={profileSection === "tried" ? "block" : "hidden"}>
-      <RetentionSuite
-        counts={{
-          posted: posted.length,
-          tried: tried.length,
-          compared: compared.length,
-          saved: wantToTry,
-        }}
-      />
-
-      <div className="mt-6">
-        <ReadyToComparePanel />
-      </div>
-
-      </div>
-
       <div className={profileSection === "submissions" ? "stitch-section" : "hidden"}>
         <PostActivity dishes={posted} />
       </div>
 
-      <section className={profileSection === "tried" ? "stitch-dashboard-card mt-8" : "hidden"}>
+      <section className={profileSection === "saved" ? "stitch-dashboard-card mt-8" : "hidden"}>
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
           {copy("Plan your next meal", "วางแผนมื้อต่อไป")}
         </p>
@@ -213,28 +197,31 @@ function Profile() {
             <EmptyNote text={t("no_saved_dishes")} />
           </div>
         ) : (
-          <div className="stitch-photo-grid mt-5">
-            {wantToTry.map((dish: any) => (
-              <DishCard key={dish.id} dish={dish} />
-            ))}
-          </div>
+          <ProfilePhotoGrid dishes={wantToTry} className="mt-5" />
         )}
       </section>
 
       <section className={profileSection === "tried" ? "mt-8" : "hidden"}>
-        <h2 className="type-section-title mb-4">{t("profile_tried")}</h2>
         {tried.length === 0 ? (
           <EmptyNote
             text={copy("No dishes marked tried yet.", "ยังไม่มีจานที่ทำเครื่องหมายว่าเคยกิน")}
           />
         ) : (
-          <div className="stitch-photo-grid">
-            {tried.map((dish: any) => (
-              <DishCard key={dish.id} dish={dish} />
-            ))}
-          </div>
+          <ProfilePhotoGrid dishes={tried} />
         )}
       </section>
+
+      <div className={profileSection === "tried" ? "mt-8 space-y-6" : "hidden"}>
+        <ReadyToComparePanel />
+        <RetentionSuite
+          counts={{
+            posted: posted.length,
+            tried: tried.length,
+            compared: compared.length,
+            saved: wantToTry,
+          }}
+        />
+      </div>
 
       <section className={profileSection === "submissions" ? "mt-10" : "hidden"}>
         <h2 className="type-section-title mb-4">{t("profile_submitted")}</h2>
@@ -401,6 +388,9 @@ function Profile() {
               </Button>
             </Link>
           ) : null}
+          <Button variant="ghost" onClick={signOut} className="min-h-11">
+            {t("sign_out")}
+          </Button>
         </div>
       </section>
       </div>
@@ -467,6 +457,56 @@ function Stat({ label, value }: { label: string; value: number }) {
     <div>
       <div className="type-stat">{value}</div>
       <div className="mt-1 text-[10px] font-bold uppercase text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ProfilePhotoGrid({
+  dishes,
+  className = "",
+}: {
+  dishes: any[];
+  className?: string;
+}) {
+  const { lang } = useI18n();
+  return (
+    <div className={`stitch-profile-dish-grid grid grid-cols-2 gap-3 ${className}`}>
+      {dishes.map((dish) => {
+        const name = localizedName(dish, lang);
+        const area = dish.place?.area
+          ? lang === "th"
+            ? dish.place.area.name_th
+            : dish.place.area.name_en
+          : dish.place?.name;
+        return (
+          <Link
+            key={dish.id}
+            to="/dish/$id"
+            params={{ id: dish.id }}
+            className="group relative aspect-[4/5] overflow-hidden bg-card"
+          >
+            {dish.photo_url ? (
+              <img
+                src={dish.photo_url}
+                alt={name}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center p-4 text-center font-display text-xl">
+                {name}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-3">
+              {area ? (
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary">{area}</p>
+              ) : null}
+              <p className="mt-1 truncate font-display text-xl text-white">{name}</p>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
