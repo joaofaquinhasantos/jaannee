@@ -555,6 +555,34 @@
   padding-bottom: 4rem;
 }
 
+.stitch-public-profile-hero {
+  background: #0e0e0e;
+}
+
+.stitch-public-profile-avatar {
+  border-radius: 0;
+}
+
+.stitch-public-profile-avatar img {
+  border-radius: 0;
+  filter: grayscale(1);
+  transition: filter 500ms ease, transform 700ms ease;
+}
+
+.stitch-public-profile-avatar:hover img {
+  filter: grayscale(0);
+  transform: scale(1.025);
+}
+
+.stitch-profile-dish-grid img {
+  filter: grayscale(0.35);
+  transition: filter 450ms ease, transform 650ms ease;
+}
+
+.stitch-profile-dish-grid a:hover img {
+  filter: grayscale(0);
+}
+
 .stitch-public-profile [role="tablist"] {
   position: sticky;
   top: 4rem;
@@ -577,6 +605,8 @@
 
 .stitch-profile-hero {
   isolation: isolate;
+  padding-block: clamp(2rem, 6vw, 5rem);
+  background: #0e0e0e;
 }
 
 .stitch-profile-hero::after {
@@ -597,7 +627,7 @@
   top: 4rem;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, minmax(max-content, 1fr));
+  grid-template-columns: repeat(3, minmax(max-content, 1fr));
   overflow-x: auto;
   border-bottom: 1px solid rgb(250 248 244 / 12%);
   background: rgb(19 19 19 / 94%);
@@ -619,6 +649,59 @@
 .stitch-profile-tabs button.is-active {
   border-color: #d6321f;
   color: #faf8f4;
+}
+
+.stitch-profile-avatar {
+  position: relative;
+  border-radius: 0;
+}
+
+.stitch-profile-avatar img {
+  filter: grayscale(1);
+  transition: filter 500ms ease, transform 700ms ease;
+}
+
+.stitch-profile-avatar:hover img {
+  filter: grayscale(0);
+  transform: scale(1.025);
+}
+
+.stitch-profile-vertical {
+  display: none;
+  align-self: center;
+  height: 12rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgb(250 248 244 / 12%);
+  color: rgb(250 248 244 / 22%);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.stitch-profile-stats {
+  max-width: 80rem;
+  margin-inline: auto;
+  background: #0e0e0e;
+}
+
+.stitch-profile .stitch-photo-grid > *,
+.stitch-profile .stitch-dashboard-card {
+  border-radius: 0;
+}
+
+.stitch-profile .stitch-dashboard-card {
+  background: #171616;
+}
+
+.stitch-profile .stitch-dashboard-card input,
+.stitch-profile .stitch-dashboard-card textarea {
+  border: 0;
+  border-bottom: 1px solid rgb(250 248 244 / 18%);
+  border-radius: 0;
+  background: transparent;
 }
 
 .stitch-business-workspace {
@@ -890,6 +973,31 @@
 }
 
 @media (min-width: 1100px) {
+  .stitch-profile-avatar,
+  .stitch-public-profile-avatar {
+    width: 12rem;
+    height: 16rem;
+  }
+
+  .stitch-profile-identity {
+    align-items: end;
+    gap: 3rem;
+  }
+
+  .stitch-public-profile-hero > div {
+    align-items: end;
+    gap: 3rem;
+  }
+
+  .stitch-profile-vertical {
+    display: block;
+  }
+
+  .stitch-profile-stats {
+    width: calc(100% - 4rem);
+    margin-top: -1px;
+  }
+
   .stitch-business-workspace {
     display: grid;
     grid-template-columns: 15rem minmax(0, 1fr);
@@ -926,11 +1034,54 @@
 
   .stitch-profile-tabs {
     top: 3.8rem;
-    grid-template-columns: repeat(4, max-content);
+    grid-template-columns: repeat(3, max-content);
   }
 
   .stitch-profile-tabs button {
-    min-width: 8rem;
+    min-width: 7rem;
+  }
+
+  .stitch-profile-identity {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .stitch-profile-identity > div {
+    flex-direction: column;
+  }
+
+  .stitch-profile-avatar,
+  .stitch-public-profile-avatar {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 999px;
+  }
+
+  .stitch-profile-avatar img,
+  .stitch-public-profile-avatar img {
+    border-radius: 999px;
+    filter: none;
+  }
+
+  .stitch-profile-identity > button {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+  }
+
+  .stitch-profile-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stitch-public-profile-hero > div {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .stitch-public-profile-hero > div > div {
+    flex-direction: column;
   }
 
   .stitch-business-tabs {

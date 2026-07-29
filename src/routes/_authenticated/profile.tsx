@@ -50,8 +50,8 @@ function Profile() {
   const [bio, setBio] = useState("");
   const [triedPublic, setTriedPublic] = useState(true);
   const [profileSection, setProfileSection] = useState<
-    "posts" | "tried" | "comparisons" | "settings"
-  >("posts");
+    "tried" | "submissions" | "settings"
+  >("tried");
 
   useEffect(() => {
     if (!profile) return;
@@ -92,9 +92,9 @@ function Profile() {
     <AppShell tone="noir">
       <div className="stitch-profile">
       <section className="stitch-profile-hero relative overflow-hidden border-b border-white/10 bg-[#1c1b1b] p-5 md:p-10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4 md:gap-7">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-primary font-display text-4xl md:h-32 md:w-32 md:text-6xl">
+        <div className="stitch-profile-identity flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4 md:gap-12">
+            <div className="stitch-profile-avatar flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-primary font-display text-4xl md:text-6xl">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -118,13 +118,16 @@ function Profile() {
               ) : null}
             </div>
           </div>
+          <p className="stitch-profile-vertical" aria-hidden="true">
+            Bangkok taste / JaanNee
+          </p>
           <Button variant="ghost" onClick={signOut} className="min-h-11">
             {t("sign_out")}
           </Button>
         </div>
       </section>
 
-      <div className="grid grid-cols-4 border-b border-white/10 bg-[#181717] py-5 text-center">
+      <div className="stitch-profile-stats grid grid-cols-4 border-b border-white/10 bg-[#181717] py-5 text-center">
         <Stat label={t("profile_posts")} value={posted.length} />
         <Stat label={t("profile_tried")} value={tried.length} />
         <Stat label={t("profile_comparisons")} value={compared.length} />
@@ -133,16 +136,15 @@ function Profile() {
 
       <nav className="stitch-profile-tabs" aria-label={copy("Profile sections", "ส่วนต่าง ๆ ของโปรไฟล์")}>
         {[
-          ["posts", t("profile_submitted")],
           ["tried", t("profile_tried")],
-          ["comparisons", t("profile_comparisons")],
+          ["submissions", t("profile_submitted")],
           ["settings", t("profile_settings")],
         ].map(([value, label]) => (
           <button
             key={value}
             type="button"
             onClick={() =>
-              setProfileSection(value as "posts" | "tried" | "comparisons" | "settings")
+              setProfileSection(value as "tried" | "submissions" | "settings")
             }
             className={profileSection === value ? "is-active" : undefined}
           >
@@ -151,7 +153,7 @@ function Profile() {
         ))}
       </nav>
 
-      <div className={profileSection === "posts" ? "block" : "hidden"}>
+      <div className={profileSection === "tried" ? "block" : "hidden"}>
       <RetentionSuite
         counts={{
           posted: posted.length,
@@ -165,9 +167,10 @@ function Profile() {
         <ReadyToComparePanel />
       </div>
 
-      <div className="stitch-section">
-        <PostActivity dishes={posted} />
       </div>
+
+      <div className={profileSection === "submissions" ? "stitch-section" : "hidden"}>
+        <PostActivity dishes={posted} />
       </div>
 
       <section className={profileSection === "tried" ? "stitch-dashboard-card mt-8" : "hidden"}>
@@ -206,7 +209,7 @@ function Profile() {
         )}
       </section>
 
-      <section className={profileSection === "posts" ? "mt-10" : "hidden"}>
+      <section className={profileSection === "submissions" ? "mt-10" : "hidden"}>
         <h2 className="type-section-title mb-4">{t("profile_submitted")}</h2>
         {posted.length === 0 ? (
           <EmptyNote text={copy("No submitted dishes yet.", "ยังไม่มีจานที่ส่งไว้")} />
@@ -231,7 +234,7 @@ function Profile() {
         )}
       </section>
 
-      <section className={profileSection === "comparisons" ? "mt-10" : "hidden"}>
+      <section className={profileSection === "tried" ? "mt-10" : "hidden"}>
         <h2 className="type-section-title mb-4">{t("profile_comparisons")}</h2>
         {compared.length === 0 ? (
           <EmptyNote text={copy("No comparisons yet.", "ยังไม่มีการเปรียบเทียบ")} />

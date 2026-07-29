@@ -128,10 +128,10 @@ function PublicProfilePage() {
   return (
     <AppShell tone="noir">
       <div className="stitch-public-profile">
-      <section className="-mx-4 -mt-6 border-b border-white/10 bg-[#1c1b1b] px-4 py-8 md:-mx-8 md:-mt-10 md:px-8 md:py-12">
+      <section className="stitch-public-profile-hero -mx-4 -mt-6 border-b border-white/10 bg-[#1c1b1b] px-4 py-8 md:-mx-8 md:-mt-10 md:px-8 md:py-12">
         <div className="mx-auto flex max-w-5xl items-start justify-between gap-3 sm:items-center sm:gap-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary font-display text-3xl text-primary-foreground sm:h-28 sm:w-28 sm:text-5xl">
+            <div className="stitch-public-profile-avatar flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary font-display text-3xl text-primary-foreground sm:text-5xl">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -277,7 +277,7 @@ function ProfileDishGrid({
   if (dishes.length === 0) return <Empty text={emptyText} />;
 
   return (
-    <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
+    <div className="stitch-profile-dish-grid grid grid-cols-2 gap-3 md:grid-cols-4">
       {dishes.map((dish) => {
         const name = lang === "th" && dish.name_th ? dish.name_th : dish.name_en;
         return (
@@ -286,7 +286,7 @@ function ProfileDishGrid({
             to="/dish/$id"
             params={{ id: dish.id }}
             aria-label={name}
-            className="group relative aspect-square overflow-hidden bg-card focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="group relative aspect-[4/5] overflow-hidden bg-card focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {dish.photo_url ? (
               <img
