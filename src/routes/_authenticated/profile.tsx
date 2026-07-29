@@ -86,27 +86,41 @@ function Profile() {
   const invalidUsername = username.trim().length > 0 && username.trim().length < 3;
 
   return (
-    <AppShell>
-      <div className="flex items-start justify-between gap-4 border-b border-border pb-5 md:pb-7">
-        <div>
-          <p className="text-xs font-bold uppercase text-primary">{t("my_jaannee")}</p>
-          <h1
-            className={
-              hasDisplayName
-                ? "mt-2 break-words font-display text-[clamp(2.5rem,7vw,6rem)] leading-[0.9]"
-                : "mt-2 break-all text-3xl font-semibold leading-tight md:text-5xl"
-            }
-          >
-            {hasDisplayName ? displayName : profile?.username ? `@${displayName}` : displayName}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
+    <AppShell tone="noir">
+      <section className="relative overflow-hidden border-b border-white/10 bg-[#1c1b1b] p-5 md:p-10">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4 md:gap-7">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-primary font-display text-4xl md:h-32 md:w-32 md:text-6xl">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                displayName.slice(0, 1)
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase text-primary">{t("my_jaannee")}</p>
+              <h1
+                className={
+                  hasDisplayName
+                    ? "mt-2 break-words font-display text-[clamp(2.5rem,7vw,6rem)] leading-[0.9]"
+                    : "mt-2 break-all text-3xl font-semibold leading-tight md:text-5xl"
+                }
+              >
+                {hasDisplayName ? displayName : profile?.username ? `@${displayName}` : displayName}
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">{t("profile_history_body")}</p>
+              {profile?.bio ? (
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">{profile.bio}</p>
+              ) : null}
+            </div>
+          </div>
+          <Button variant="ghost" onClick={signOut} className="min-h-11">
+            {t("sign_out")}
+          </Button>
         </div>
-        <Button variant="ghost" onClick={signOut} className="min-h-11">
-          {t("sign_out")}
-        </Button>
-      </div>
+      </section>
 
-      <div className="mt-5 grid grid-cols-4 gap-2 rounded-lg border border-border bg-card p-3 text-center">
+      <div className="grid grid-cols-4 border-b border-white/10 bg-[#181717] py-5 text-center">
         <Stat label={t("profile_posts")} value={posted.length} />
         <Stat label={t("profile_tried")} value={tried.length} />
         <Stat label={t("profile_comparisons")} value={compared.length} />
@@ -126,9 +140,11 @@ function Profile() {
         <ReadyToComparePanel />
       </div>
 
-      <PostActivity dishes={posted} />
+      <div className="stitch-section">
+        <PostActivity dishes={posted} />
+      </div>
 
-      <section className="mt-8 rounded-lg border border-border bg-secondary/35 p-4 md:p-6">
+      <section className="stitch-dashboard-card mt-8">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
           {copy("Plan your next meal", "วางแผนมื้อต่อไป")}
         </p>
@@ -141,7 +157,7 @@ function Profile() {
             <EmptyNote text={t("no_saved_dishes")} />
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stitch-photo-grid mt-5">
             {wantToTry.map((dish: any) => (
               <DishCard key={dish.id} dish={dish} />
             ))}
@@ -156,7 +172,7 @@ function Profile() {
             text={copy("No dishes marked tried yet.", "ยังไม่มีจานที่ทำเครื่องหมายว่าเคยกิน")}
           />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stitch-photo-grid">
             {tried.map((dish: any) => (
               <DishCard key={dish.id} dish={dish} />
             ))}
@@ -169,10 +185,13 @@ function Profile() {
         {posted.length === 0 ? (
           <EmptyNote text={copy("No submitted dishes yet.", "ยังไม่มีจานที่ส่งไว้")} />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stitch-photo-grid">
             {posted.map((dish: any) =>
               dish.status === "approved" ? (
-                <div key={dish.id} className="overflow-hidden rounded-lg border border-border bg-card">
+                <div
+                  key={dish.id}
+                  className="overflow-hidden rounded-lg border border-border bg-card"
+                >
                   <DishCard dish={dish} />
                   <div className="border-t border-border px-4 pb-4">
                     <PostProgressTimeline dish={dish} />
@@ -213,7 +232,7 @@ function Profile() {
         )}
       </section>
 
-      <section className="mt-10 rounded-lg border border-border bg-card p-4 md:p-5">
+      <section className="stitch-dashboard-card mt-10">
         <h2 className="type-section-title">{t("profile_settings")}</h2>
         {!profile?.username ? (
           <div className="mt-4 rounded-md bg-secondary p-3 text-sm">

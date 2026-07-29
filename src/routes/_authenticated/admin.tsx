@@ -155,17 +155,19 @@ function Admin() {
     );
 
   return (
-    <AppShell>
-      <section className="border-b border-border pb-7">
-        <p className="text-xs font-bold uppercase text-primary">Operations</p>
-        <h1 className="type-page-title mt-2">Admin</h1>
+    <AppShell tone="noir">
+      <section className="stitch-masthead">
+        <div>
+          <p className="stitch-kicker">Operations</p>
+          <h1 className="mt-2">Admin</h1>
+        </div>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
           Keep the board clean: approve dishes, resolve reports, and manage the taxonomy behind the
           public ranking.
         </p>
       </section>
-      <Tabs value={section} onValueChange={changeSection} className="mt-6">
-        <TabsList className="sticky top-2 z-20 h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg border border-border bg-secondary/95 p-1 shadow-sm backdrop-blur">
+      <Tabs value={section} onValueChange={changeSection} className="stitch-workspace mt-8">
+        <TabsList className="stitch-workspace-nav h-auto w-full justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="dishes">Dishes</TabsTrigger>
@@ -175,30 +177,32 @@ function Admin() {
           <TabsTrigger value="taxonomy">Cuisines, Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview">
-          <AdminOverview onNavigate={changeSection} />
-        </TabsContent>
-        <TabsContent value="pending">
-          <PendingList />
-        </TabsContent>
-        <TabsContent value="dishes">
-          <DishAdmin />
-        </TabsContent>
-        <TabsContent value="places">
-          <PendingPlaces />
-        </TabsContent>
-        <TabsContent value="reports">
-          <Reports />
-        </TabsContent>
-        <TabsContent value="restaurants">
-          <RestaurantClaims />
-        </TabsContent>
-        <TabsContent value="taxonomy">
-          <Taxonomy />
-        </TabsContent>
-        <TabsContent value="import">
-          <Import />
-        </TabsContent>
+        <div className="min-w-0">
+          <TabsContent value="overview">
+            <AdminOverview onNavigate={changeSection} />
+          </TabsContent>
+          <TabsContent value="pending">
+            <PendingList />
+          </TabsContent>
+          <TabsContent value="dishes">
+            <DishAdmin />
+          </TabsContent>
+          <TabsContent value="places">
+            <PendingPlaces />
+          </TabsContent>
+          <TabsContent value="reports">
+            <Reports />
+          </TabsContent>
+          <TabsContent value="restaurants">
+            <RestaurantClaims />
+          </TabsContent>
+          <TabsContent value="taxonomy">
+            <Taxonomy />
+          </TabsContent>
+          <TabsContent value="import">
+            <Import />
+          </TabsContent>
+        </div>
       </Tabs>
     </AppShell>
   );
@@ -278,7 +282,9 @@ function RestaurantClaims() {
     <div className="mt-5 space-y-4">
       <section className="flex flex-col gap-4 rounded-lg border border-primary/40 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-primary">Public profile demo</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-primary">
+            Public profile demo
+          </p>
           <h2 className="mt-2 font-display text-3xl uppercase">JaanNee Test Kitchen</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Preview the complete diner-facing restaurant page with booking, official updates,
@@ -311,14 +317,18 @@ function RestaurantClaims() {
         <article key={claim.id} className="rounded-lg border border-border bg-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-primary">{claim.status}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                {claim.status}
+              </p>
               <h3 className="mt-2 font-display text-2xl">{claim.place?.name}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{claim.place?.address}</p>
               <p className="mt-3 text-sm">
                 <strong>Claimant:</strong>{" "}
                 {claim.profile?.display_name || claim.profile?.username || claim.requested_by}
               </p>
-              <p className="mt-1 text-sm"><strong>Business role:</strong> {claim.business_role}</p>
+              <p className="mt-1 text-sm">
+                <strong>Business role:</strong> {claim.business_role}
+              </p>
             </div>
           </div>
           <div className="mt-4 rounded-md bg-secondary p-4 text-sm leading-6">

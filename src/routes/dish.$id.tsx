@@ -343,9 +343,9 @@ function DishPage() {
     : false;
 
   return (
-    <AppShell>
-      <article>
-        <div className="relative min-h-[32rem] overflow-hidden border-2 border-foreground bg-ink md:min-h-[43rem]">
+    <AppShell tone="noir" fullBleed>
+      <article className="stitch-page">
+        <div className="relative min-h-[72svh] overflow-hidden bg-black md:min-h-[82svh]">
           <div className="absolute inset-0 bg-muted">
             {dish.photo_url ? (
               <img
@@ -371,7 +371,9 @@ function DishPage() {
                     : dish.requested_category_en || dish.requested_category_th)}
                 {dish.subtype ? ` · ${localizedName(dish.subtype, lang)}` : ""}
               </p>
-              <h1 className="type-page-title mt-4 max-w-5xl">{name}</h1>
+              <h1 className="mt-4 max-w-5xl font-display text-[clamp(3.5rem,10vw,9rem)] leading-[0.82] tracking-[-0.045em]">
+                {name}
+              </h1>
               {alternateName ? (
                 <p className="mt-3 font-thai text-xl font-medium text-white/75">{alternateName}</p>
               ) : null}
@@ -380,7 +382,7 @@ function DishPage() {
                 {areaName ? ` · ${areaName}` : ""}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
+            <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end md:pb-2">
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(status.tone)}`}
               >
@@ -400,8 +402,8 @@ function DishPage() {
           </div>
         </div>
 
-        <div className="grid border-x-2 border-b-2 border-foreground bg-card md:grid-cols-[1.15fr_0.85fr]">
-          <div className="p-5 md:border-r-2 md:border-foreground md:p-8">
+        <div className="stitch-container grid bg-[#131313] lg:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
+          <div className="py-8 lg:border-r lg:border-white/10 lg:py-14 lg:pr-12">
             {dish.note ? (
               <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">
                 {dish.note}
@@ -446,10 +448,7 @@ function DishPage() {
                   )}
                 </div>
               </section>
-            ) : auth.status === "in" &&
-              isTried &&
-              !comparison.isLoading &&
-              dish.category?.slug ? (
+            ) : auth.status === "in" && isTried && !comparison.isLoading && dish.category?.slug ? (
               <section className="mt-8 border-t border-border pt-6">
                 <p className="label-caps text-primary">{t("no_pairs_yet")}</p>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
@@ -468,7 +467,7 @@ function DishPage() {
               </section>
             ) : null}
 
-            <div className="mt-7 flex flex-wrap gap-2">
+            <div className="sticky bottom-20 z-20 -mx-4 mt-8 flex gap-2 overflow-x-auto border-y border-white/10 bg-[#131313]/95 px-4 py-3 backdrop-blur-xl md:static md:mx-0 md:flex-wrap md:border-0 md:bg-transparent md:px-0 md:py-0">
               {isApproved && auth.status === "in" ? (
                 <Button
                   variant={isTried ? "secondary" : "default"}
@@ -584,7 +583,7 @@ function DishPage() {
             />
           </div>
 
-          <aside className="space-y-5 p-5 md:p-8">
+          <aside className="space-y-8 py-8 lg:py-14 lg:pl-12">
             {dish.submitted_by ? (
               <div className="border-y border-foreground/25 py-4">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">

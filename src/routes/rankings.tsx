@@ -115,14 +115,12 @@ function Rankings() {
     .slice(0, 12);
 
   return (
-    <AppShell>
-      <section className="border-b border-border pb-6 pt-5 md:pb-8 md:pt-10">
+    <AppShell tone="noir">
+      <section className="stitch-masthead">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="editorial-kicker text-primary">
-              {copy("Diner-powered leaderboard", "อันดับจากนักชิม")}
-            </p>
-            <h1 className="type-page-title mt-3">{t("nav_rankings")}</h1>
+            <p className="stitch-kicker">{copy("Diner-powered leaderboard", "อันดับจากนักชิม")}</p>
+            <h1 className="mt-3">{t("nav_rankings")}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
               {t("rankings_intro")}
             </p>
@@ -131,20 +129,21 @@ function Rankings() {
         </div>
       </section>
 
-      <div className="mt-5">
+      <div className="sticky top-16 z-20 -mx-4 border-b border-white/10 bg-[#131313]/95 px-4 py-3 backdrop-blur-xl md:mx-0 md:px-0">
         <DishBrowser
           categories={categories}
           areas={areas}
           category={cat}
           subtype={subtype}
           area={area}
+          tone="noir"
           onCategoryChange={setCat}
           onSubtypeChange={setSubtype}
           onAreaChange={setArea}
         />
       </div>
 
-      <div className="mt-7">
+      <div className="stitch-section">
         {taxonomy.isSuccess && categories.length === 0 ? (
           <EmptyBoard title={copy("No rankings yet.", "ยังไม่มีอันดับ")} />
         ) : !cat ? (
@@ -161,32 +160,32 @@ function Rankings() {
                 "แต่ละหมวดมีการเปรียบเทียบและอันดับแยกจากกันอย่างยุติธรรม",
               )}
             </p>
-            <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="stitch-card-grid mt-8">
               {orderedCategories.slice(0, 18).map((category) => {
                 const count = Number(categoryCounts.data?.[category.id] ?? 0);
                 return (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => {
-                    setCat(category.slug);
-                    setSubtype(undefined);
-                  }}
-                  className={`min-h-16 rounded-md border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    count > 0 ? "border-border" : "border-border/60 text-muted-foreground"
-                  }`}
-                >
-                  <span className="block font-semibold">{localizedName(category, lang)}</span>
-                  <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                    {count > 0
-                      ? lang === "th"
-                        ? `${count} จาน`
-                        : `${count} ${count === 1 ? "dish" : "dishes"}`
-                      : lang === "th"
-                        ? "ยังไม่มีจาน"
-                        : "No dishes yet"}
-                  </span>
-                </button>
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setCat(category.slug);
+                      setSubtype(undefined);
+                    }}
+                    className={`min-h-28 border-0 bg-[#1c1b1b] px-5 py-4 text-left transition hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      count > 0 ? "border-border" : "border-border/60 text-muted-foreground"
+                    }`}
+                  >
+                    <span className="block font-semibold">{localizedName(category, lang)}</span>
+                    <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                      {count > 0
+                        ? lang === "th"
+                          ? `${count} จาน`
+                          : `${count} ${count === 1 ? "dish" : "dishes"}`
+                        : lang === "th"
+                          ? "ยังไม่มีจาน"
+                          : "No dishes yet"}
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -198,14 +197,16 @@ function Rankings() {
         ) : (board.data ?? []).length === 0 && gatheringDishes.length === 0 ? (
           <EmptyBoard title={copy("No ranking yet.", "ยังไม่มีอันดับ")} />
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-20">
             {(board.data ?? []).length > 0 ? (
               <section>
-                <div className="mb-6">
-                  <p className="label-caps text-primary">{t("section_top_ranked")}</p>
-                  <h2 className="type-section-title mt-2">
-                    {copy("Ranked dishes", "จานที่มีอันดับ")}
-                  </h2>
+                <div className="stitch-section-head">
+                  <div>
+                    <p className="stitch-kicker">{t("section_top_ranked")}</p>
+                    <h2 className="mt-2 font-display text-5xl">
+                      {copy("Ranked dishes", "จานที่มีอันดับ")}
+                    </h2>
+                  </div>
                 </div>
                 <div className="space-y-14 md:space-y-20">
                   {(board.data ?? []).slice(0, 3).map((dish: any, index: number) => (
@@ -228,17 +229,19 @@ function Rankings() {
             ) : null}
 
             {gatheringDishes.length > 0 ? (
-              <section className="border-t border-border pt-7">
-                <div className="mb-5">
-                  <p className="label-caps text-primary">{t("gathering_progress")}</p>
-                  <h2 className="type-section-title mt-2">
-                    {copy("New contenders", "ผู้ท้าชิงใหม่")}
-                  </h2>
-                  <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                    {t("section_almost_ranked_body")}
-                  </p>
+              <section className="stitch-section">
+                <div className="stitch-section-head">
+                  <div>
+                    <p className="stitch-kicker">{t("gathering_progress")}</p>
+                    <h2 className="mt-2 font-display text-5xl">
+                      {copy("New contenders", "ผู้ท้าชิงใหม่")}
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                      {t("section_almost_ranked_body")}
+                    </p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="stitch-card-grid">
                   {gatheringDishes.map((dish: any) => (
                     <DishCard key={dish.id} dish={dish} />
                   ))}
