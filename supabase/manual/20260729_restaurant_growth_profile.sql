@@ -123,7 +123,20 @@ create policy "restaurant members read consented audience"
   on public.restaurant_contact_permissions
   for select to authenticated
   using (
-    public.restaurant_growth_is_active(place_id)
+    exists (
+      select 1
+      from public.restaurant_profiles rp
+      where rp.place_id = restaurant_contact_permissions.place_id
+        and rp.is_verified = true
+        and rp.subscription_tier = 'growth'
+        and (
+          rp.subscription_status = 'active'
+          or (
+            rp.subscription_status = 'trialing'
+            and rp.trial_ends_at > now()
+          )
+        )
+    )
     and exists (
       select 1
       from public.restaurant_memberships m

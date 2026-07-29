@@ -20,7 +20,7 @@ describe("restaurant Growth profile safety", () => {
     expect(sql).toContain("trial_ends_at > now()");
     expect(sql).toContain("trg_restaurant_outreach_growth");
     expect(sql).toContain('drop policy if exists "restaurant members read consented audience"');
-    expect(sql).toContain("public.restaurant_growth_is_active(place_id)");
+    expect(sql).toContain("rp.subscription_tier = 'growth'");
   });
 
   it("limits official updates and preserves ranking isolation", () => {
