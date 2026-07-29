@@ -168,6 +168,9 @@ function Index() {
     .sort((a, b) => dateValue(b.created_at) - dateValue(a.created_at) || a.id.localeCompare(b.id))
     .slice(0, 8);
   const leader = ranked.find((dish) => dish.photo_url) ?? contenders.find((dish) => dish.photo_url);
+  const supportingDish =
+    ranked.find((dish) => dish.id !== leader?.id && dish.photo_url) ??
+    contenders.find((dish) => dish.id !== leader?.id && dish.photo_url);
   const categoryPhotos = categoryRows.filter((category) => category.reference_photo_url);
   const publishedDishes = (bootstrap.data?.dishes ?? []) as DishRow[];
   const followedDishes =
@@ -224,9 +227,6 @@ function Index() {
         </div>
       </div>
 
-      <TriedActivation dishes={dishRows} />
-      <ReturnHub />
-
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
         <SubtypeChooser
           category={selectedCategory!}
@@ -240,11 +240,20 @@ function Index() {
         <div className="min-h-[40vh] px-6 py-16 text-sm text-white/75">{t("loading")}</div>
       ) : leader ? (
         <div>
-          <HeroDish
-            dish={leader}
-            rank={ranked.findIndex((dish) => dish.id === leader.id) + 1}
+          <DiscoveryMosaic
+            leader={leader}
+            leaderRank={ranked.findIndex((dish) => dish.id === leader.id) + 1}
+            supportingDish={supportingDish}
+            supportingRank={
+              supportingDish ? ranked.findIndex((dish) => dish.id === supportingDish.id) + 1 : 0
+            }
             poolReady={poolReady}
           />
+
+          <div className="border-t border-white/10 bg-[#111111] px-5 pt-8 md:px-8">
+            <TriedActivation dishes={dishRows} />
+            <ReturnHub />
+          </div>
 
           {ranked.length > 1 ? (
             <DishSection
@@ -436,6 +445,106 @@ function SubtypeChooser({
   );
 }
 
+function DiscoveryMosaic({
+  leader,
+  leaderRank,
+  supportingDish,
+  supportingRank,
+  poolReady,
+}: {
+  leader: DishRow;
+  leaderRank: number;
+  supportingDish?: DishRow;
+  supportingRank: number;
+  poolReady: boolean;
+}) {
+  const { lang } = useI18n();
+  const triedCount = Number(leader.tried_count ?? 0);
+  const supportingIsRanked =
+    poolReady &&
+    supportingRank > 0 &&
+    Number(supportingDish?.comparisons_count ?? 0) >= PUBLIC_RANK_THRESHOLD;
+
+  return (
+    <section className="bg-[#111111] px-4 py-4 text-white md:px-8 md:py-8">
+      <div className="mx-auto grid max-w-[112rem] grid-cols-12 gap-3">
+        <div className="col-span-12 overflow-hidden lg:col-span-8">
+          <HeroDish dish={leader} rank={leaderRank} poolReady={poolReady} />
+        </div>
+        <aside className="col-span-12 grid gap-3 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
+          <div className="relative flex min-h-52 flex-col justify-between overflow-hidden border border-white/10 bg-[#201f1f] p-6 md:p-8">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+                {lang === "th" ? "สัญญาณจากนักชิม" : "Diner signal"}
+              </p>
+              <p className="mt-5 font-noir-display text-4xl uppercase leading-[0.9]">
+                {triedCount > 0
+                  ? lang === "th"
+                    ? `นักชิม ${triedCount} คนเคยกินจานนี้`
+                    : `${triedCount} ${triedCount === 1 ? "diner has" : "diners have"} tried this dish`
+                  : lang === "th"
+                    ? "เป็นคนแรกที่ลองจานนี้"
+                    : "Be the first diner to try this dish"}
+              </p>
+            </div>
+            <p className="mt-6 text-xs leading-5 text-white/55">
+              {lang === "th"
+                ? "ทุกการลองช่วยเปิดโอกาสให้เกิดการเปรียบเทียบที่น่าเชื่อถือ"
+                : "Every tried mark unlocks more credible dish comparisons."}
+            </p>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-12 -right-4 font-noir-display text-[11rem] leading-none text-white/[0.025]"
+            >
+              JN
+            </span>
+          </div>
+
+          {supportingDish ? (
+            <Link
+              to="/dish/$id"
+              params={{ id: supportingDish.id }}
+              className="group relative min-h-64 overflow-hidden border border-white/10 bg-[#201f1f]"
+            >
+              <NoirPhoto
+                src={supportingDish.photo_url ?? ""}
+                alt={localizedName(supportingDish, lang)}
+              />
+              <div className="absolute inset-x-0 bottom-0 z-10 p-6">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
+                  {supportingIsRanked
+                    ? lang === "th"
+                      ? `อันดับ #${supportingRank}`
+                      : `Ranked #${supportingRank}`
+                    : lang === "th"
+                      ? "ผู้ท้าชิงใหม่"
+                      : "New contender"}
+                </p>
+                <h2 className="mt-2 font-noir-display text-4xl uppercase leading-[0.88] text-white">
+                  {localizedName(supportingDish, lang)}
+                </h2>
+                <p className="mt-3 text-xs text-white/65">{supportingDish.place?.name}</p>
+              </div>
+            </Link>
+          ) : (
+            <Link
+              to="/submit"
+              className="flex min-h-52 flex-col justify-end border border-white/10 bg-primary p-6 text-white md:p-8"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+                {lang === "th" ? "สร้างการแข่งขัน" : "Build the competition"}
+              </p>
+              <p className="mt-3 font-noir-display text-4xl uppercase leading-[0.9]">
+                {lang === "th" ? "เพิ่มจานถัดไป" : "Add the next dish"}
+              </p>
+            </Link>
+          )}
+        </aside>
+      </div>
+    </section>
+  );
+}
+
 function HeroDish({ dish, rank, poolReady }: { dish: DishRow; rank: number; poolReady: boolean }) {
   const { t, lang } = useI18n();
   const ranked =
@@ -447,7 +556,7 @@ function HeroDish({ dish, rank, poolReady }: { dish: DishRow; rank: number; pool
     <Link
       to="/dish/$id"
       params={{ id: dish.id }}
-      className="group relative block min-h-[56svh] overflow-hidden bg-black md:min-h-[40vh]"
+      className="group relative block h-full min-h-[56svh] overflow-hidden bg-black lg:min-h-[34rem]"
     >
       <NoirPhoto src={dish.photo_url ?? ""} alt={name} priority />
       <div className="absolute inset-x-0 bottom-0 z-10 max-w-5xl p-6 md:p-10 lg:p-12">
