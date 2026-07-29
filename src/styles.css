@@ -544,13 +544,13 @@
 
 /* Exact structural language from the supplied Stitch platform exports. */
 .stitch-profile {
-  width: min(100%, 80rem);
+  width: min(100%, 48rem);
   margin-inline: auto;
   padding-bottom: 5rem;
 }
 
 .stitch-public-profile {
-  width: min(100%, 78rem);
+  width: min(100%, 48rem);
   margin-inline: auto;
   padding-bottom: 4rem;
 }
@@ -560,12 +560,14 @@
 }
 
 .stitch-public-profile-avatar {
-  border-radius: 0;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgb(214 50 31 / 12%), 0 1.2rem 3rem rgb(0 0 0 / 35%);
 }
 
 .stitch-public-profile-avatar img {
-  border-radius: 0;
-  filter: grayscale(1);
+  border-radius: 999px;
   transition: filter 500ms ease, transform 700ms ease;
 }
 
@@ -605,21 +607,12 @@
 
 .stitch-profile-hero {
   isolation: isolate;
-  padding-block: clamp(2rem, 6vw, 5rem);
+  padding-block: 2.5rem 2rem;
   background: #0e0e0e;
 }
 
 .stitch-profile-hero::after {
-  position: absolute;
-  right: -2rem;
-  bottom: -4rem;
-  z-index: -1;
-  color: rgb(250 248 244 / 3%);
-  content: "TASTE";
-  font-family: var(--font-display);
-  font-size: clamp(7rem, 20vw, 18rem);
-  line-height: 0.7;
-  pointer-events: none;
+  content: none;
 }
 
 .stitch-profile-tabs {
@@ -653,11 +646,14 @@
 
 .stitch-profile-avatar {
   position: relative;
-  border-radius: 0;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgb(214 50 31 / 12%), 0 1.2rem 3rem rgb(0 0 0 / 35%);
 }
 
 .stitch-profile-avatar img {
-  filter: grayscale(1);
+  border-radius: 999px;
   transition: filter 500ms ease, transform 700ms ease;
 }
 
@@ -682,9 +678,57 @@
 }
 
 .stitch-profile-stats {
-  max-width: 80rem;
+  width: calc(100% - 2.5rem);
+  max-width: 40rem;
   margin-inline: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid rgb(250 248 244 / 10%);
+  border-radius: 0.75rem;
+  overflow: hidden;
   background: #0e0e0e;
+}
+
+.stitch-profile-identity > div:first-child,
+.stitch-public-profile-hero > div > div {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stitch-profile-identity > div:last-child {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.stitch-profile-identity h1,
+.stitch-public-profile-hero h1 {
+  max-width: 36rem;
+  font-size: clamp(2rem, 8vw, 3rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.stitch-profile-identity > div:first-child > div:last-child,
+.stitch-public-profile-hero > div > div > div:last-child {
+  min-width: 0;
+  text-align: center;
+}
+
+.stitch-public-profile-hero > div {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stitch-public-profile-hero > div > a,
+.stitch-public-profile-hero > div > button {
+  order: -1;
+  align-self: flex-end;
+}
+
+.stitch-public-profile [role="tablist"] {
+  border-top: 1px solid rgb(250 248 244 / 8%);
 }
 
 .stitch-profile .stitch-photo-grid > *,
@@ -975,27 +1019,31 @@
 @media (min-width: 1100px) {
   .stitch-profile-avatar,
   .stitch-public-profile-avatar {
-    width: 12rem;
-    height: 16rem;
+    width: 8rem;
+    height: 8rem;
   }
 
   .stitch-profile-identity {
-    align-items: end;
-    gap: 3rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
   }
 
   .stitch-public-profile-hero > div {
-    align-items: end;
-    gap: 3rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
   }
 
   .stitch-profile-vertical {
-    display: block;
+    display: none;
   }
 
   .stitch-profile-stats {
-    width: calc(100% - 4rem);
-    margin-top: -1px;
+    width: calc(100% - 2.5rem);
+    margin-top: 0;
   }
 
   .stitch-business-workspace {
