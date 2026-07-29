@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CalendarDays, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { VoucherCard } from "@/components/VoucherCard";
 import { Input } from "@/components/ui/input";
 import {
   listMyRetention,
@@ -149,14 +150,17 @@ export function RetentionSuite({ counts }: { counts: ProfileCounts }) {
                           {item.place?.name} · {item.kind === "voucher" ? copy("Gift voucher", "บัตรกำนัล") : copy("Message", "ข้อความ")}
                         </p>
                         <h3 className="mt-1 font-semibold">{item.subject}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
                         {item.kind === "voucher" ? (
-                          <div className="mt-3 rounded-md border border-dashed border-primary bg-background p-3">
-                            <p className="font-mono text-lg font-bold text-primary">{item.voucher_code}</p>
-                            {item.voucher_terms ? <p className="mt-1 text-xs text-muted-foreground">{item.voucher_terms}</p> : null}
-                            {item.expires_at ? <p className="mt-1 text-xs text-muted-foreground">{copy("Expires", "หมดอายุ")} {new Date(item.expires_at).toLocaleDateString(lang === "th" ? "th-TH" : "en-GB")}</p> : null}
-                          </div>
-                        ) : null}
+                          <VoucherCard
+                            restaurantName={item.place?.name || copy("Restaurant", "ร้านอาหาร")}
+                            title={item.subject}
+                            message={item.body}
+                            securityNumber={item.voucher_code}
+                            terms={item.voucher_terms}
+                            expiresAt={item.expires_at}
+                            language={lang}
+                          />
+                        ) : <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>}
                       </div>
                       <div className="flex gap-2">
                         {!item.read_at ? (
