@@ -129,9 +129,22 @@ export function AppShell({
           className={`mx-auto flex items-center justify-between px-4 md:px-8 ${noir ? "max-w-[112rem]" : "max-w-[90rem]"}`}
         >
           <p className="brand-serif text-2xl">JaanNee</p>
-          <p className={noir ? "text-sm text-white/35" : "text-sm text-muted-foreground"}>
-            © {new Date().getFullYear()} JaanNee
-          </p>
+          <div className="flex items-center gap-4">
+            <Link
+              to={auth.status === "in" ? "/restaurant" : "/auth"}
+              search={auth.status === "out" ? { redirect: "/restaurant" } : undefined}
+              className={
+                noir
+                  ? "text-xs font-semibold text-white/45 hover:text-primary"
+                  : "text-xs font-semibold text-muted-foreground hover:text-primary"
+              }
+            >
+              {lang === "th" ? "สำหรับร้านอาหาร" : "For restaurants"}
+            </Link>
+            <p className={noir ? "text-sm text-white/35" : "text-sm text-muted-foreground"}>
+              © {new Date().getFullYear()} JaanNee
+            </p>
+          </div>
         </div>
       </footer>
       <nav

@@ -14,6 +14,7 @@ import { DishCard, statusLabel, toneClass } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
 import { FoodPostCreator } from "@/components/FoodPostCreator";
+import { RestaurantConnection } from "@/components/RestaurantConnection";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,6 +51,7 @@ import { localizedName, secondaryName } from "@/lib/names";
 import { getRequestOrigin } from "@/lib/origin.functions";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
 import { useAuthUser } from "@/lib/use-auth";
+import { getPublicRestaurantSummary } from "@/lib/restaurant.functions";
 
 type DishDetail = TriedDish & {
   status?: string | null;
@@ -167,6 +169,12 @@ function DishPage() {
     staleTime: 60_000,
   });
   const dish = dishQuery.data as DishDetail | undefined;
+  const officialRestaurant = useQuery({
+    queryKey: ["public-restaurant-profile", dish?.place?.id],
+    queryFn: () => getPublicRestaurantSummary({ data: { placeId: dish!.place!.id! } }),
+    enabled: Boolean(dish?.place?.id),
+    staleTime: 5 * 60_000,
+  });
   const tried = useQuery({
     queryKey: ["tried-ids", auth.userId],
     queryFn: () => myTriedIds(),
@@ -559,8 +567,21 @@ function DishPage() {
                   </Button>
                 </a>
               ) : null}
+              {officialRestaurant.data && dish.place?.id ? (
+                <Link to="/place/$placeId" params={{ placeId: dish.place.id }}>
+                  <Button variant="outline" type="button" className="min-h-11">
+                    {copy("Official restaurant profile", "โปรไฟล์ร้านทางการ")}
+                  </Button>
+                </Link>
+              ) : null}
               {auth.status === "in" ? <ReportDialog dishId={id} /> : null}
             </div>
+            <RestaurantConnection
+              placeId={dish.place?.id}
+              placeName={dish.place?.name}
+              dishId={dish.id}
+              eligible={auth.status === "in" && (isTried || isSaved)}
+            />
           </div>
 
           <aside className="space-y-5 p-5 md:p-8">
