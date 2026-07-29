@@ -43,6 +43,9 @@ import { useAuthUser } from "@/lib/use-auth";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/restaurant")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    demo: search.demo === true || search.demo === "true",
+  }),
   head: () => ({
     meta: [
       { title: "Restaurant workspace — JaanNee" },
@@ -53,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/restaurant")({
 });
 
 function RestaurantWorkspace() {
+  const { demo: openDemo } = Route.useSearch();
   const { lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const { userId } = useAuthUser();
@@ -63,7 +67,7 @@ function RestaurantWorkspace() {
     enabled: Boolean(userId),
   });
   const restaurants = workspace.data?.restaurants ?? [];
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState(openDemo);
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
   useEffect(() => {
     if (!selectedPlaceId && restaurants[0]?.place_id) setSelectedPlaceId(restaurants[0].place_id);
@@ -377,9 +381,10 @@ function VerifiedRestaurantPanel({
   const [updateCtaLabel, setUpdateCtaLabel] = useState("");
   const [updateCtaUrl, setUpdateCtaUrl] = useState("");
   const [updateExpiry, setUpdateExpiry] = useState("");
+  const [demoSent, setDemoSent] = useState<any[]>([]);
   const [workspaceTab, setWorkspaceTab] = useState<
     "overview" | "profile" | "photos" | "updates" | "audience"
-  >("overview");
+  >(demo ? "audience" : "overview");
   const workspaceTabs = [
     { value: "overview", Icon: Sparkles, label: copy("Overview", "ภาพรวม") },
     { value: "profile", Icon: Info, label: copy("Profile", "โปรไฟล์") },
@@ -516,6 +521,32 @@ function VerifiedRestaurantPanel({
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const handleSend = () => {
+    if (!selectedDiner || !subject.trim() || !body.trim()) return;
+    if (demo) {
+      const item = {
+        id: `demo-sent-${Date.now()}`,
+        recipient: selectedDiner.diner?.display_name || selectedDiner.diner?.username || "Demo diner",
+        kind,
+        subject: subject.trim(),
+        body: body.trim(),
+        voucherCode: kind === "voucher" ? code.trim() : null,
+        expiresAt: kind === "voucher" ? expiry : null,
+      };
+      setDemoSent((current) => [item, ...current]);
+      setSubject("");
+      setBody("");
+      setCode("");
+      setTerms("");
+      setExpiry("");
+      toast.success(copy(
+        kind === "voucher" ? "Demo voucher delivered" : "Demo message delivered",
+        kind === "voucher" ? "ส่งบัตรกำนัลตัวอย่างแล้ว" : "ส่งข้อความตัวอย่างแล้ว",
+      ));
+      return;
+    }
+    send.mutate();
+  };
 
   return (
     <div className="mt-7 space-y-7">
@@ -753,10 +784,36 @@ function VerifiedRestaurantPanel({
                 <Input value={terms} onChange={(e) => setTerms(e.target.value)} placeholder={copy("Terms", "เงื่อนไข")} />
               </div>
             ) : null}
-            <Button className="w-fit" disabled={demo || !subject.trim() || !body.trim() || (kind === "voucher" && (!code.trim() || !expiry)) || send.isPending} onClick={() => send.mutate()}>
-              {copy("Send", "ส่ง")}
+            <Button className="w-fit" disabled={!subject.trim() || !body.trim() || (kind === "voucher" && (!code.trim() || !expiry)) || send.isPending} onClick={handleSend}>
+              {demo ? copy("Send demo", "ส่งตัวอย่าง") : copy("Send", "ส่ง")}
             </Button>
           </div>
+          {demoSent.length ? (
+            <div className="mt-6 border-t border-border pt-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                {copy("Demo delivery history", "ประวัติการส่งตัวอย่าง")}
+              </p>
+              <div className="mt-3 space-y-3">
+                {demoSent.map((item) => (
+                  <article key={item.id} className="rounded-md border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold">{item.subject}</p>
+                      <span className="text-xs font-bold uppercase text-primary">
+                        {item.kind === "voucher" ? copy("Gift voucher", "บัตรกำนัล") : copy("Message", "ข้อความ")}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{copy("Delivered to", "ส่งถึง")} {item.recipient}</p>
+                    <p className="mt-3 text-sm">{item.body}</p>
+                    {item.voucherCode ? (
+                      <p className="mt-3 rounded bg-secondary p-3 font-mono text-sm">
+                        {copy("Code", "รหัส")}: {item.voucherCode}
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
     </div>

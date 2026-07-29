@@ -66,6 +66,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   FileWarning,
+  Gift,
   ImageOff,
   Eye,
   MapPin,
@@ -284,12 +285,20 @@ function RestaurantClaims() {
             gallery and diner-added dishes. This is sample data and never appears in rankings.
           </p>
         </div>
-        <Link to="/restaurant-demo">
-          <Button className="w-full gap-2 sm:w-auto">
-            <Eye size={17} />
-            View public demo
-          </Button>
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link to="/restaurant-demo">
+            <Button variant="outline" className="w-full gap-2 sm:w-auto">
+              <Eye size={17} />
+              View public profile
+            </Button>
+          </Link>
+          <Link to="/restaurant" search={{ demo: true }}>
+            <Button className="w-full gap-2 sm:w-auto">
+              <Gift size={17} />
+              Test messages & vouchers
+            </Button>
+          </Link>
+        </div>
       </section>
       <div>
         <h2 className="type-section-title">Restaurant verification</h2>
