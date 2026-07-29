@@ -413,7 +413,7 @@ function Submit() {
     return (
       <AppShell tone="noir">
         <SubmitProgress current={1} />
-        <section className="mx-auto max-w-2xl py-4 text-left md:py-10">
+        <section className="stitch-submit-capture mx-auto max-w-2xl py-4 text-left md:py-10">
           <p className="editorial-kicker text-primary">{t("nav_submit")}</p>
           <h1 className="type-page-title mt-3">{copy("Start with the dish", "เริ่มจากรูปจาน")}</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -442,7 +442,7 @@ function Submit() {
   return (
     <AppShell tone="noir">
       <SubmitProgress current={2} />
-      <div className="mx-auto grid max-w-5xl overflow-hidden border border-white/10 bg-[#1c1b1b] lg:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]">
+      <div className="stitch-submit-editor mx-auto grid max-w-5xl overflow-hidden border border-white/10 bg-[#1c1b1b] lg:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]">
         <div className="relative aspect-[4/5] bg-muted">
           <img
             src={photoUrl}
@@ -684,7 +684,7 @@ function SubmitProgress({ current }: { current: 1 | 2 | 3 }) {
   return (
     <ol
       aria-label={lang === "th" ? "ขั้นตอนการโพสต์" : "Post progress"}
-      className="mx-auto mb-8 grid max-w-2xl grid-cols-3 gap-3 pt-3"
+      className="stitch-submit-progress mx-auto mb-8 grid max-w-2xl grid-cols-3 gap-3 pt-3"
     >
       {labels.map((label, index) => {
         const stepNumber = (index + 1) as 1 | 2 | 3;

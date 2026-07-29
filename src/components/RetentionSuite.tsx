@@ -109,8 +109,8 @@ export function RetentionSuite({ counts }: { counts: ProfileCounts }) {
   };
 
   return (
-    <section className="mt-7 overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex overflow-x-auto border-b border-border">
+    <section className="stitch-inbox mt-7 overflow-hidden border border-border bg-card">
+      <div className="stitch-inbox-tabs flex overflow-x-auto border-b border-border">
         <Tab active={tab === "taste"} onClick={() => setTab("taste")} icon={<Sparkles size={16} />}>
           {copy("My taste", "รสนิยมของฉัน")}
         </Tab>

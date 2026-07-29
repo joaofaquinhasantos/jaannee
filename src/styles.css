@@ -541,3 +541,408 @@
     min-height: 3.25rem;
   }
 }
+
+/* Exact structural language from the supplied Stitch platform exports. */
+.stitch-profile {
+  width: min(100%, 80rem);
+  margin-inline: auto;
+  padding-bottom: 5rem;
+}
+
+.stitch-public-profile {
+  width: min(100%, 78rem);
+  margin-inline: auto;
+  padding-bottom: 4rem;
+}
+
+.stitch-public-profile [role="tablist"] {
+  position: sticky;
+  top: 4rem;
+  z-index: 15;
+  background: rgb(19 19 19 / 94%);
+  backdrop-filter: blur(16px);
+}
+
+.stitch-restaurant-profile {
+  background: #131313;
+}
+
+.stitch-restaurant-profile > :first-child {
+  max-height: 56svh;
+}
+
+.stitch-restaurant-profile img {
+  filter: saturate(0.92) contrast(1.03);
+}
+
+.stitch-profile-hero {
+  isolation: isolate;
+}
+
+.stitch-profile-hero::after {
+  position: absolute;
+  right: -2rem;
+  bottom: -4rem;
+  z-index: -1;
+  color: rgb(250 248 244 / 3%);
+  content: "TASTE";
+  font-family: var(--font-display);
+  font-size: clamp(7rem, 20vw, 18rem);
+  line-height: 0.7;
+  pointer-events: none;
+}
+
+.stitch-profile-tabs {
+  position: sticky;
+  top: 4rem;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(max-content, 1fr));
+  overflow-x: auto;
+  border-bottom: 1px solid rgb(250 248 244 / 12%);
+  background: rgb(19 19 19 / 94%);
+  backdrop-filter: blur(18px);
+}
+
+.stitch-profile-tabs button {
+  min-height: 3.5rem;
+  padding-inline: 1rem;
+  border-bottom: 2px solid transparent;
+  color: rgb(250 248 244 / 42%);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stitch-profile-tabs button.is-active {
+  border-color: #d6321f;
+  color: #faf8f4;
+}
+
+.stitch-business-workspace {
+  width: min(100%, 90rem);
+  margin-inline: auto;
+}
+
+.stitch-business-tabs {
+  position: sticky;
+  top: 4.5rem;
+  z-index: 20;
+  border-radius: 0;
+  background: rgb(19 19 19 / 94%);
+  backdrop-filter: blur(18px);
+}
+
+.stitch-business-tabs button {
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+}
+
+.stitch-business-tabs button.bg-primary {
+  border-left-color: #d6321f;
+}
+
+.stitch-business-tile {
+  min-height: 12rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stitch-business-tile::after {
+  position: absolute;
+  right: 1rem;
+  bottom: -1.6rem;
+  color: rgb(250 248 244 / 4%);
+  content: "↗";
+  font-family: var(--font-display);
+  font-size: 7rem;
+}
+
+.stitch-admin-console {
+  width: min(100%, 100rem);
+  margin-inline: auto;
+}
+
+.stitch-state {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 20rem;
+  overflow: hidden;
+  border: 1px solid rgb(250 248 244 / 10%);
+  padding: clamp(2rem, 7vw, 5rem);
+  background:
+    radial-gradient(circle at 50% 30%, rgb(214 50 31 / 11%), transparent 18rem),
+    #171616;
+  text-align: center;
+}
+
+.stitch-state::after {
+  position: absolute;
+  right: -1rem;
+  bottom: -4rem;
+  color: rgb(250 248 244 / 3%);
+  content: "JAANNEE";
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 18vw, 15rem);
+  line-height: 0.7;
+  pointer-events: none;
+}
+
+.stitch-state > * {
+  position: relative;
+  z-index: 1;
+}
+
+.stitch-state-mark {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 1.4rem;
+  border: 1px solid rgb(214 50 31 / 45%);
+  color: #d6321f;
+}
+
+.stitch-state h2 {
+  max-width: 14ch;
+  margin-top: 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6vw, 5.5rem);
+  line-height: 0.86;
+}
+
+.stitch-state > p:not(.stitch-kicker) {
+  max-width: 35rem;
+  margin-top: 1rem;
+  color: rgb(250 248 244 / 52%);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.stitch-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.stitch-inbox {
+  border-radius: 0;
+  background: #171616;
+}
+
+.stitch-inbox-tabs {
+  background: #111;
+}
+
+.stitch-inbox-tabs button {
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+
+.stitch-inbox-tabs button.bg-secondary {
+  border-bottom-color: #d6321f;
+  background: transparent;
+}
+
+.stitch-voucher-composer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.stitch-voucher-composer::before {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  content: "";
+  background-image: repeating-linear-gradient(
+    135deg,
+    #faf8f4 0,
+    #faf8f4 1px,
+    transparent 1px,
+    transparent 9px
+  );
+  pointer-events: none;
+}
+
+.stitch-voucher-composer > * {
+  position: relative;
+}
+
+.stitch-submit-capture {
+  min-height: calc(100svh - 10rem);
+}
+
+.stitch-submit-capture > button {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0;
+  background:
+    linear-gradient(rgb(19 19 19 / 52%), rgb(19 19 19 / 78%)),
+    repeating-linear-gradient(135deg, #1c1b1b 0, #1c1b1b 12px, #191818 12px, #191818 24px);
+}
+
+.stitch-submit-capture > button::after {
+  position: absolute;
+  inset: 1rem;
+  z-index: -1;
+  border: 1px solid rgb(250 248 244 / 8%);
+  content: "";
+}
+
+.stitch-submit-editor {
+  border-radius: 0;
+  box-shadow: 0 2rem 8rem rgb(0 0 0 / 40%);
+}
+
+.stitch-submit-progress {
+  position: sticky;
+  top: 4.1rem;
+  z-index: 25;
+  padding: 0.8rem;
+  border-block: 1px solid rgb(250 248 244 / 10%);
+  background: rgb(19 19 19 / 94%);
+  backdrop-filter: blur(16px);
+}
+
+.stitch-submit-progress > div {
+  border-radius: 0;
+}
+
+@media (min-width: 900px) {
+  .stitch-voucher-workspace {
+    grid-template-columns: minmax(18rem, 0.75fr) minmax(22rem, 1.25fr);
+    align-items: start;
+  }
+
+  .stitch-voucher-workspace > :nth-child(-n + 4) {
+    grid-column: 1;
+  }
+
+  .stitch-voucher-workspace > article {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    margin-top: 0;
+  }
+}
+
+.stitch-admin-console .stitch-masthead {
+  padding-block: clamp(2rem, 4vw, 4rem);
+}
+
+.stitch-admin-status {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding-block: 0.8rem;
+  border-block: 1px solid rgb(250 248 244 / 10%);
+  color: rgb(250 248 244 / 42%);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stitch-admin-status span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stitch-admin-status i {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #42b883;
+  box-shadow: 0 0 0.8rem rgb(66 184 131 / 65%);
+}
+
+.stitch-admin-console [data-slot="tabs-content"] > div {
+  animation: stitch-panel-in 180ms ease-out;
+}
+
+@keyframes stitch-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stitch-admin-console article,
+.stitch-admin-console .rounded-lg,
+.stitch-business-workspace .rounded-lg,
+.stitch-profile .rounded-lg {
+  border-radius: 0;
+}
+
+@media (min-width: 1100px) {
+  .stitch-business-workspace {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    align-items: start;
+    column-gap: 2rem;
+  }
+
+  .stitch-business-workspace > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .stitch-business-tabs {
+    position: sticky;
+    top: 6rem;
+    display: grid;
+    grid-auto-flow: row;
+    align-self: start;
+    grid-column: 1;
+  }
+
+  .stitch-business-tabs + * {
+    grid-column: 2;
+  }
+
+  .stitch-business-workspace > :not(:first-child):not(.stitch-business-tabs) {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 767px) {
+  .stitch-profile {
+    padding-bottom: 2rem;
+  }
+
+  .stitch-profile-tabs {
+    top: 3.8rem;
+    grid-template-columns: repeat(4, max-content);
+  }
+
+  .stitch-profile-tabs button {
+    min-width: 8rem;
+  }
+
+  .stitch-business-tabs {
+    top: 3.8rem;
+  }
+
+  .stitch-admin-console .stitch-workspace-nav {
+    position: sticky;
+    top: 3.8rem;
+    z-index: 20;
+    margin-inline: -1rem;
+    width: calc(100% + 2rem);
+    border-inline: 0;
+  }
+}

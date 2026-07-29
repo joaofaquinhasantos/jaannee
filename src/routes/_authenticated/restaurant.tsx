@@ -180,7 +180,7 @@ function RestaurantClaimPanel({ claims, onPreview }: { claims: any[]; onPreview:
   });
 
   return (
-    <div className="mt-7 space-y-7">
+    <div className="stitch-business-workspace mt-7 space-y-7">
       <section className="stitch-card-grid">
         {[
           {
@@ -668,7 +668,7 @@ function VerifiedRestaurantPanel({
       </section>
 
       <nav
-        className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-card p-1"
+        className="stitch-business-tabs flex gap-1 overflow-x-auto border border-border bg-card p-1"
         aria-label={copy("Restaurant workspace", "พื้นที่จัดการร้าน")}
       >
         {workspaceTabs.map(({ value, Icon, label }) => (
@@ -676,7 +676,7 @@ function VerifiedRestaurantPanel({
             key={String(value)}
             type="button"
             onClick={() => setWorkspaceTab(value)}
-            className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md px-4 text-sm font-semibold transition ${
+            className={`flex min-h-11 shrink-0 items-center gap-2 px-4 text-sm font-semibold transition ${
               workspaceTab === value
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -693,7 +693,7 @@ function VerifiedRestaurantPanel({
           <button
             type="button"
             onClick={() => setWorkspaceTab("profile")}
-            className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60"
+            className="stitch-business-tile border border-border bg-card p-5 text-left transition hover:border-primary/60"
           >
             <Info className="text-primary" size={21} />
             <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">
@@ -706,7 +706,7 @@ function VerifiedRestaurantPanel({
           <button
             type="button"
             onClick={() => setWorkspaceTab("updates")}
-            className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60"
+            className="stitch-business-tile border border-border bg-card p-5 text-left transition hover:border-primary/60"
           >
             <Newspaper className="text-primary" size={21} />
             <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">
@@ -719,7 +719,7 @@ function VerifiedRestaurantPanel({
           <button
             type="button"
             onClick={() => setWorkspaceTab("audience")}
-            className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60"
+            className="stitch-business-tile border border-border bg-card p-5 text-left transition hover:border-primary/60"
           >
             <Users className="text-primary" size={21} />
             <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">
@@ -1093,7 +1093,7 @@ function VerifiedRestaurantPanel({
       ) : null}
 
       {workspaceTab === "audience" && selectedDiner ? (
-        <section className="rounded-lg border border-border bg-secondary/30 p-5">
+        <section className="stitch-voucher-composer border border-border bg-secondary/30 p-5">
           <h2 className="type-section-title">{copy("Send manually", "ส่งด้วยตนเอง")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {copy(
@@ -1121,7 +1121,7 @@ function VerifiedRestaurantPanel({
               </Button>
             ) : null}
           </div>
-          <div className="mt-4 grid gap-3">
+          <div className="stitch-voucher-workspace mt-4 grid gap-3">
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
