@@ -16,17 +16,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-display text-7xl font-semibold text-primary">404</h1>
-        <h2 className="mt-4 font-display text-xl font-semibold">Page not found</h2>
+    <div className="noir-theme flex min-h-screen items-center justify-center bg-background px-5">
+      <div className="noir-panel max-w-lg p-8 text-center md:p-12">
+        <p className="noir-label">JaanNee</p>
+        <h1 className="brand-serif mt-3 text-8xl text-primary">404</h1>
+        <h2 className="brand-serif mt-4 text-4xl">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The dish you're looking for isn't on the menu.
         </p>
         <div className="mt-6">
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="inline-flex min-h-12 items-center justify-center bg-primary px-5 text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90"
           >
             Go home
           </a>
@@ -44,11 +45,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
+    <div className="noir-theme flex min-h-screen items-center justify-center bg-background px-5">
+      <div className="noir-panel max-w-lg p-8 text-center md:p-12">
+        <p className="noir-label">JaanNee</p>
+        <h1 className="brand-serif mt-3 text-4xl text-foreground">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
@@ -58,13 +58,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex min-h-12 items-center justify-center bg-primary px-5 text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex min-h-12 items-center justify-center border border-white/20 bg-transparent px-5 text-xs font-bold uppercase tracking-[0.12em] text-foreground transition-colors hover:border-primary hover:bg-primary"
           >
             Go home
           </a>
