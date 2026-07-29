@@ -1,0 +1,14 @@
+# JaanNee
+
+> JaanNee (จานนี้) ranks the dish, not the restaurant. Diners in Thailand compare individual dishes head-to-head to surface Bangkok's best plates, dish by dish.
+
+Rankings come only from signed-in diners who have personally tried both dishes in a head-to-head comparison. A dish gets a public numeric rank only after at least 5 comparisons. Restaurants cannot buy, edit, or influence ranking position.
+
+## Pages
+
+- [Discover](/): Browse ranked dishes and new contenders by category, dish type, and area.
+- [Rankings](/rankings): Dish-by-dish leaderboards for each category and dish type.
+
+## Optional
+
+- [Compare](/compare): Head-to-head comparison flow for signed-in diners who have tried both dishes.
