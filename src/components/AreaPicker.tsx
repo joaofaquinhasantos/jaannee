@@ -49,7 +49,7 @@ export function AreaPicker({
             tone === "noir"
               ? selected
                 ? "text-white"
-                : "text-white/55"
+                : "text-white/75"
               : selected
                 ? "text-foreground"
                 : "text-muted-foreground"
@@ -58,7 +58,7 @@ export function AreaPicker({
           {selected ? (lang === "th" ? selected.name_th : selected.name_en) : t("filter_all_areas")}
         </span>
         <Search
-          className={tone === "noir" ? "h-4 w-4 text-white/40" : "h-4 w-4 text-muted-foreground"}
+          className={tone === "noir" ? "h-4 w-4 text-white/75" : "h-4 w-4 text-muted-foreground"}
         />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -96,7 +96,7 @@ export function AreaPicker({
                     {lang === "th" ? area.name_th : area.name_en}
                   </span>
                   {area.name_th ? (
-                    <span className="ml-2 font-thai text-xs text-white/45">{area.name_th}</span>
+                    <span className="ml-2 font-thai text-xs text-white/75">{area.name_th}</span>
                   ) : null}
                 </button>
               ))}

@@ -36,14 +36,14 @@ export function VoucherCard({
       </div>
       <div className="relative mt-7 grid gap-3 border-t border-dashed border-white/30 pt-4 sm:grid-cols-[1fr_auto] sm:items-end">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
             {copy("Security number", "หมายเลขความปลอดภัย")}
           </p>
           <p className="mt-1 font-mono text-xl font-bold tracking-wider text-gold">{securityNumber}</p>
         </div>
         {expiresAt ? (
           <div className="sm:text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
               {copy("Valid until", "ใช้ได้ถึง")}
             </p>
             <p className="mt-1 text-sm font-semibold">
@@ -52,8 +52,8 @@ export function VoucherCard({
           </div>
         ) : null}
       </div>
-      {terms ? <p className="relative mt-4 text-[11px] leading-5 text-white/50">{terms}</p> : null}
-      <p className="relative mt-4 text-[10px] font-semibold uppercase tracking-wider text-white/45">
+      {terms ? <p className="relative mt-4 text-[11px] leading-5 text-white/75">{terms}</p> : null}
+      <p className="relative mt-4 text-[10px] font-semibold uppercase tracking-wider text-white/75">
         {copy("Present this message to the restaurant · Single use", "แสดงข้อความนี้ที่ร้าน · ใช้ได้ครั้งเดียว")}
       </p>
     </article>

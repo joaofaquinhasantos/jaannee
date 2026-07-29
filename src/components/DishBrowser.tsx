@@ -67,7 +67,7 @@ export function DishBrowser({
             }}
             className={
               tone === "noir"
-                ? "px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45 transition-colors hover:text-primary"
+                ? "px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/75 transition-colors hover:text-primary"
                 : "px-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
             }
           >
@@ -89,7 +89,7 @@ export function DishBrowser({
                 subtype === item.slug
                   ? "border-primary text-primary"
                   : tone === "noir"
-                    ? "border-transparent text-white/45 hover:text-white"
+                    ? "border-transparent text-white/75 hover:text-white"
                     : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >

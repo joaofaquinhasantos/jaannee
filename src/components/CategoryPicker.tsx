@@ -78,7 +78,7 @@ export function CategoryPicker({
             tone === "noir"
               ? selected && !triggerLabel
                 ? "text-white"
-                : "text-white/55"
+                : "text-white/75"
               : selected && !triggerLabel
                 ? "text-foreground"
                 : "text-muted-foreground"
@@ -88,7 +88,7 @@ export function CategoryPicker({
             (selected ? (lang === "th" ? selected.name_th : selected.name_en) : placeholder)}
         </span>
         <Search
-          className={tone === "noir" ? "h-4 w-4 text-white/40" : "h-4 w-4 text-muted-foreground"}
+          className={tone === "noir" ? "h-4 w-4 text-white/75" : "h-4 w-4 text-muted-foreground"}
         />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -135,7 +135,7 @@ export function CategoryPicker({
                         {lang === "th" ? category.name_th : category.name_en}
                       </span>
                       {lang !== "th" && category.name_th ? (
-                        <span className="ml-2 font-thai text-xs text-white/45">
+                        <span className="ml-2 font-thai text-xs text-white/75">
                           {category.name_th}
                         </span>
                       ) : null}

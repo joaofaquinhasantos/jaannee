@@ -206,7 +206,7 @@ function Index() {
     <AppShell tone="noir" fullBleed>
       <div className="sticky top-[61px] z-30 border-b border-white/10 bg-[#111111]/95 px-4 py-3 backdrop-blur md:top-[65px] md:px-8">
         <div className="grid items-center gap-3 lg:grid-cols-[auto_1fr]">
-          <p className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/40 lg:block">
+          <p className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/75 lg:block">
             {t("discover_bangkok")}
           </p>
           <DishBrowser
@@ -237,7 +237,7 @@ function Index() {
       ) : bootstrap.isLoading ||
         filteredDishes.isLoading ||
         (categorySlug && subtypeScoped && activeSubtypes.length === 1 && !subtypeSlug) ? (
-        <div className="min-h-[40vh] px-6 py-16 text-sm text-white/45">{t("loading")}</div>
+        <div className="min-h-[40vh] px-6 py-16 text-sm text-white/75">{t("loading")}</div>
       ) : leader ? (
         <div>
           <HeroDish
@@ -408,7 +408,7 @@ function SubtypeChooser({
         <h1 className="mt-3 font-noir-display text-5xl uppercase leading-[0.86] md:text-7xl">
           {t("choose_dish_type")}
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-white/55">
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-white/75">
           {t("choose_dish_type_body")}
         </p>
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -423,11 +423,11 @@ function SubtypeChooser({
                 {localizedName(subtype, lang)}
               </span>
               {secondaryName(subtype, lang) ? (
-                <span className="mt-2 block font-thai text-sm text-white/55 group-hover:text-white/80">
+                <span className="mt-2 block font-thai text-sm text-white/75 group-hover:text-white/80">
                   {secondaryName(subtype, lang)}
                 </span>
               ) : null}
-              <ArrowUpRight className="mt-5 h-4 w-4 text-white/50 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white" />
+              <ArrowUpRight className="mt-5 h-4 w-4 text-white/75 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white" />
             </button>
           ))}
         </div>
@@ -497,7 +497,7 @@ function DishSection({
         <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] md:text-6xl">
           {title}
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">{description}</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">{description}</p>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
           {dishes.map((dish, index) => (
             <div
@@ -542,7 +542,7 @@ function CompactDish({ dish, rank }: { dish: DishRow; rank?: number }) {
         <h3 className="mt-2 font-noir-display text-4xl uppercase leading-[0.86] text-white">
           {name}
         </h3>
-        <p className="mt-3 text-xs text-white/50">{dish.place?.name}</p>
+        <p className="mt-3 text-xs text-white/75">{dish.place?.name}</p>
       </div>
     </Link>
   );
@@ -636,7 +636,7 @@ function FilteredEmptyDiscover({
         <h1 className="mt-4 font-noir-display text-5xl uppercase leading-[0.86] md:text-7xl">
           {t("no_dishes_for_filters")}
         </h1>
-        <p className="mt-4 max-w-xl text-sm leading-6 text-white/55">
+        <p className="mt-4 max-w-xl text-sm leading-6 text-white/75">
           {t("no_dishes_for_filters_body")}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">

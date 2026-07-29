@@ -94,7 +94,7 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
               {t("activation_title")}
             </p>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
               {t("activation_body")}
             </p>
           </div>
@@ -137,7 +137,7 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
                 <div className="min-h-16 bg-black/85 p-2">
                   <p className="line-clamp-2 text-xs font-semibold leading-4">{name}</p>
                   {dish.place?.name ? (
-                    <p className="mt-1 truncate text-[10px] text-white/45">{dish.place.name}</p>
+                    <p className="mt-1 truncate text-[10px] text-white/75">{dish.place.name}</p>
                   ) : null}
                 </div>
                 {active ? (
@@ -159,7 +159,7 @@ export function TriedActivation({ dishes }: { dishes: ActivationDish[] }) {
           >
             {applying ? t("saving") : t("activation_save")}
           </Button>
-          <span className="text-xs text-white/45">
+          <span className="text-xs text-white/75">
             {selected.length} {t("selected_count")}
           </span>
         </div>

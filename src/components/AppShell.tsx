@@ -64,7 +64,7 @@ export function AppShell({
               className={`flex min-h-14 items-center gap-4 border-l-2 px-5 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
                 path === n.to
                   ? "border-primary bg-white/[0.06] text-primary"
-                  : "border-transparent text-white/45 hover:bg-white/[0.03] hover:text-white"
+                  : "border-transparent text-white/75 hover:bg-white/[0.03] hover:text-white"
               }`}
             >
               <n.Icon className="h-5 w-5" aria-hidden="true" />
@@ -81,7 +81,7 @@ export function AppShell({
         </nav>
         <Link
           to={auth.status === "in" ? "/profile" : "/auth"}
-          className="flex min-h-14 items-center gap-4 border-t border-white/10 px-4 pt-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/55 hover:text-primary"
+          className="flex min-h-14 items-center gap-4 border-t border-white/10 px-4 pt-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/75 hover:text-primary"
         >
           <UserRound className="h-5 w-5" aria-hidden="true" />
           {auth.status === "in" ? t("nav_profile") : t("sign_in")}
@@ -100,7 +100,7 @@ export function AppShell({
               {t("brand")}
             </span>
             <span
-              className={`hidden max-w-44 border-l pl-3 text-[10px] font-bold uppercase leading-tight tracking-[0.12em] sm:inline ${noir ? "border-white/20 text-white/45" : "border-foreground/25 text-muted-foreground"}`}
+              className={`hidden max-w-44 border-l pl-3 text-[10px] font-bold uppercase leading-tight tracking-[0.12em] sm:inline ${noir ? "border-white/20 text-white/75" : "border-foreground/25 text-muted-foreground"}`}
             >
               {t("tagline")}
             </span>
@@ -168,7 +168,7 @@ export function AppShell({
               search={auth.status === "out" ? { redirect: "/restaurant" } : undefined}
               className={
                 noir
-                  ? "text-xs font-semibold text-white/45 hover:text-primary"
+                  ? "text-xs font-semibold text-white/75 hover:text-primary"
                   : "text-xs font-semibold text-muted-foreground hover:text-primary"
               }
             >
@@ -194,7 +194,7 @@ export function AppShell({
                     ? "text-primary"
                     : "bg-secondary text-primary"
                   : noir
-                    ? "text-white/45"
+                    ? "text-white/75"
                     : "text-muted-foreground"
               }`}
             >
@@ -212,7 +212,7 @@ export function AppShell({
           <Link
             to={auth.status === "in" ? "/profile" : "/auth"}
             className={`flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-[10px] font-bold uppercase tracking-[0.05em] ${
-              path === "/profile" ? "text-primary" : "text-white/45"
+              path === "/profile" ? "text-primary" : "text-white/75"
             }`}
           >
             <UserRound className="h-5 w-5" aria-hidden="true" />
@@ -222,7 +222,7 @@ export function AppShell({
             <Link
               to="/admin"
               className={`flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-[10px] font-bold uppercase tracking-[0.05em] ${
-                path === "/admin" ? "text-primary" : "text-white/45"
+                path === "/admin" ? "text-primary" : "text-white/75"
               }`}
             >
               <ShieldCheck className="h-5 w-5" aria-hidden="true" />

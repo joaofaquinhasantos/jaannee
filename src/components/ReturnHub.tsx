@@ -74,7 +74,7 @@ export function ReturnHub() {
               {copy("Pick up where you left off", "กลับมาต่อจากครั้งก่อน")}
             </h2>
           </div>
-          <Link to="/profile" className="hidden text-xs font-bold text-white/55 hover:text-white sm:block">
+          <Link to="/profile" className="hidden text-xs font-bold text-white/75 hover:text-white sm:block">
             {copy("View my profile", "ดูโปรไฟล์ของฉัน")}
           </Link>
         </div>
@@ -87,7 +87,7 @@ export function ReturnHub() {
               </p>
               <div className="mt-3 flex items-center gap-3">
                 <PairThumb dish={nextPair.a as TriedDish} />
-                <span className="text-xs font-bold text-white/40">VS</span>
+                <span className="text-xs font-bold text-white/75">VS</span>
                 <PairThumb dish={nextPair.b as TriedDish} />
               </div>
               <PairProgress pair={nextPair} />
@@ -99,7 +99,7 @@ export function ReturnHub() {
 
           {savedCount > 0 || pendingCount > 0 ? (
             <article className="border border-white/15 bg-black/20 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
                 {copy("Your next moves", "สิ่งที่รอคุณอยู่")}
               </p>
               <div className="mt-4 space-y-3">
@@ -134,7 +134,7 @@ export function ReturnHub() {
             <article className="border border-white/15 bg-black/20 p-4">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" aria-hidden="true" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
                   {copy("From people you follow", "จากคนที่คุณติดตาม")}
                 </p>
               </div>
@@ -188,7 +188,7 @@ function ReturnStat({
       </span>
       <p>
         <strong className="mr-1 text-white">{value}</strong>
-        <span className="text-white/55">{label}</span>
+        <span className="text-white/75">{label}</span>
       </p>
     </div>
   );
@@ -212,7 +212,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
         ) : null}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-xs text-white/55">
+        <p className="truncate text-xs text-white/75">
           {diner}{" "}
           {item.type === "posted"
             ? copy("posted", "โพสต์")

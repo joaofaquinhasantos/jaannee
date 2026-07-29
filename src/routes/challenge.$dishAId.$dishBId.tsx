@@ -128,7 +128,7 @@ function ChallengePage() {
               {t("do_you_agree")}
             </h1>
           </div>
-          <p className="hidden max-w-sm text-right text-xs leading-5 text-white/55 md:block">
+          <p className="hidden max-w-sm text-right text-xs leading-5 text-white/75 md:block">
             {t("challenge_intro")}
           </p>
         </div>
@@ -153,7 +153,7 @@ function ChallengePage() {
           <ComparisonResultPanel winner={result.winner} loser={result.loser} />
         </div>
       ) : auth.status === "loading" ? (
-        <p className="mx-auto max-w-5xl text-sm text-white/55">{t("loading")}</p>
+        <p className="mx-auto max-w-5xl text-sm text-white/75">{t("loading")}</p>
       ) : auth.status === "out" ? (
         <section className="mx-auto max-w-5xl">
           <p className="text-sm text-white/60">{t("challenge_sign_in")}</p>
@@ -166,7 +166,7 @@ function ChallengePage() {
           <h2 className="type-section-title">
             {copy("You already compared this pair", "คุณเปรียบเทียบคู่นี้แล้ว")}
           </h2>
-          <p className="mt-2 text-sm text-white/55">
+          <p className="mt-2 text-sm text-white/75">
             {copy(
               "Past comparison choices are permanent and cannot be rewritten.",
               "ผลการเปรียบเทียบเดิมเป็นข้อมูลถาวรและแก้ไขย้อนหลังไม่ได้",
@@ -274,7 +274,7 @@ function ChallengeDish({
         <h2 className="font-noir-display text-5xl uppercase leading-[0.84] md:text-7xl">{name}</h2>
         {alternate ? <p className="mt-2 font-thai text-base text-white/60">{alternate}</p> : null}
         {dish.place?.name ? (
-          <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-white/55">
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-white/75">
             {dish.place.name}
           </p>
         ) : null}
