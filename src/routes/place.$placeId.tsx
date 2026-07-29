@@ -60,6 +60,7 @@ export function RestaurantProfileView({ data }: { data: any }) {
   const updates = data.updates ?? [];
   return (
     <AppShell tone="noir" fullBleed>
+      <div className="stitch-restaurant-profile">
       {data.cover_url ? (
         <div className="relative min-h-[48svh] overflow-hidden">
           <img
@@ -230,6 +231,7 @@ export function RestaurantProfileView({ data }: { data: any }) {
           </p>
         )}
       </section>
+      </div>
     </AppShell>
   );
 }

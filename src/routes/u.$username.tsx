@@ -127,6 +127,7 @@ function PublicProfilePage() {
 
   return (
     <AppShell tone="noir">
+      <div className="stitch-public-profile">
       <section className="-mx-4 -mt-6 border-b border-white/10 bg-[#1c1b1b] px-4 py-8 md:-mx-8 md:-mt-10 md:px-8 md:py-12">
         <div className="mx-auto flex max-w-5xl items-start justify-between gap-3 sm:items-center sm:gap-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-5">
@@ -230,6 +231,7 @@ function PublicProfilePage() {
           )}
         </div>
       </section>
+      </div>
     </AppShell>
   );
 }

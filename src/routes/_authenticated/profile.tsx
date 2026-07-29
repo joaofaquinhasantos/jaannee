@@ -49,6 +49,9 @@ function Profile() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [triedPublic, setTriedPublic] = useState(true);
+  const [profileSection, setProfileSection] = useState<
+    "posts" | "tried" | "comparisons" | "settings"
+  >("posts");
 
   useEffect(() => {
     if (!profile) return;
@@ -87,7 +90,8 @@ function Profile() {
 
   return (
     <AppShell tone="noir">
-      <section className="relative overflow-hidden border-b border-white/10 bg-[#1c1b1b] p-5 md:p-10">
+      <div className="stitch-profile">
+      <section className="stitch-profile-hero relative overflow-hidden border-b border-white/10 bg-[#1c1b1b] p-5 md:p-10">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4 md:gap-7">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-primary font-display text-4xl md:h-32 md:w-32 md:text-6xl">
@@ -127,6 +131,27 @@ function Profile() {
         <Stat label={copy("Followers", "ผู้ติดตาม")} value={q.data?.followers_count ?? 0} />
       </div>
 
+      <nav className="stitch-profile-tabs" aria-label={copy("Profile sections", "ส่วนต่าง ๆ ของโปรไฟล์")}>
+        {[
+          ["posts", t("profile_submitted")],
+          ["tried", t("profile_tried")],
+          ["comparisons", t("profile_comparisons")],
+          ["settings", t("profile_settings")],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() =>
+              setProfileSection(value as "posts" | "tried" | "comparisons" | "settings")
+            }
+            className={profileSection === value ? "is-active" : undefined}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <div className={profileSection === "posts" ? "block" : "hidden"}>
       <RetentionSuite
         counts={{
           posted: posted.length,
@@ -143,8 +168,9 @@ function Profile() {
       <div className="stitch-section">
         <PostActivity dishes={posted} />
       </div>
+      </div>
 
-      <section className="stitch-dashboard-card mt-8">
+      <section className={profileSection === "tried" ? "stitch-dashboard-card mt-8" : "hidden"}>
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
           {copy("Plan your next meal", "วางแผนมื้อต่อไป")}
         </p>
@@ -165,7 +191,7 @@ function Profile() {
         )}
       </section>
 
-      <section className="mt-8">
+      <section className={profileSection === "tried" ? "mt-8" : "hidden"}>
         <h2 className="type-section-title mb-4">{t("profile_tried")}</h2>
         {tried.length === 0 ? (
           <EmptyNote
@@ -180,7 +206,7 @@ function Profile() {
         )}
       </section>
 
-      <section className="mt-10">
+      <section className={profileSection === "posts" ? "mt-10" : "hidden"}>
         <h2 className="type-section-title mb-4">{t("profile_submitted")}</h2>
         {posted.length === 0 ? (
           <EmptyNote text={copy("No submitted dishes yet.", "ยังไม่มีจานที่ส่งไว้")} />
@@ -205,7 +231,7 @@ function Profile() {
         )}
       </section>
 
-      <section className="mt-10">
+      <section className={profileSection === "comparisons" ? "mt-10" : "hidden"}>
         <h2 className="type-section-title mb-4">{t("profile_comparisons")}</h2>
         {compared.length === 0 ? (
           <EmptyNote text={copy("No comparisons yet.", "ยังไม่มีการเปรียบเทียบ")} />
@@ -232,7 +258,7 @@ function Profile() {
         )}
       </section>
 
-      <section className="stitch-dashboard-card mt-10">
+      <section className={profileSection === "settings" ? "stitch-dashboard-card mt-10" : "hidden"}>
         <h2 className="type-section-title">{t("profile_settings")}</h2>
         {!profile?.username ? (
           <div className="mt-4 rounded-md bg-secondary p-3 text-sm">
@@ -301,6 +327,7 @@ function Profile() {
           ) : null}
         </div>
       </section>
+      </div>
     </AppShell>
   );
 }

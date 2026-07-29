@@ -156,6 +156,7 @@ function Admin() {
 
   return (
     <AppShell tone="noir">
+      <div className="stitch-admin-console">
       <section className="stitch-masthead">
         <div>
           <p className="stitch-kicker">Operations</p>
@@ -166,6 +167,11 @@ function Admin() {
           public ranking.
         </p>
       </section>
+      <div className="stitch-admin-status" role="status">
+        <span><i aria-hidden="true" /> System operational</span>
+        <span>Bangkok catalogue</span>
+        <span>Live moderation</span>
+      </div>
       <Tabs value={section} onValueChange={changeSection} className="stitch-workspace mt-8">
         <TabsList className="stitch-workspace-nav h-auto w-full justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -204,6 +210,7 @@ function Admin() {
           </TabsContent>
         </div>
       </Tabs>
+      </div>
     </AppShell>
   );
 }

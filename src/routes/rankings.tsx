@@ -6,6 +6,7 @@ import { DishBrowser } from "@/components/DishBrowser";
 import { DishCard } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { LeaderboardEntry } from "@/components/LeaderboardEntry";
+import { StitchState } from "@/components/StitchState";
 import {
   getPublicTaxonomy,
   listCategoryCounts,
@@ -258,16 +259,25 @@ function Rankings() {
 function EmptyBoard({ title }: { title: string }) {
   const { t, lang } = useI18n();
   return (
-    <div className="border-t border-border py-10">
-      <h2 className="type-section-title">{title}</h2>
-      <div className="mt-5 flex gap-5">
-        <Link to="/submit" className="text-sm font-semibold text-primary">
-          {t("cta_add")}
-        </Link>
-        <Link to="/" className="text-sm font-semibold text-foreground">
-          {lang === "th" ? "ค้นพบจาน" : "Discover dishes"}
-        </Link>
-      </div>
-    </div>
+    <StitchState
+      kind="empty"
+      eyebrow={t("gathering_progress")}
+      title={title}
+      body={
+        lang === "th"
+          ? "จานในกลุ่มนี้ยังต้องการการเปรียบเทียบจากนักชิมก่อนจะมีอันดับสาธารณะ"
+          : "Dishes in this pool still need diner comparisons before a public ranking appears."
+      }
+      action={
+        <>
+          <Link to="/submit" className="text-sm font-semibold text-primary">
+            {t("cta_add")}
+          </Link>
+          <Link to="/" className="text-sm font-semibold text-foreground">
+            {lang === "th" ? "ค้นพบจาน" : "Discover dishes"}
+          </Link>
+        </>
+      }
+    />
   );
 }
