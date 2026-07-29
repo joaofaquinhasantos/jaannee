@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Gift, MessageCircle, ShieldCheck } from "lucide-react";
+import {
+  BadgeCheck,
+  Building2,
+  Gift,
+  LockKeyhole,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -38,6 +47,7 @@ function RestaurantWorkspace() {
     enabled: Boolean(userId),
   });
   const restaurants = workspace.data?.restaurants ?? [];
+  const [showDemo, setShowDemo] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
   useEffect(() => {
     if (!selectedPlaceId && restaurants[0]?.place_id) setSelectedPlaceId(restaurants[0].place_id);
@@ -62,17 +72,21 @@ function RestaurantWorkspace() {
   return (
     <AppShell>
       <section className="border-b border-border pb-7">
-        <p className="editorial-kicker text-primary">{copy("For verified restaurants", "สำหรับร้านที่ยืนยันแล้ว")}</p>
-        <h1 className="type-page-title mt-3">{copy("Restaurant workspace", "พื้นที่จัดการร้าน")}</h1>
+        <p className="editorial-kicker text-primary">{copy("JaanNee for restaurants", "JaanNee สำหรับร้านอาหาร")}</p>
+        <h1 className="type-page-title mt-3 max-w-4xl">
+          {copy("Turn genuine diner interest into return visits", "เปลี่ยนความสนใจจริงจากนักชิมให้กลายเป็นการกลับมาอีก")}
+        </h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
           {copy(
-            "Maintain official information and contact only diners who explicitly gave permission after marking one of your dishes. Restaurant activity never affects rankings.",
-            "ดูแลข้อมูลทางการและติดต่อเฉพาะนักชิมที่อนุญาตหลังทำเครื่องหมายจานของร้าน กิจกรรมของร้านไม่มีผลต่ออันดับ",
+            "Own your official information, share your menu and send thoughtful messages or gift vouchers only to diners who explicitly invite contact. Rankings remain completely independent.",
+            "จัดการข้อมูลทางการ แชร์เมนู และส่งข้อความหรือบัตรกำนัลเฉพาะให้นักชิมที่อนุญาต อันดับยังคงเป็นอิสระโดยสิ้นเชิง",
           )}
         </p>
       </section>
 
-      {restaurants.length ? (
+      {showDemo ? (
+        <DemoRestaurant onExit={() => setShowDemo(false)} />
+      ) : restaurants.length ? (
         <>
           {restaurants.length > 1 ? (
             <select value={selectedPlaceId} onChange={(e) => setSelectedPlaceId(e.target.value)} className="mt-6 min-h-11 rounded-md border border-border bg-card px-3">
@@ -82,13 +96,22 @@ function RestaurantWorkspace() {
           {selected ? <VerifiedRestaurantPanel key={selected.place_id} restaurant={selected} /> : null}
         </>
       ) : (
-        <RestaurantClaimPanel claims={workspace.data?.claims ?? []} />
+        <RestaurantClaimPanel
+          claims={workspace.data?.claims ?? []}
+          onPreview={() => setShowDemo(true)}
+        />
       )}
     </AppShell>
   );
 }
 
-function RestaurantClaimPanel({ claims }: { claims: any[] }) {
+function RestaurantClaimPanel({
+  claims,
+  onPreview,
+}: {
+  claims: any[];
+  onPreview: () => void;
+}) {
   const { lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
@@ -114,7 +137,83 @@ function RestaurantClaimPanel({ claims }: { claims: any[] }) {
   });
 
   return (
-    <div className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+    <div className="mt-7 space-y-7">
+      <section className="grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
+        {[
+          {
+            Icon: BadgeCheck,
+            title: copy("Verified presence", "ตัวตนร้านที่ยืนยัน"),
+            body: copy(
+              "Publish your official story, menu and contact details beside diner-created dishes.",
+              "เผยแพร่เรื่องราว เมนู และช่องทางติดต่อทางการข้างจานที่นักชิมเพิ่ม",
+            ),
+          },
+          {
+            Icon: Users,
+            title: copy("Permission-based audience", "กลุ่มนักชิมที่อนุญาต"),
+            body: copy(
+              "Reach only diners who tried or want your dishes and separately opted in.",
+              "ติดต่อเฉพาะผู้ที่เคยลองหรืออยากลองจานของคุณและยินยอมแยกต่างหาก",
+            ),
+          },
+          {
+            Icon: Gift,
+            title: copy("Messages & gifts", "ข้อความและของขวัญ"),
+            body: copy(
+              "Send personal invitations and trackable gift vouchers without spam.",
+              "ส่งคำเชิญและบัตรกำนัลส่วนบุคคลโดยไม่รบกวน",
+            ),
+          },
+        ].map(({ Icon, title, body }) => (
+          <div key={title} className="bg-card p-5 md:p-6">
+            <Icon className="h-6 w-6 text-primary" />
+            <h2 className="mt-4 font-display text-2xl uppercase">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-5 rounded-lg border border-primary/40 bg-primary/5 p-5 md:grid-cols-[1fr_auto] md:items-center md:p-7">
+        <div>
+          <p className="editorial-kicker text-primary">
+            {copy("Founding restaurant pilot", "โครงการร้านรุ่นก่อตั้ง")}
+          </p>
+          <h2 className="mt-2 font-display text-3xl uppercase md:text-4xl">
+            {copy("One complete restaurant plan", "แผนร้านอาหารแบบครบวงจร")}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            {copy(
+              "Verification comes first. Subscription payment follows approval, before the live workspace is activated. No card is charged during the claim.",
+              "ยืนยันร้านก่อน จากนั้นจึงชำระค่าสมาชิกก่อนเปิดใช้พื้นที่ร้าน จะไม่มีการตัดบัตรในขณะส่งคำขอ",
+            )}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold uppercase">
+            <span>✓ {copy("Official profile", "โปรไฟล์ทางการ")}</span>
+            <span>✓ {copy("Consented messaging", "ข้อความที่ยินยอม")}</span>
+            <span>✓ {copy("Gift vouchers", "บัตรกำนัล")}</span>
+          </div>
+        </div>
+        <Button size="lg" className="gap-2" variant="outline" onClick={onPreview}>
+          <Sparkles size={18} />
+          {copy("Preview full workspace", "ดูตัวอย่างพื้นที่ร้าน")}
+        </Button>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-4">
+        {[
+          [copy("1. Claim", "1. ส่งคำขอ"), copy("Select your existing restaurant.", "เลือกร้านที่มีอยู่")],
+          [copy("2. Verify", "2. ยืนยัน"), copy("JaanNee confirms your authority.", "JaanNee ยืนยันสิทธิ์ของคุณ")],
+          [copy("3. Pay", "3. ชำระเงิน"), copy("Complete secure subscription checkout.", "ชำระค่าสมาชิกอย่างปลอดภัย")],
+          [copy("4. Launch", "4. เปิดใช้"), copy("Your official workspace goes live.", "พื้นที่ร้านทางการเปิดใช้งาน")],
+        ].map(([title, body]) => (
+          <div key={title} className="rounded-lg border border-border bg-card p-4">
+            <p className="font-bold uppercase text-primary">{title}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
       <section className="rounded-lg border border-border bg-card p-5 md:p-6">
         <h2 className="type-section-title">{copy("Claim your restaurant", "ขอยืนยันร้านของคุณ")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{copy("Search for the existing JaanNee place. Claims are manually verified before access is granted.", "ค้นหาร้านที่มีอยู่ใน JaanNee คำขอจะได้รับการตรวจสอบก่อนอนุมัติ")}</p>
@@ -151,11 +250,73 @@ function RestaurantClaimPanel({ claims }: { claims: any[] }) {
           </ul>
         ) : <p className="mt-3 text-sm text-muted-foreground">{copy("No claims submitted yet.", "ยังไม่มีคำขอ")}</p>}
       </section>
+      </section>
     </div>
   );
 }
 
-function VerifiedRestaurantPanel({ restaurant }: { restaurant: any }) {
+function DemoRestaurant({ onExit }: { onExit: () => void }) {
+  const demoRestaurant = {
+    place_id: "demo",
+    role: "owner",
+    place: { name: "JaanNee Test Kitchen", address: "Thonglor, Bangkok" },
+    profile: {
+      official_description:
+        "A sample restaurant workspace showing how verified restaurants can welcome interested diners without influencing JaanNee rankings.",
+      menu_url: "https://example.com/menu",
+      instagram_url: "https://instagram.com/",
+      line_url: "",
+      phone: "02 000 0000",
+    },
+    audience: [
+      {
+        user_id: "demo-diner-1",
+        allow_messages: true,
+        allow_vouchers: true,
+        diner: { display_name: "Mali S.", username: "malieats" },
+      },
+      {
+        user_id: "demo-diner-2",
+        allow_messages: false,
+        allow_vouchers: true,
+        diner: { display_name: "Bangkok Bites", username: "bkkbites" },
+      },
+      {
+        user_id: "demo-diner-3",
+        allow_messages: true,
+        allow_vouchers: false,
+        diner: { display_name: "Nok", username: "noktries" },
+      },
+    ],
+    sent: [],
+  };
+
+  return (
+    <div className="mt-7">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gold/40 bg-gold/10 p-4">
+        <div className="flex items-center gap-3">
+          <LockKeyhole className="h-5 w-5 text-gold" />
+          <div>
+            <p className="font-bold uppercase">Demo workspace</p>
+            <p className="text-xs text-muted-foreground">
+              Sample data only. Saving and sending are disabled.
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" onClick={onExit}>Exit demo</Button>
+      </div>
+      <VerifiedRestaurantPanel restaurant={demoRestaurant} demo />
+    </div>
+  );
+}
+
+function VerifiedRestaurantPanel({
+  restaurant,
+  demo = false,
+}: {
+  restaurant: any;
+  demo?: boolean;
+}) {
   const { lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
@@ -213,9 +374,11 @@ function VerifiedRestaurantPanel({ restaurant }: { restaurant: any }) {
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary"><ShieldCheck size={16} /> {copy("Verified restaurant", "ร้านที่ยืนยันแล้ว")}</p>
           <h2 className="mt-2 font-display text-3xl">{restaurant.place?.name}</h2>
         </div>
-        <Link to="/place/$placeId" params={{ placeId: restaurant.place_id }}>
-          <Button variant="outline">{copy("View public profile", "ดูโปรไฟล์สาธารณะ")}</Button>
-        </Link>
+        {!demo ? (
+          <Link to="/place/$placeId" params={{ placeId: restaurant.place_id }}>
+            <Button variant="outline">{copy("View public profile", "ดูโปรไฟล์สาธารณะ")}</Button>
+          </Link>
+        ) : null}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -227,7 +390,7 @@ function VerifiedRestaurantPanel({ restaurant }: { restaurant: any }) {
             <Input value={lineUrl} onChange={(e) => setLineUrl(e.target.value)} placeholder="LINE URL" />
             <Input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="Instagram URL" />
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={copy("Phone", "โทรศัพท์")} />
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>{copy("Save profile", "บันทึกโปรไฟล์")}</Button>
+            <Button onClick={() => save.mutate()} disabled={demo || save.isPending}>{copy("Save profile", "บันทึกโปรไฟล์")}</Button>
           </div>
         </section>
 
@@ -267,7 +430,7 @@ function VerifiedRestaurantPanel({ restaurant }: { restaurant: any }) {
                 <Input value={terms} onChange={(e) => setTerms(e.target.value)} placeholder={copy("Terms", "เงื่อนไข")} />
               </div>
             ) : null}
-            <Button className="w-fit" disabled={!subject.trim() || !body.trim() || (kind === "voucher" && (!code.trim() || !expiry)) || send.isPending} onClick={() => send.mutate()}>
+            <Button className="w-fit" disabled={demo || !subject.trim() || !body.trim() || (kind === "voucher" && (!code.trim() || !expiry)) || send.isPending} onClick={() => send.mutate()}>
               {copy("Send", "ส่ง")}
             </Button>
           </div>
