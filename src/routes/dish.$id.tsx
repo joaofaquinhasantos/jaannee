@@ -2,6 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Camera,
+  ChevronRight,
+  MapPin,
+  Utensils,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import {
   ComparePairChoice,
@@ -10,7 +18,7 @@ import {
   type TriedDish,
   useComparePairs,
 } from "@/components/ContextualCompare";
-import { DishCard, statusLabel, toneClass } from "@/components/DishCard";
+import { DishCard, statusLabel } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
 import { FoodPostCreator } from "@/components/FoodPostCreator";
@@ -344,8 +352,8 @@ function DishPage() {
 
   return (
     <AppShell tone="noir" fullBleed>
-      <article className="stitch-page">
-        <div className="relative min-h-[72svh] overflow-hidden bg-black md:min-h-[82svh]">
+      <article className="stitch-page stitch-dish-detail">
+        <div className="relative mx-auto aspect-[4/5] min-h-[500px] max-h-[780px] w-full overflow-hidden bg-black md:aspect-[16/10] md:min-h-[620px]">
           <div className="absolute inset-0 bg-muted">
             {dish.photo_url ? (
               <img
@@ -362,7 +370,27 @@ function DishPage() {
             )}
           </div>
           <div className="photo-scrim absolute inset-0" />
-          <div className="absolute inset-x-0 bottom-0 grid gap-6 p-6 text-white md:grid-cols-[1fr_auto] md:items-end md:p-10">
+          <Link
+            to="/"
+            aria-label={copy("Back to Discover", "กลับไปหน้าค้นพบ")}
+            className="absolute left-4 top-5 z-10 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur-md transition hover:bg-black/70 sm:left-7 sm:top-7"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+          {rank > 0 ? (
+            <div className="absolute right-4 top-5 z-10 inline-flex items-center gap-2 bg-primary px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-primary-foreground shadow-xl sm:right-7 sm:top-7">
+              <BadgeCheck size={16} />
+              {copy(`Public rank #${rank}`, `อันดับสาธารณะ #${rank}`)}
+            </div>
+          ) : (
+            <div className="absolute right-4 top-5 z-10 bg-black/55 px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-white backdrop-blur-md sm:right-7 sm:top-7">
+              {copy(
+                `New contender · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`,
+                `ผู้ท้าชิงใหม่ · ${dish.comparisons_count ?? 0}/${PUBLIC_RANK_THRESHOLD}`,
+              )}
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 grid gap-7 p-5 text-white sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:p-10 lg:p-14">
             <div>
               <p className="editorial-kicker text-white/75">
                 {localizedName(dish.category, lang) ||
@@ -371,32 +399,30 @@ function DishPage() {
                     : dish.requested_category_en || dish.requested_category_th)}
                 {dish.subtype ? ` · ${localizedName(dish.subtype, lang)}` : ""}
               </p>
-              <h1 className="mt-4 max-w-5xl font-display text-[clamp(3.5rem,10vw,9rem)] leading-[0.82] tracking-[-0.045em]">
+              <h1 className="mt-3 max-w-5xl font-display text-[clamp(3.3rem,10vw,8.5rem)] uppercase leading-[0.82] tracking-[-0.045em]">
                 {name}
               </h1>
               {alternateName ? (
-                <p className="mt-3 font-thai text-xl font-medium text-white/75">{alternateName}</p>
+                <p className="mt-3 font-thai text-lg font-medium text-white/70 sm:text-xl">{alternateName}</p>
               ) : null}
-              <p className="mt-5 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
+              <p className="mt-4 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.1em] text-white/80">
+                <MapPin size={15} />
                 {dish.place?.name}
                 {areaName ? ` · ${areaName}` : ""}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end md:pb-2">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${toneClass(status.tone)}`}
-              >
-                {status.text}
-              </span>
-              {rank > 0 ? (
-                <span className="border border-gold bg-black/45 px-3 py-2 text-sm font-bold text-gold">
-                  #{rank}
-                </span>
-              ) : null}
+            <div className="flex gap-7 border-t border-white/20 pt-4 md:border-l md:border-t-0 md:pl-7 md:pt-0">
+              <HeroMetric value={String(triedCount)} label={copy("Diners tried", "นักชิมเคยกิน")} />
+              <HeroMetric
+                value={String(dish.comparisons_count ?? 0)}
+                label={copy("Comparisons", "การเปรียบเทียบ")}
+                accent
+              />
               {dish.price_thb != null ? (
-                <span className="border border-white/40 bg-black/35 px-3 py-2 text-sm font-bold">
-                  THB {Number(dish.price_thb).toFixed(0)}
-                </span>
+                <HeroMetric
+                  value={Number(dish.price_thb).toFixed(0)}
+                  label={copy("THB", "บาท")}
+                />
               ) : null}
             </div>
           </div>
@@ -405,9 +431,14 @@ function DishPage() {
         <div className="stitch-container grid bg-[#131313] lg:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
           <div className="py-8 lg:border-r lg:border-white/10 lg:py-14 lg:pr-12">
             {dish.note ? (
-              <p className="border-l-4 border-primary bg-secondary p-5 text-sm leading-7">
-                {dish.note}
-              </p>
+              <section>
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary">
+                  {copy("Diner note", "บันทึกจากนักชิม")}
+                </p>
+                <p className="mt-3 border-l-2 border-primary bg-white/[0.035] p-5 text-sm italic leading-7">
+                  “{dish.note}”
+                </p>
+              </section>
             ) : null}
 
             <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
@@ -417,7 +448,7 @@ function DishPage() {
                 triedCount={triedCount}
               />
             </div>
-            <div className="mt-4 grid grid-cols-3 border-y-2 border-foreground text-center text-xs text-muted-foreground">
+            <div className="mt-4 grid grid-cols-3 border-y border-white/15 bg-white/[0.025] text-center text-xs text-muted-foreground">
               <Metric label={copy("Status", "สถานะ")} value={status.text} />
               <Metric label={copy("Added", "เพิ่มเมื่อ")} value={`${days} ${t("days_ago")}`} />
               <Metric label={t("comparisons_progress")} value={`${dish.comparisons_count ?? 0}`} />
@@ -429,8 +460,10 @@ function DishPage() {
             ) : null}
 
             {auth.status === "in" && isTried && currentTriedDish && eligiblePartner ? (
-              <section className="mt-8 border-t border-border pt-6">
-                <p className="label-caps text-primary">{t("ready_to_compare")}</p>
+              <section className="mt-8 border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary">
+                  {t("ready_to_compare")}
+                </p>
                 <h2 className="type-section-title mt-2">{t("which_better")}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{t("ready_to_compare_body")}</p>
                 <div className="mt-4">
@@ -449,8 +482,10 @@ function DishPage() {
                 </div>
               </section>
             ) : auth.status === "in" && isTried && !comparison.isLoading && dish.category?.slug ? (
-              <section className="mt-8 border-t border-border pt-6">
-                <p className="label-caps text-primary">{t("no_pairs_yet")}</p>
+              <section className="mt-8 border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary">
+                  {t("no_pairs_yet")}
+                </p>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
                   {t("no_pairs_yet_body")}
                 </p>
@@ -559,20 +594,6 @@ function DishPage() {
                   </DialogContent>
                 </Dialog>
               ) : null}
-              {dish.place ? (
-                <a href={mapsDirectionsUrl(dish.place)} target="_blank" rel="noreferrer">
-                  <Button variant="outline" type="button" className="min-h-11">
-                    {copy("Directions", "เส้นทาง")}
-                  </Button>
-                </a>
-              ) : null}
-              {officialRestaurant.data && dish.place?.id ? (
-                <Link to="/place/$placeId" params={{ placeId: dish.place.id }}>
-                  <Button variant="outline" type="button" className="min-h-11">
-                    {copy("Official restaurant profile", "โปรไฟล์ร้านทางการ")}
-                  </Button>
-                </Link>
-              ) : null}
               {auth.status === "in" ? <ReportDialog dishId={id} /> : null}
             </div>
             <RestaurantConnection
@@ -584,10 +605,62 @@ function DishPage() {
           </div>
 
           <aside className="space-y-8 py-8 lg:py-14 lg:pl-12">
+            {dish.place ? (
+              <section>
+                <div className="mb-4 flex items-center gap-3">
+                  <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary">
+                    {officialRestaurant.data
+                      ? copy("Verified venue", "ร้านที่ยืนยันแล้ว")
+                      : copy("The place", "ร้าน")}
+                  </p>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+                <div className="border border-white/10 bg-white/[0.035] p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="grid h-14 w-14 shrink-0 place-items-center bg-primary/12 text-primary">
+                      <Utensils size={23} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h2 className="truncate font-display text-2xl uppercase leading-none">
+                          {dish.place.name}
+                        </h2>
+                        {officialRestaurant.data ? (
+                          <BadgeCheck size={18} className="shrink-0 text-primary" />
+                        ) : null}
+                      </div>
+                      <p className="mt-2 text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                        {[areaName, dish.place.address].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-5 grid gap-2 ${officialRestaurant.data && dish.place.id ? "grid-cols-2" : "grid-cols-1"}`}
+                  >
+                    <a href={mapsDirectionsUrl(dish.place)} target="_blank" rel="noreferrer">
+                      <Button variant="outline" className="min-h-11 w-full gap-2">
+                        <MapPin size={16} />
+                        {copy("Directions", "เส้นทาง")}
+                      </Button>
+                    </a>
+                    {officialRestaurant.data && dish.place.id ? (
+                      <Link to="/place/$placeId" params={{ placeId: dish.place.id }}>
+                        <Button variant="outline" className="min-h-11 w-full gap-2">
+                          {copy("Venue profile", "โปรไฟล์ร้าน")}
+                          <ChevronRight size={16} />
+                        </Button>
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
             {dish.submitted_by ? (
-              <div className="border-y border-foreground/25 py-4">
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  {copy("Submitted by", "ส่งโดย")}
+              <div className="border-y border-white/15 py-5">
+                <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  <Camera size={15} className="text-primary" />
+                  {copy("Diner submission", "โพสต์จากนักชิม")}
                 </h2>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -672,6 +745,27 @@ function DishPage() {
         b={promptPartner}
       />
     </AppShell>
+  );
+}
+
+function HeroMetric({
+  value,
+  label,
+  accent = false,
+}: {
+  value: string;
+  label: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className={`font-display text-3xl leading-none sm:text-4xl ${accent ? "text-primary" : "text-white"}`}>
+        {value}
+      </p>
+      <p className="mt-1 max-w-20 text-[0.6rem] font-black uppercase leading-4 tracking-[0.1em] text-white/60">
+        {label}
+      </p>
+    </div>
   );
 }
 
