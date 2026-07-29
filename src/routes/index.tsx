@@ -6,10 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
 import { ReturnHub } from "@/components/ReturnHub";
-import {
-  InterestFollowControls,
-  useInterestFollows,
-} from "@/components/InterestFollowing";
+import { InterestFollowControls, useInterestFollows } from "@/components/InterestFollowing";
 import { getDiscoverBootstrap, listDishes } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, secondaryName } from "@/lib/names";
@@ -179,8 +176,7 @@ function Index() {
               (dish.place?.area?.id && follows.area_ids.includes(dish.place.area.id)),
           )
           .sort(
-            (a, b) =>
-              dateValue(b.created_at) - dateValue(a.created_at) || a.id.localeCompare(b.id),
+            (a, b) => dateValue(b.created_at) - dateValue(a.created_at) || a.id.localeCompare(b.id),
           )
           .slice(0, 6)
       : [];
@@ -239,9 +235,10 @@ function Index() {
         (categorySlug && subtypeScoped && activeSubtypes.length === 1 && !subtypeSlug) ? (
         <div className="min-h-[40vh] px-6 py-16 text-sm text-white/45">{t("loading")}</div>
       ) : leader ? (
-        <div>
-          <HeroDish
-            dish={leader}
+        <div className="stitch-page">
+          <EditorialLead
+            leader={leader}
+            supporting={dishRows.filter((dish) => dish.id !== leader.id).slice(0, 2)}
             rank={ranked.findIndex((dish) => dish.id === leader.id) + 1}
             poolReady={poolReady}
           />
@@ -327,6 +324,41 @@ function Index() {
         <Plus className="h-5 w-5" aria-hidden="true" />
       </Link>
     </AppShell>
+  );
+}
+
+function EditorialLead({
+  leader,
+  supporting,
+  rank,
+  poolReady,
+}: {
+  leader: DishRow;
+  supporting: DishRow[];
+  rank: number;
+  poolReady: boolean;
+}) {
+  const { lang } = useI18n();
+  return (
+    <section className="grid min-h-[72svh] border-b border-white/10 lg:grid-cols-[minmax(0,1.8fr)_minmax(18rem,0.7fr)]">
+      <HeroDish dish={leader} rank={rank} poolReady={poolReady} />
+      <aside className="hidden border-l border-white/10 bg-[#171616] lg:grid lg:grid-rows-[auto_1fr_1fr]">
+        <div className="flex items-end justify-between gap-4 border-b border-white/10 p-6">
+          <div>
+            <p className="stitch-kicker">{lang === "th" ? "จานที่น่าจับตา" : "The edit"}</p>
+            <h2 className="mt-2 font-display text-4xl leading-none">
+              {lang === "th" ? "จานเด่นตอนนี้" : "Worth a closer look"}
+            </h2>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
+            01—03
+          </span>
+        </div>
+        {supporting.map((dish) => (
+          <CompactDish key={dish.id} dish={dish} />
+        ))}
+      </aside>
+    </section>
   );
 }
 
@@ -491,14 +523,18 @@ function DishSection({
 }) {
   if (dishes.length === 0) return null;
   return (
-    <section className="border-t border-white/10 bg-[#111111] px-5 py-12 text-white md:px-8 md:py-16">
+    <section className="stitch-section bg-[#131313] text-white">
       <div className="mx-auto max-w-[112rem]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
-        <h2 className="mt-2 font-noir-display text-5xl uppercase leading-[0.86] md:text-6xl">
-          {title}
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">{description}</p>
-        <div className="mt-8 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stitch-container">
+          <div className="stitch-section-head">
+            <div>
+              <p className="stitch-kicker">{eyebrow}</p>
+              <h2 className="mt-2">{title}</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">{description}</p>
+            </div>
+          </div>
+        </div>
+        <div className="stitch-card-grid">
           {dishes.map((dish, index) => (
             <CompactDish key={dish.id} dish={dish} rank={ranked ? index + 2 : undefined} />
           ))}

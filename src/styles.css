@@ -388,3 +388,156 @@
 @utility hairline {
   border-top: 1px solid color-mix(in oklab, var(--ink) 14%, transparent);
 }
+
+/* Page structures consolidated from the five Stitch design packages. */
+.stitch-page {
+  min-height: 100%;
+  background: radial-gradient(circle at 75% -10%, rgb(214 50 31 / 9%), transparent 28rem), #131313;
+  color: #faf8f4;
+}
+
+.stitch-container {
+  width: min(100%, 112rem);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 3rem);
+}
+
+.stitch-masthead {
+  display: grid;
+  gap: 1.5rem;
+  padding-block: clamp(2.25rem, 7vw, 6.5rem);
+  border-bottom: 1px solid rgb(250 248 244 / 12%);
+}
+
+.stitch-masthead h1 {
+  max-width: 13ch;
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 9vw, 8.5rem);
+  font-weight: 400;
+  line-height: 0.84;
+  letter-spacing: -0.04em;
+}
+
+.stitch-kicker {
+  color: #d6321f;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.stitch-section {
+  padding-block: clamp(2.5rem, 6vw, 6rem);
+  border-top: 1px solid rgb(250 248 244 / 10%);
+}
+
+.stitch-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(1.4rem, 3vw, 2.5rem);
+}
+
+.stitch-section-head h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+}
+
+.stitch-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: rgb(250 248 244 / 12%);
+}
+
+.stitch-card-grid > * {
+  min-width: 0;
+  background: #131313;
+}
+
+.stitch-dashboard {
+  display: grid;
+  gap: 1rem;
+}
+
+.stitch-dashboard-card {
+  border: 1px solid rgb(250 248 244 / 10%);
+  background: #1c1b1b;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.stitch-workspace-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.35rem;
+  border: 1px solid rgb(250 248 244 / 10%);
+  background: #1c1b1b;
+  scrollbar-width: none;
+}
+
+.stitch-workspace-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.stitch-workspace-nav [role="tab"] {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  border-radius: 0;
+  padding-inline: 1rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stitch-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+@media (min-width: 768px) {
+  .stitch-masthead {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.45fr);
+    align-items: end;
+  }
+
+  .stitch-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stitch-photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .stitch-dashboard {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .stitch-workspace {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    align-items: start;
+    gap: 2rem;
+  }
+
+  .stitch-workspace-nav {
+    position: sticky;
+    top: 6rem;
+    display: grid;
+    overflow: visible;
+  }
+
+  .stitch-workspace-nav [role="tab"] {
+    justify-content: flex-start;
+    min-height: 3.25rem;
+  }
+}

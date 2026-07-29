@@ -35,11 +35,7 @@ import {
   submitRestaurantClaim,
   updateRestaurantProfile,
 } from "@/lib/restaurant.functions";
-import {
-  PHOTO_ACCEPT_ATTR,
-  buildPhotoPath,
-  validatePhotoFile,
-} from "@/lib/photo-upload";
+import { PHOTO_ACCEPT_ATTR, buildPhotoPath, validatePhotoFile } from "@/lib/photo-upload";
 import { useAuthUser } from "@/lib/use-auth";
 import { useI18n } from "@/lib/i18n";
 import { generateVoucherNumber } from "@/lib/voucher";
@@ -74,30 +70,51 @@ function RestaurantWorkspace() {
   useEffect(() => {
     if (!selectedPlaceId && restaurants[0]?.place_id) setSelectedPlaceId(restaurants[0].place_id);
   }, [restaurants, selectedPlaceId]);
-  const selected = restaurants.find((item: any) => item.place_id === selectedPlaceId) ?? restaurants[0];
+  const selected =
+    restaurants.find((item: any) => item.place_id === selectedPlaceId) ?? restaurants[0];
 
   if (workspace.isLoading) {
-    return <AppShell><p className="text-muted-foreground">{copy("Loading restaurant workspace…", "กำลังโหลดพื้นที่ร้าน…")}</p></AppShell>;
+    return (
+      <AppShell tone="noir">
+        <p className="text-muted-foreground">
+          {copy("Loading restaurant workspace…", "กำลังโหลดพื้นที่ร้าน…")}
+        </p>
+      </AppShell>
+    );
   }
   if (workspace.data?.available === false) {
     return (
-      <AppShell>
+      <AppShell tone="noir">
         <section className="mx-auto max-w-xl py-16 text-center">
           <Building2 className="mx-auto h-10 w-10 text-primary" />
-          <h1 className="type-page-title mt-4">{copy("Restaurant profiles are almost ready", "โปรไฟล์ร้านใกล้พร้อมแล้ว")}</h1>
-          <p className="mt-3 text-sm text-muted-foreground">{copy("The owner must finish the secure database setup first.", "เจ้าของระบบต้องตั้งค่าฐานข้อมูลที่ปลอดภัยให้เสร็จก่อน")}</p>
+          <h1 className="type-page-title mt-4">
+            {copy("Restaurant profiles are almost ready", "โปรไฟล์ร้านใกล้พร้อมแล้ว")}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {copy(
+              "The owner must finish the secure database setup first.",
+              "เจ้าของระบบต้องตั้งค่าฐานข้อมูลที่ปลอดภัยให้เสร็จก่อน",
+            )}
+          </p>
         </section>
       </AppShell>
     );
   }
 
   return (
-    <AppShell>
-      <section className="border-b border-border pb-7">
-        <p className="editorial-kicker text-primary">{copy("JaanNee for restaurants", "JaanNee สำหรับร้านอาหาร")}</p>
-        <h1 className="type-page-title mt-3 max-w-4xl">
-          {copy("Turn genuine diner interest into return visits", "เปลี่ยนความสนใจจริงจากนักชิมให้กลายเป็นการกลับมาอีก")}
-        </h1>
+    <AppShell tone="noir">
+      <section className="stitch-masthead">
+        <div>
+          <p className="stitch-kicker">
+            {copy("JaanNee for restaurants", "JaanNee สำหรับร้านอาหาร")}
+          </p>
+          <h1 className="mt-3 max-w-4xl">
+            {copy(
+              "Turn genuine diner interest into return visits",
+              "เปลี่ยนความสนใจจริงจากนักชิมให้กลายเป็นการกลับมาอีก",
+            )}
+          </h1>
+        </div>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
           {copy(
             "Own your official information, share your menu and send thoughtful messages or gift vouchers only to diners who explicitly invite contact. Rankings remain completely independent.",
@@ -111,11 +128,21 @@ function RestaurantWorkspace() {
       ) : restaurants.length ? (
         <>
           {restaurants.length > 1 ? (
-            <select value={selectedPlaceId} onChange={(e) => setSelectedPlaceId(e.target.value)} className="mt-6 min-h-11 rounded-md border border-border bg-card px-3">
-              {restaurants.map((item: any) => <option key={item.place_id} value={item.place_id}>{item.place?.name}</option>)}
+            <select
+              value={selectedPlaceId}
+              onChange={(e) => setSelectedPlaceId(e.target.value)}
+              className="mt-6 min-h-11 rounded-md border border-border bg-card px-3"
+            >
+              {restaurants.map((item: any) => (
+                <option key={item.place_id} value={item.place_id}>
+                  {item.place?.name}
+                </option>
+              ))}
             </select>
           ) : null}
-          {selected ? <VerifiedRestaurantPanel key={selected.place_id} restaurant={selected} /> : null}
+          {selected ? (
+            <VerifiedRestaurantPanel key={selected.place_id} restaurant={selected} />
+          ) : null}
         </>
       ) : (
         <RestaurantClaimPanel
@@ -127,13 +154,7 @@ function RestaurantWorkspace() {
   );
 }
 
-function RestaurantClaimPanel({
-  claims,
-  onPreview,
-}: {
-  claims: any[];
-  onPreview: () => void;
-}) {
+function RestaurantClaimPanel({ claims, onPreview }: { claims: any[]; onPreview: () => void }) {
   const { lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
@@ -160,7 +181,7 @@ function RestaurantClaimPanel({
 
   return (
     <div className="mt-7 space-y-7">
-      <section className="grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
+      <section className="stitch-card-grid">
         {[
           {
             Icon: BadgeCheck,
@@ -223,10 +244,22 @@ function RestaurantClaimPanel({
 
       <section className="grid gap-4 md:grid-cols-4">
         {[
-          [copy("1. Claim", "1. ส่งคำขอ"), copy("Select your existing restaurant.", "เลือกร้านที่มีอยู่")],
-          [copy("2. Verify", "2. ยืนยัน"), copy("JaanNee confirms your authority.", "JaanNee ยืนยันสิทธิ์ของคุณ")],
-          [copy("3. Pay", "3. ชำระเงิน"), copy("Complete secure subscription checkout.", "ชำระค่าสมาชิกอย่างปลอดภัย")],
-          [copy("4. Launch", "4. เปิดใช้"), copy("Your official workspace goes live.", "พื้นที่ร้านทางการเปิดใช้งาน")],
+          [
+            copy("1. Claim", "1. ส่งคำขอ"),
+            copy("Select your existing restaurant.", "เลือกร้านที่มีอยู่"),
+          ],
+          [
+            copy("2. Verify", "2. ยืนยัน"),
+            copy("JaanNee confirms your authority.", "JaanNee ยืนยันสิทธิ์ของคุณ"),
+          ],
+          [
+            copy("3. Pay", "3. ชำระเงิน"),
+            copy("Complete secure subscription checkout.", "ชำระค่าสมาชิกอย่างปลอดภัย"),
+          ],
+          [
+            copy("4. Launch", "4. เปิดใช้"),
+            copy("Your official workspace goes live.", "พื้นที่ร้านทางการเปิดใช้งาน"),
+          ],
         ].map(([title, body]) => (
           <div key={title} className="rounded-lg border border-border bg-card p-4">
             <p className="font-bold uppercase text-primary">{title}</p>
@@ -236,42 +269,86 @@ function RestaurantClaimPanel({
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-lg border border-border bg-card p-5 md:p-6">
-        <h2 className="type-section-title">{copy("Claim your restaurant", "ขอยืนยันร้านของคุณ")}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{copy("Search for the existing JaanNee place. Claims are manually verified before access is granted.", "ค้นหาร้านที่มีอยู่ใน JaanNee คำขอจะได้รับการตรวจสอบก่อนอนุมัติ")}</p>
-        <div className="mt-5 space-y-4">
-          <Input value={search} onChange={(e) => { setSearch(e.target.value); setPlaceId(""); }} placeholder={copy("Search restaurant name", "ค้นหาชื่อร้าน")} />
-          {places.data?.length ? (
-            <div className="max-h-56 overflow-y-auto rounded-md border border-border">
-              {places.data.map((place: any) => (
-                <button key={place.id} type="button" onClick={() => setPlaceId(place.id)} className={`block w-full border-b border-border p-3 text-left last:border-0 ${placeId === place.id ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
-                  <span className="font-semibold">{place.name}</span>
-                  {place.address ? <span className="mt-1 block text-xs opacity-70">{place.address}</span> : null}
-                </button>
+        <section className="rounded-lg border border-border bg-card p-5 md:p-6">
+          <h2 className="type-section-title">
+            {copy("Claim your restaurant", "ขอยืนยันร้านของคุณ")}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {copy(
+              "Search for the existing JaanNee place. Claims are manually verified before access is granted.",
+              "ค้นหาร้านที่มีอยู่ใน JaanNee คำขอจะได้รับการตรวจสอบก่อนอนุมัติ",
+            )}
+          </p>
+          <div className="mt-5 space-y-4">
+            <Input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPlaceId("");
+              }}
+              placeholder={copy("Search restaurant name", "ค้นหาชื่อร้าน")}
+            />
+            {places.data?.length ? (
+              <div className="max-h-56 overflow-y-auto rounded-md border border-border">
+                {places.data.map((place: any) => (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => setPlaceId(place.id)}
+                    className={`block w-full border-b border-border p-3 text-left last:border-0 ${placeId === place.id ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}
+                  >
+                    <span className="font-semibold">{place.name}</span>
+                    {place.address ? (
+                      <span className="mt-1 block text-xs opacity-70">{place.address}</span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <Input
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              placeholder={copy("Your role (owner, manager…)", "บทบาทของคุณ (เจ้าของ ผู้จัดการ…)")}
+            />
+            <Textarea
+              value={proof}
+              onChange={(e) => setProof(e.target.value)}
+              placeholder={copy(
+                "Explain how we can verify you (business email, website, phone, company details…)",
+                "อธิบายวิธียืนยันตัวตน (อีเมลธุรกิจ เว็บไซต์ โทรศัพท์ ข้อมูลบริษัท…)",
+              )}
+              rows={5}
+            />
+            <Button
+              disabled={
+                !placeId || role.trim().length < 2 || proof.trim().length < 10 || claim.isPending
+              }
+              onClick={() => claim.mutate()}
+            >
+              {copy("Submit verification request", "ส่งคำขอยืนยัน")}
+            </Button>
+          </div>
+        </section>
+        <section className="rounded-lg border border-border bg-secondary/35 p-5">
+          <h2 className="type-section-title">{copy("Your claims", "คำขอของคุณ")}</h2>
+          {claims.length ? (
+            <ul className="mt-4 space-y-3">
+              {claims.map((item) => (
+                <li key={item.id} className="rounded-md border border-border bg-card p-3">
+                  <p className="font-semibold">{item.place?.name}</p>
+                  <p className="mt-1 text-xs font-bold uppercase text-primary">{item.status}</p>
+                  {item.review_note ? (
+                    <p className="mt-2 text-sm text-muted-foreground">{item.review_note}</p>
+                  ) : null}
+                </li>
               ))}
-            </div>
-          ) : null}
-          <Input value={role} onChange={(e) => setRole(e.target.value)} placeholder={copy("Your role (owner, manager…)", "บทบาทของคุณ (เจ้าของ ผู้จัดการ…)")} />
-          <Textarea value={proof} onChange={(e) => setProof(e.target.value)} placeholder={copy("Explain how we can verify you (business email, website, phone, company details…)", "อธิบายวิธียืนยันตัวตน (อีเมลธุรกิจ เว็บไซต์ โทรศัพท์ ข้อมูลบริษัท…)")} rows={5} />
-          <Button disabled={!placeId || role.trim().length < 2 || proof.trim().length < 10 || claim.isPending} onClick={() => claim.mutate()}>
-            {copy("Submit verification request", "ส่งคำขอยืนยัน")}
-          </Button>
-        </div>
-      </section>
-      <section className="rounded-lg border border-border bg-secondary/35 p-5">
-        <h2 className="type-section-title">{copy("Your claims", "คำขอของคุณ")}</h2>
-        {claims.length ? (
-          <ul className="mt-4 space-y-3">
-            {claims.map((item) => (
-              <li key={item.id} className="rounded-md border border-border bg-card p-3">
-                <p className="font-semibold">{item.place?.name}</p>
-                <p className="mt-1 text-xs font-bold uppercase text-primary">{item.status}</p>
-                {item.review_note ? <p className="mt-2 text-sm text-muted-foreground">{item.review_note}</p> : null}
-              </li>
-            ))}
-          </ul>
-        ) : <p className="mt-3 text-sm text-muted-foreground">{copy("No claims submitted yet.", "ยังไม่มีคำขอ")}</p>}
-      </section>
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {copy("No claims submitted yet.", "ยังไม่มีคำขอ")}
+            </p>
+          )}
+        </section>
       </section>
     </div>
   );
@@ -342,7 +419,9 @@ function DemoRestaurant({ onExit }: { onExit: () => void }) {
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={onExit}>Exit demo</Button>
+        <Button variant="outline" onClick={onExit}>
+          Exit demo
+        </Button>
       </div>
       <VerifiedRestaurantPanel restaurant={demoRestaurant} demo />
     </div>
@@ -408,23 +487,33 @@ function VerifiedRestaurantPanel({
     if (!selectedDiner) return;
     if (kind === "message" && !selectedDiner.allow_messages && selectedDiner.allow_vouchers) {
       setKind("voucher");
-    } else if (kind === "voucher" && !selectedDiner.allow_vouchers && selectedDiner.allow_messages) {
+    } else if (
+      kind === "voucher" &&
+      !selectedDiner.allow_vouchers &&
+      selectedDiner.allow_messages
+    ) {
       setKind("message");
     }
   }, [kind, selectedDiner]);
   const save = useMutation({
-    mutationFn: () => updateRestaurantProfile({ data: {
-      placeId: restaurant.place_id,
-      officialDescription: description,
-      menuUrl,
-      reservationUrl,
-      logoUrl,
-      coverUrl,
-      lineUrl,
-      instagramUrl,
-      phone,
-    } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }); toast.success(copy("Official profile saved", "บันทึกโปรไฟล์ทางการแล้ว")); },
+    mutationFn: () =>
+      updateRestaurantProfile({
+        data: {
+          placeId: restaurant.place_id,
+          officialDescription: description,
+          menuUrl,
+          reservationUrl,
+          logoUrl,
+          coverUrl,
+          lineUrl,
+          instagramUrl,
+          phone,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["restaurant-workspace"] });
+      toast.success(copy("Official profile saved", "บันทึกโปรไฟล์ทางการแล้ว"));
+    },
     onError: (error: Error) => toast.error(error.message),
   });
   const trial = useMutation({
@@ -436,51 +525,56 @@ function VerifiedRestaurantPanel({
     onError: (error: Error) => toast.error(error.message),
   });
   const addGallery = useMutation({
-    mutationFn: (photoUrl: string) => addRestaurantGalleryPhoto({
-      data: { placeId: restaurant.place_id, photoUrl },
-    }),
+    mutationFn: (photoUrl: string) =>
+      addRestaurantGalleryPhoto({
+        data: { placeId: restaurant.place_id, photoUrl },
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }),
     onError: (error: Error) => toast.error(error.message),
   });
   const removeGallery = useMutation({
-    mutationFn: (photoId: string) => deleteRestaurantGalleryPhoto({
-      data: { placeId: restaurant.place_id, photoId },
-    }),
+    mutationFn: (photoId: string) =>
+      deleteRestaurantGalleryPhoto({
+        data: { placeId: restaurant.place_id, photoId },
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }),
     onError: (error: Error) => toast.error(error.message),
   });
   const publishUpdate = useMutation({
-    mutationFn: () => createRestaurantUpdate({
-      data: {
-        placeId: restaurant.place_id,
-        title: updateTitle,
-        body: updateBody,
-        photoUrl: updatePhotoUrl || undefined,
-        ctaLabel: updateCtaLabel || undefined,
-        ctaUrl: updateCtaUrl || undefined,
-        expiresAt: updateExpiry ? new Date(updateExpiry).toISOString() : undefined,
-      },
-    }),
+    mutationFn: () =>
+      createRestaurantUpdate({
+        data: {
+          placeId: restaurant.place_id,
+          title: updateTitle,
+          body: updateBody,
+          photoUrl: updatePhotoUrl || undefined,
+          ctaLabel: updateCtaLabel || undefined,
+          ctaUrl: updateCtaUrl || undefined,
+          expiresAt: updateExpiry ? new Date(updateExpiry).toISOString() : undefined,
+        },
+      }),
     onSuccess: () => {
-      setUpdateTitle(""); setUpdateBody(""); setUpdatePhotoUrl("");
-      setUpdateCtaLabel(""); setUpdateCtaUrl(""); setUpdateExpiry("");
+      setUpdateTitle("");
+      setUpdateBody("");
+      setUpdatePhotoUrl("");
+      setUpdateCtaLabel("");
+      setUpdateCtaUrl("");
+      setUpdateExpiry("");
       qc.invalidateQueries({ queryKey: ["restaurant-workspace"] });
       toast.success(copy("Official update published", "เผยแพร่อัปเดตทางการแล้ว"));
     },
     onError: (error: Error) => toast.error(error.message),
   });
   const removeUpdate = useMutation({
-    mutationFn: (updateId: string) => deleteRestaurantUpdate({
-      data: { placeId: restaurant.place_id, updateId },
-    }),
+    mutationFn: (updateId: string) =>
+      deleteRestaurantUpdate({
+        data: { placeId: restaurant.place_id, updateId },
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }),
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const uploadPhoto = async (
-    file: File,
-    purpose: "logo" | "cover" | "gallery" | "update",
-  ) => {
+  const uploadPhoto = async (file: File, purpose: "logo" | "cover" | "gallery" | "update") => {
     if (!auth.userId || demo) return;
     setUploading(purpose);
     try {
@@ -505,18 +599,24 @@ function VerifiedRestaurantPanel({
     }
   };
   const send = useMutation({
-    mutationFn: () => sendRestaurantOutreach({ data: {
-      placeId: restaurant.place_id,
-      recipientUserId: recipientId,
-      kind,
-      subject,
-      body,
-      voucherTerms: kind === "voucher" ? terms : undefined,
-      expiresAt: kind === "voucher" && expiry ? new Date(expiry).toISOString() : undefined,
-    } }),
+    mutationFn: () =>
+      sendRestaurantOutreach({
+        data: {
+          placeId: restaurant.place_id,
+          recipientUserId: recipientId,
+          kind,
+          subject,
+          body,
+          voucherTerms: kind === "voucher" ? terms : undefined,
+          expiresAt: kind === "voucher" && expiry ? new Date(expiry).toISOString() : undefined,
+        },
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["restaurant-workspace"] });
-      setSubject(""); setBody(""); setTerms(""); setExpiry("");
+      setSubject("");
+      setBody("");
+      setTerms("");
+      setExpiry("");
       toast.success(copy("Sent to the consenting diner", "ส่งให้นักชิมที่อนุญาตแล้ว"));
     },
     onError: (error: Error) => toast.error(error.message),
@@ -526,7 +626,8 @@ function VerifiedRestaurantPanel({
     if (demo) {
       const item = {
         id: `demo-sent-${Date.now()}`,
-        recipient: selectedDiner.diner?.display_name || selectedDiner.diner?.username || "Demo diner",
+        recipient:
+          selectedDiner.diner?.display_name || selectedDiner.diner?.username || "Demo diner",
         kind,
         subject: subject.trim(),
         body: body.trim(),
@@ -539,10 +640,12 @@ function VerifiedRestaurantPanel({
       setBody("");
       setTerms("");
       setExpiry("");
-      toast.success(copy(
-        kind === "voucher" ? "Demo voucher delivered" : "Demo message delivered",
-        kind === "voucher" ? "ส่งบัตรกำนัลตัวอย่างแล้ว" : "ส่งข้อความตัวอย่างแล้ว",
-      ));
+      toast.success(
+        copy(
+          kind === "voucher" ? "Demo voucher delivered" : "Demo message delivered",
+          kind === "voucher" ? "ส่งบัตรกำนัลตัวอย่างแล้ว" : "ส่งข้อความตัวอย่างแล้ว",
+        ),
+      );
       return;
     }
     send.mutate();
@@ -552,7 +655,9 @@ function VerifiedRestaurantPanel({
     <div className="mt-7 space-y-7">
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/40 bg-primary/5 p-5">
         <div>
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary"><ShieldCheck size={16} /> {copy("Verified restaurant", "ร้านที่ยืนยันแล้ว")}</p>
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+            <ShieldCheck size={16} /> {copy("Verified restaurant", "ร้านที่ยืนยันแล้ว")}
+          </p>
           <h2 className="mt-2 font-display text-3xl">{restaurant.place?.name}</h2>
         </div>
         {!demo ? (
@@ -562,7 +667,10 @@ function VerifiedRestaurantPanel({
         ) : null}
       </section>
 
-      <nav className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-card p-1" aria-label={copy("Restaurant workspace", "พื้นที่จัดการร้าน")}>
+      <nav
+        className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-card p-1"
+        aria-label={copy("Restaurant workspace", "พื้นที่จัดการร้าน")}
+      >
         {workspaceTabs.map(({ value, Icon, label }) => (
           <button
             key={String(value)}
@@ -582,205 +690,462 @@ function VerifiedRestaurantPanel({
 
       {workspaceTab === "overview" ? (
         <div className="grid gap-4 md:grid-cols-3">
-          <button type="button" onClick={() => setWorkspaceTab("profile")} className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60">
+          <button
+            type="button"
+            onClick={() => setWorkspaceTab("profile")}
+            className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60"
+          >
             <Info className="text-primary" size={21} />
-            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">{copy("Public profile", "โปรไฟล์สาธารณะ")}</p>
-            <p className="mt-1 font-display text-2xl uppercase">{copy("Edit restaurant details", "แก้ไขข้อมูลร้าน")}</p>
+            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">
+              {copy("Public profile", "โปรไฟล์สาธารณะ")}
+            </p>
+            <p className="mt-1 font-display text-2xl uppercase">
+              {copy("Edit restaurant details", "แก้ไขข้อมูลร้าน")}
+            </p>
           </button>
-          <button type="button" onClick={() => setWorkspaceTab("updates")} className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60">
+          <button
+            type="button"
+            onClick={() => setWorkspaceTab("updates")}
+            className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60"
+          >
             <Newspaper className="text-primary" size={21} />
-            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">{copy("Official updates", "อัปเดตทางการ")}</p>
-            <p className="mt-1 font-display text-2xl uppercase">{updates.length} {copy("published", "รายการ")}</p>
+            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">
+              {copy("Official updates", "อัปเดตทางการ")}
+            </p>
+            <p className="mt-1 font-display text-2xl uppercase">
+              {updates.length} {copy("published", "รายการ")}
+            </p>
           </button>
-          <button type="button" onClick={() => setWorkspaceTab("audience")} className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60">
+          <button
+            type="button"
+            onClick={() => setWorkspaceTab("audience")}
+            className="rounded-lg border border-border bg-card p-5 text-left transition hover:border-primary/60"
+          >
             <Users className="text-primary" size={21} />
-            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">{copy("Consenting diners", "นักชิมที่อนุญาต")}</p>
-            <p className="mt-1 font-display text-2xl uppercase">{audience.length} {copy("available", "คน")}</p>
+            <p className="mt-4 text-xs font-bold uppercase text-muted-foreground">
+              {copy("Consenting diners", "นักชิมที่อนุญาต")}
+            </p>
+            <p className="mt-1 font-display text-2xl uppercase">
+              {audience.length} {copy("available", "คน")}
+            </p>
           </button>
         </div>
       ) : null}
 
       {workspaceTab === "overview" ? (
-      <section className={`rounded-lg border p-5 ${growthActive ? "border-gold/50 bg-gold/10" : "border-border bg-card"}`}>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="editorial-kicker text-primary">
-              {growthActive ? copy("Growth active", "Growth เปิดใช้งาน") : copy("Free verified profile", "โปรไฟล์ยืนยันฟรี")}
-            </p>
-            <h2 className="mt-2 font-display text-3xl uppercase">
-              {growthActive
-                ? copy("Turn interest into repeat business", "เปลี่ยนความสนใจเป็นลูกค้าประจำ")
-                : copy("Unlock gallery, updates, messages and vouchers", "ปลดล็อกแกลเลอรี อัปเดต ข้อความ และบัตรกำนัล")}
-            </h2>
-            {profile.subscription_status === "trialing" && profile.trial_ends_at ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {copy("Trial ends", "ทดลองถึง")} {new Date(profile.trial_ends_at).toLocaleDateString()}
+        <section
+          className={`rounded-lg border p-5 ${growthActive ? "border-gold/50 bg-gold/10" : "border-border bg-card"}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="editorial-kicker text-primary">
+                {growthActive
+                  ? copy("Growth active", "Growth เปิดใช้งาน")
+                  : copy("Free verified profile", "โปรไฟล์ยืนยันฟรี")}
               </p>
+              <h2 className="mt-2 font-display text-3xl uppercase">
+                {growthActive
+                  ? copy("Turn interest into repeat business", "เปลี่ยนความสนใจเป็นลูกค้าประจำ")
+                  : copy(
+                      "Unlock gallery, updates, messages and vouchers",
+                      "ปลดล็อกแกลเลอรี อัปเดต ข้อความ และบัตรกำนัล",
+                    )}
+              </h2>
+              {profile.subscription_status === "trialing" && profile.trial_ends_at ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {copy("Trial ends", "ทดลองถึง")}{" "}
+                  {new Date(profile.trial_ends_at).toLocaleDateString()}
+                </p>
+              ) : null}
+            </div>
+            {!growthActive && !profile.trial_started_at && !demo ? (
+              <Button onClick={() => trial.mutate()} disabled={trial.isPending}>
+                {copy("Start 14-day Growth trial", "เริ่มทดลอง Growth 14 วัน")}
+              </Button>
             ) : null}
           </div>
-          {!growthActive && !profile.trial_started_at && !demo ? (
-            <Button onClick={() => trial.mutate()} disabled={trial.isPending}>
-              {copy("Start 14-day Growth trial", "เริ่มทดลอง Growth 14 วัน")}
-            </Button>
-          ) : null}
-        </div>
-      </section>
+        </section>
       ) : null}
 
       {workspaceTab === "profile" ? (
         <section className="rounded-lg border border-border bg-card p-5">
           <h2 className="type-section-title">{copy("Official information", "ข้อมูลทางการ")}</h2>
           <div className="mt-4 space-y-3">
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} placeholder={copy("Official restaurant description", "คำอธิบายร้านอย่างเป็นทางการ")} />
-            <Input value={reservationUrl} onChange={(e) => setReservationUrl(e.target.value)} placeholder={copy("Reservation URL (SevenRooms, TableCheck, website…)", "ลิงก์จองโต๊ะ (SevenRooms, TableCheck, เว็บไซต์…)")} />
-            <Input value={menuUrl} onChange={(e) => setMenuUrl(e.target.value)} placeholder={copy("Official menu URL", "ลิงก์เมนูทางการ")} />
-            <Input value={lineUrl} onChange={(e) => setLineUrl(e.target.value)} placeholder="LINE URL" />
-            <Input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="Instagram URL" />
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={copy("Phone", "โทรศัพท์")} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={1000}
+              placeholder={copy("Official restaurant description", "คำอธิบายร้านอย่างเป็นทางการ")}
+            />
+            <Input
+              value={reservationUrl}
+              onChange={(e) => setReservationUrl(e.target.value)}
+              placeholder={copy(
+                "Reservation URL (SevenRooms, TableCheck, website…)",
+                "ลิงก์จองโต๊ะ (SevenRooms, TableCheck, เว็บไซต์…)",
+              )}
+            />
+            <Input
+              value={menuUrl}
+              onChange={(e) => setMenuUrl(e.target.value)}
+              placeholder={copy("Official menu URL", "ลิงก์เมนูทางการ")}
+            />
+            <Input
+              value={lineUrl}
+              onChange={(e) => setLineUrl(e.target.value)}
+              placeholder="LINE URL"
+            />
+            <Input
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
+              placeholder="Instagram URL"
+            />
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={copy("Phone", "โทรศัพท์")}
+            />
             <div className="grid grid-cols-2 gap-3">
               <label className="cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-sm hover:border-primary">
                 <Camera className="mx-auto mb-2 h-5 w-5" />
-                {uploading === "logo" ? copy("Uploading…", "กำลังอัปโหลด…") : copy("Upload logo", "อัปโหลดโลโก้")}
-                <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void uploadPhoto(file, "logo");
-                  event.target.value = "";
-                }} />
+                {uploading === "logo"
+                  ? copy("Uploading…", "กำลังอัปโหลด…")
+                  : copy("Upload logo", "อัปโหลดโลโก้")}
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept={PHOTO_ACCEPT_ATTR}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadPhoto(file, "logo");
+                    event.target.value = "";
+                  }}
+                />
               </label>
               <label className="cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-sm hover:border-primary">
                 <Camera className="mx-auto mb-2 h-5 w-5" />
-                {uploading === "cover" ? copy("Uploading…", "กำลังอัปโหลด…") : copy("Upload cover", "อัปโหลดภาพปก")}
-                <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void uploadPhoto(file, "cover");
-                  event.target.value = "";
-                }} />
+                {uploading === "cover"
+                  ? copy("Uploading…", "กำลังอัปโหลด…")
+                  : copy("Upload cover", "อัปโหลดภาพปก")}
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept={PHOTO_ACCEPT_ATTR}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadPhoto(file, "cover");
+                    event.target.value = "";
+                  }}
+                />
               </label>
             </div>
-            {(logoUrl || coverUrl) ? (
+            {logoUrl || coverUrl ? (
               <div className="grid grid-cols-2 gap-3">
-                {logoUrl ? <img src={logoUrl} alt="" className="aspect-square w-full rounded-md object-cover" /> : <div />}
-                {coverUrl ? <img src={coverUrl} alt="" className="aspect-square w-full rounded-md object-cover" /> : null}
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    className="aspect-square w-full rounded-md object-cover"
+                  />
+                ) : (
+                  <div />
+                )}
+                {coverUrl ? (
+                  <img
+                    src={coverUrl}
+                    alt=""
+                    className="aspect-square w-full rounded-md object-cover"
+                  />
+                ) : null}
               </div>
             ) : null}
-            <Button onClick={() => save.mutate()} disabled={demo || save.isPending}>{copy("Save profile", "บันทึกโปรไฟล์")}</Button>
+            <Button onClick={() => save.mutate()} disabled={demo || save.isPending}>
+              {copy("Save profile", "บันทึกโปรไฟล์")}
+            </Button>
           </div>
         </section>
       ) : null}
 
       {workspaceTab === "audience" ? (
-        <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
+        <section
+          className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}
+        >
           <h2 className="type-section-title">{copy("Consenting diners", "นักชิมที่อนุญาต")}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{copy("Only diners who marked one of your dishes and explicitly opted in appear here.", "แสดงเฉพาะนักชิมที่ทำเครื่องหมายจานของร้านและอนุญาตอย่างชัดเจน")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {copy(
+              "Only diners who marked one of your dishes and explicitly opted in appear here.",
+              "แสดงเฉพาะนักชิมที่ทำเครื่องหมายจานของร้านและอนุญาตอย่างชัดเจน",
+            )}
+          </p>
           {!growthActive ? (
             <p className="mt-4 rounded-md border border-border bg-background p-3 text-sm font-semibold">
-              {copy("Available with Growth. Start the trial to see consenting diners and contact them manually.", "ใช้ได้ในแพ็กเกจ Growth เริ่มทดลองเพื่อดูนักชิมที่อนุญาตและติดต่อด้วยตนเอง")}
+              {copy(
+                "Available with Growth. Start the trial to see consenting diners and contact them manually.",
+                "ใช้ได้ในแพ็กเกจ Growth เริ่มทดลองเพื่อดูนักชิมที่อนุญาตและติดต่อด้วยตนเอง",
+              )}
             </p>
-          ) : <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
-            {audience.map((item: any) => {
-              const name = item.diner?.display_name || item.diner?.username || copy("Private diner", "นักชิมส่วนตัว");
-              return (
-                <button key={item.user_id} type="button" onClick={() => setRecipientId(item.user_id)} className={`w-full rounded-md border p-3 text-left ${recipientId === item.user_id ? "border-primary bg-primary/5" : "border-border"}`}>
-                  <p className="font-semibold">{name}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{item.allow_messages ? copy("Messages", "ข้อความ") : ""}{item.allow_messages && item.allow_vouchers ? " · " : ""}{item.allow_vouchers ? copy("Vouchers", "บัตรกำนัล") : ""}</p>
-                </button>
-              );
-            })}
-            {!audience.length ? <p className="text-sm text-muted-foreground">{copy("No diners have opted in yet.", "ยังไม่มีนักชิมอนุญาต")}</p> : null}
-          </div>}
+          ) : (
+            <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+              {audience.map((item: any) => {
+                const name =
+                  item.diner?.display_name ||
+                  item.diner?.username ||
+                  copy("Private diner", "นักชิมส่วนตัว");
+                return (
+                  <button
+                    key={item.user_id}
+                    type="button"
+                    onClick={() => setRecipientId(item.user_id)}
+                    className={`w-full rounded-md border p-3 text-left ${recipientId === item.user_id ? "border-primary bg-primary/5" : "border-border"}`}
+                  >
+                    <p className="font-semibold">{name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {item.allow_messages ? copy("Messages", "ข้อความ") : ""}
+                      {item.allow_messages && item.allow_vouchers ? " · " : ""}
+                      {item.allow_vouchers ? copy("Vouchers", "บัตรกำนัล") : ""}
+                    </p>
+                  </button>
+                );
+              })}
+              {!audience.length ? (
+                <p className="text-sm text-muted-foreground">
+                  {copy("No diners have opted in yet.", "ยังไม่มีนักชิมอนุญาต")}
+                </p>
+              ) : null}
+            </div>
+          )}
         </section>
       ) : null}
 
       {workspaceTab === "photos" ? (
-      <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="editorial-kicker text-primary">{copy("Growth gallery", "แกลเลอรี Growth")}</p>
-            <h2 className="type-section-title mt-2">{copy("Show the restaurant experience", "แสดงประสบการณ์ในร้าน")}</h2>
-          </div>
-          <label className={`inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 font-semibold ${growthActive && gallery.length < 12 && !demo ? "cursor-pointer hover:border-primary" : "pointer-events-none"}`}>
-            <Camera size={17} />
-            {uploading === "gallery" ? copy("Uploading…", "กำลังอัปโหลด…") : copy("Add gallery photo", "เพิ่มภาพแกลเลอรี")}
-            <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} disabled={!growthActive || demo} onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void uploadPhoto(file, "gallery");
-              event.target.value = "";
-            }} />
-          </label>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {gallery.map((photo: any) => (
-            <div key={photo.id} className="group relative">
-              <img src={photo.photo_url} alt={photo.caption || ""} className="aspect-square w-full rounded-md object-cover" />
-              {!demo ? <button type="button" onClick={() => removeGallery.mutate(photo.id)} className="absolute right-2 top-2 rounded-full bg-black/75 p-2 text-white"><Trash2 size={15} /></button> : null}
+        <section
+          className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="editorial-kicker text-primary">
+                {copy("Growth gallery", "แกลเลอรี Growth")}
+              </p>
+              <h2 className="type-section-title mt-2">
+                {copy("Show the restaurant experience", "แสดงประสบการณ์ในร้าน")}
+              </h2>
             </div>
-          ))}
-        </div>
-        {!growthActive ? <p className="mt-4 text-sm text-muted-foreground">{copy("Start Growth to add up to 12 official photos.", "เริ่ม Growth เพื่อเพิ่มภาพทางการสูงสุด 12 ภาพ")}</p> : null}
-      </section>
+            <label
+              className={`inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 font-semibold ${growthActive && gallery.length < 12 && !demo ? "cursor-pointer hover:border-primary" : "pointer-events-none"}`}
+            >
+              <Camera size={17} />
+              {uploading === "gallery"
+                ? copy("Uploading…", "กำลังอัปโหลด…")
+                : copy("Add gallery photo", "เพิ่มภาพแกลเลอรี")}
+              <input
+                className="sr-only"
+                type="file"
+                accept={PHOTO_ACCEPT_ATTR}
+                disabled={!growthActive || demo}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file, "gallery");
+                  event.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {gallery.map((photo: any) => (
+              <div key={photo.id} className="group relative">
+                <img
+                  src={photo.photo_url}
+                  alt={photo.caption || ""}
+                  className="aspect-square w-full rounded-md object-cover"
+                />
+                {!demo ? (
+                  <button
+                    type="button"
+                    onClick={() => removeGallery.mutate(photo.id)}
+                    className="absolute right-2 top-2 rounded-full bg-black/75 p-2 text-white"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          {!growthActive ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              {copy(
+                "Start Growth to add up to 12 official photos.",
+                "เริ่ม Growth เพื่อเพิ่มภาพทางการสูงสุด 12 ภาพ",
+              )}
+            </p>
+          ) : null}
+        </section>
       ) : null}
 
       {workspaceTab === "updates" ? (
-      <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
-        <p className="editorial-kicker text-primary">{copy("Official updates", "อัปเดตทางการ")}</p>
-        <h2 className="type-section-title mt-2">{copy("Give diners a reason to return", "สร้างเหตุผลให้นักชิมกลับมา")}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{copy("Publish up to two updates every 7 days. Updates are labeled as restaurant content and never affect rankings.", "เผยแพร่ได้สูงสุด 2 อัปเดตต่อ 7 วัน เนื้อหาจะแสดงว่าเป็นของร้านและไม่มีผลต่ออันดับ")}</p>
-        <div className="mt-5 grid gap-3">
-          <Input value={updateTitle} onChange={(e) => setUpdateTitle(e.target.value)} maxLength={100} placeholder={copy("Update title", "หัวข้ออัปเดต")} disabled={!growthActive || demo} />
-          <Textarea value={updateBody} onChange={(e) => setUpdateBody(e.target.value)} maxLength={1000} placeholder={copy("What should diners know?", "อยากบอกอะไรกับนักชิม?")} disabled={!growthActive || demo} />
-          <div className="grid gap-3 md:grid-cols-3">
-            <Input value={updateCtaLabel} onChange={(e) => setUpdateCtaLabel(e.target.value)} maxLength={40} placeholder={copy("Button label (optional)", "ข้อความปุ่ม (ไม่บังคับ)")} disabled={!growthActive || demo} />
-            <Input value={updateCtaUrl} onChange={(e) => setUpdateCtaUrl(e.target.value)} placeholder={copy("Button URL (optional)", "ลิงก์ปุ่ม (ไม่บังคับ)")} disabled={!growthActive || demo} />
-            <Input value={updateExpiry} onChange={(e) => setUpdateExpiry(e.target.value)} type="datetime-local" disabled={!growthActive || demo} />
+        <section
+          className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}
+        >
+          <p className="editorial-kicker text-primary">
+            {copy("Official updates", "อัปเดตทางการ")}
+          </p>
+          <h2 className="type-section-title mt-2">
+            {copy("Give diners a reason to return", "สร้างเหตุผลให้นักชิมกลับมา")}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {copy(
+              "Publish up to two updates every 7 days. Updates are labeled as restaurant content and never affect rankings.",
+              "เผยแพร่ได้สูงสุด 2 อัปเดตต่อ 7 วัน เนื้อหาจะแสดงว่าเป็นของร้านและไม่มีผลต่ออันดับ",
+            )}
+          </p>
+          <div className="mt-5 grid gap-3">
+            <Input
+              value={updateTitle}
+              onChange={(e) => setUpdateTitle(e.target.value)}
+              maxLength={100}
+              placeholder={copy("Update title", "หัวข้ออัปเดต")}
+              disabled={!growthActive || demo}
+            />
+            <Textarea
+              value={updateBody}
+              onChange={(e) => setUpdateBody(e.target.value)}
+              maxLength={1000}
+              placeholder={copy("What should diners know?", "อยากบอกอะไรกับนักชิม?")}
+              disabled={!growthActive || demo}
+            />
+            <div className="grid gap-3 md:grid-cols-3">
+              <Input
+                value={updateCtaLabel}
+                onChange={(e) => setUpdateCtaLabel(e.target.value)}
+                maxLength={40}
+                placeholder={copy("Button label (optional)", "ข้อความปุ่ม (ไม่บังคับ)")}
+                disabled={!growthActive || demo}
+              />
+              <Input
+                value={updateCtaUrl}
+                onChange={(e) => setUpdateCtaUrl(e.target.value)}
+                placeholder={copy("Button URL (optional)", "ลิงก์ปุ่ม (ไม่บังคับ)")}
+                disabled={!growthActive || demo}
+              />
+              <Input
+                value={updateExpiry}
+                onChange={(e) => setUpdateExpiry(e.target.value)}
+                type="datetime-local"
+                disabled={!growthActive || demo}
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <label
+                className={`inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 font-semibold ${growthActive && !demo ? "cursor-pointer" : "pointer-events-none"}`}
+              >
+                <Camera size={17} />{" "}
+                {updatePhotoUrl
+                  ? copy("Photo ready", "มีรูปแล้ว")
+                  : copy("Add update photo", "เพิ่มรูปอัปเดต")}
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept={PHOTO_ACCEPT_ATTR}
+                  disabled={!growthActive || demo}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadPhoto(file, "update");
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+              <Button
+                onClick={() => publishUpdate.mutate()}
+                disabled={
+                  !growthActive ||
+                  demo ||
+                  publishUpdate.isPending ||
+                  !updateTitle.trim() ||
+                  !updateBody.trim()
+                }
+              >
+                {copy("Publish official update", "เผยแพร่อัปเดตทางการ")}
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <label className={`inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 font-semibold ${growthActive && !demo ? "cursor-pointer" : "pointer-events-none"}`}>
-              <Camera size={17} /> {updatePhotoUrl ? copy("Photo ready", "มีรูปแล้ว") : copy("Add update photo", "เพิ่มรูปอัปเดต")}
-              <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} disabled={!growthActive || demo} onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void uploadPhoto(file, "update");
-                event.target.value = "";
-              }} />
-            </label>
-            <Button onClick={() => publishUpdate.mutate()} disabled={!growthActive || demo || publishUpdate.isPending || !updateTitle.trim() || !updateBody.trim()}>
-              {copy("Publish official update", "เผยแพร่อัปเดตทางการ")}
-            </Button>
-          </div>
-        </div>
-        {updates.length ? (
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-            {updates.map((item: any) => (
-              <article key={item.id} className="rounded-md border border-border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase text-primary">{copy("Official restaurant update", "อัปเดตทางการจากร้าน")}</p>
-                    <h3 className="mt-1 font-semibold">{item.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
+          {updates.length ? (
+            <div className="mt-6 grid gap-3 md:grid-cols-2">
+              {updates.map((item: any) => (
+                <article key={item.id} className="rounded-md border border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase text-primary">
+                        {copy("Official restaurant update", "อัปเดตทางการจากร้าน")}
+                      </p>
+                      <h3 className="mt-1 font-semibold">{item.title}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
+                    </div>
+                    {!demo ? (
+                      <button type="button" onClick={() => removeUpdate.mutate(item.id)}>
+                        <Trash2 size={17} />
+                      </button>
+                    ) : null}
                   </div>
-                  {!demo ? <button type="button" onClick={() => removeUpdate.mutate(item.id)}><Trash2 size={17} /></button> : null}
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : null}
-      </section>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       {workspaceTab === "audience" && selectedDiner ? (
         <section className="rounded-lg border border-border bg-secondary/30 p-5">
           <h2 className="type-section-title">{copy("Send manually", "ส่งด้วยตนเอง")}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{copy("Messages are limited to one per 7 days; gift vouchers to one per 30 days for each diner.", "ข้อความจำกัด 1 ครั้งต่อ 7 วัน และบัตรกำนัล 1 ครั้งต่อ 30 วันต่อนักชิม")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {copy(
+              "Messages are limited to one per 7 days; gift vouchers to one per 30 days for each diner.",
+              "ข้อความจำกัด 1 ครั้งต่อ 7 วัน และบัตรกำนัล 1 ครั้งต่อ 30 วันต่อนักชิม",
+            )}
+          </p>
           <div className="mt-4 flex gap-2">
-            {selectedDiner.allow_messages ? <Button variant={kind === "message" ? "default" : "outline"} className="gap-2" onClick={() => setKind("message")}><MessageCircle size={16} /> {copy("Message", "ข้อความ")}</Button> : null}
-            {selectedDiner.allow_vouchers ? <Button variant={kind === "voucher" ? "default" : "outline"} className="gap-2" onClick={() => setKind("voucher")}><Gift size={16} /> {copy("Gift voucher", "บัตรกำนัล")}</Button> : null}
+            {selectedDiner.allow_messages ? (
+              <Button
+                variant={kind === "message" ? "default" : "outline"}
+                className="gap-2"
+                onClick={() => setKind("message")}
+              >
+                <MessageCircle size={16} /> {copy("Message", "ข้อความ")}
+              </Button>
+            ) : null}
+            {selectedDiner.allow_vouchers ? (
+              <Button
+                variant={kind === "voucher" ? "default" : "outline"}
+                className="gap-2"
+                onClick={() => setKind("voucher")}
+              >
+                <Gift size={16} /> {copy("Gift voucher", "บัตรกำนัล")}
+              </Button>
+            ) : null}
           </div>
           <div className="mt-4 grid gap-3">
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={100} placeholder={copy("Subject", "หัวข้อ")} />
-            <Textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} placeholder={copy("Write a respectful message", "เขียนข้อความอย่างสุภาพ")} />
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={100}
+              placeholder={copy("Subject", "หัวข้อ")}
+            />
+            <Textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              maxLength={1000}
+              placeholder={copy("Write a respectful message", "เขียนข้อความอย่างสุภาพ")}
+            />
             {kind === "voucher" ? (
               <div className="grid gap-3 md:grid-cols-2">
-                <Input value={expiry} onChange={(e) => setExpiry(e.target.value)} type="datetime-local" />
-                <Input value={terms} onChange={(e) => setTerms(e.target.value)} placeholder={copy("Terms", "เงื่อนไข")} />
+                <Input
+                  value={expiry}
+                  onChange={(e) => setExpiry(e.target.value)}
+                  type="datetime-local"
+                />
+                <Input
+                  value={terms}
+                  onChange={(e) => setTerms(e.target.value)}
+                  placeholder={copy("Terms", "เงื่อนไข")}
+                />
                 <p className="text-xs text-muted-foreground md:col-span-2">
                   {copy(
                     "JaanNee generates a unique security number automatically. The offer text appears inside the voucher message.",
@@ -804,7 +1169,13 @@ function VerifiedRestaurantPanel({
                 language={lang}
               />
             ) : null}
-            <Button className="w-fit" disabled={!subject.trim() || !body.trim() || (kind === "voucher" && !expiry) || send.isPending} onClick={handleSend}>
+            <Button
+              className="w-fit"
+              disabled={
+                !subject.trim() || !body.trim() || (kind === "voucher" && !expiry) || send.isPending
+              }
+              onClick={handleSend}
+            >
               {demo ? copy("Send demo", "ส่งตัวอย่าง") : copy("Send", "ส่ง")}
             </Button>
           </div>
@@ -819,10 +1190,14 @@ function VerifiedRestaurantPanel({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-semibold">{item.subject}</p>
                       <span className="text-xs font-bold uppercase text-primary">
-                        {item.kind === "voucher" ? copy("Gift voucher", "บัตรกำนัล") : copy("Message", "ข้อความ")}
+                        {item.kind === "voucher"
+                          ? copy("Gift voucher", "บัตรกำนัล")
+                          : copy("Message", "ข้อความ")}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{copy("Delivered to", "ส่งถึง")} {item.recipient}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {copy("Delivered to", "ส่งถึง")} {item.recipient}
+                    </p>
                     {item.voucherCode ? (
                       <VoucherCard
                         restaurantName={restaurant.place?.name || copy("Restaurant", "ร้านอาหาร")}
@@ -833,7 +1208,9 @@ function VerifiedRestaurantPanel({
                         expiresAt={item.expiresAt}
                         language={lang}
                       />
-                    ) : <p className="mt-3 text-sm">{item.body}</p>}
+                    ) : (
+                      <p className="mt-3 text-sm">{item.body}</p>
+                    )}
                   </article>
                 ))}
               </div>

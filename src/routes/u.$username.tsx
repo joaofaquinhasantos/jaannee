@@ -126,9 +126,9 @@ function PublicProfilePage() {
   const isFollowing = (following.data ?? []).includes(profile.id);
 
   return (
-    <AppShell>
-      <section className="mx-auto max-w-5xl">
-        <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-6">
+    <AppShell tone="noir">
+      <section className="-mx-4 -mt-6 border-b border-white/10 bg-[#1c1b1b] px-4 py-8 md:-mx-8 md:-mt-10 md:px-8 md:py-12">
+        <div className="mx-auto flex max-w-5xl items-start justify-between gap-3 sm:items-center sm:gap-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-5">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary font-display text-3xl text-primary-foreground sm:h-28 sm:w-28 sm:text-5xl">
               {profile.avatar_url ? (
@@ -177,15 +177,18 @@ function PublicProfilePage() {
             </Link>
           )}
         </div>
-        <div className="mt-6 grid grid-cols-4 border-y border-border py-4 text-center">
+        <div className="mx-auto mt-8 grid max-w-5xl grid-cols-4 border-y border-white/10 py-5 text-center">
           <Stat label={t("profile_posts")} value={posted.length} />
           <Stat label={t("profile_tried")} value={tried.length} />
           <Stat label={t("profile_comparisons")} value={q.data.comparisons_count ?? 0} />
-          <Stat label={lang === "th" ? "ผู้ติดตาม" : "Followers"} value={q.data.followers_count ?? 0} />
+          <Stat
+            label={lang === "th" ? "ผู้ติดตาม" : "Followers"}
+            value={q.data.followers_count ?? 0}
+          />
         </div>
       </section>
 
-      <section className="mx-auto mt-6 max-w-5xl">
+      <section className="mx-auto mt-8 max-w-5xl">
         <div className="grid grid-cols-2 border-b border-border" role="tablist">
           <ProfileTab
             active={activeTab === "posts"}
@@ -220,7 +223,9 @@ function PublicProfilePage() {
             <ProfileDishGrid
               dishes={tried}
               lang={lang}
-              emptyText={lang === "th" ? "ยังไม่มีจานที่เคยกินแบบสาธารณะ" : "No public tried dishes yet."}
+              emptyText={
+                lang === "th" ? "ยังไม่มีจานที่เคยกินแบบสาธารณะ" : "No public tried dishes yet."
+              }
             />
           )}
         </div>
