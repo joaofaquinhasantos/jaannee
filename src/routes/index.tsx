@@ -447,10 +447,10 @@ function HeroDish({ dish, rank, poolReady }: { dish: DishRow; rank: number; pool
     <Link
       to="/dish/$id"
       params={{ id: dish.id }}
-      className="group relative block min-h-[62vh] overflow-hidden bg-black md:min-h-[68vh]"
+      className="group relative block min-h-[56svh] overflow-hidden bg-black md:min-h-[40vh]"
     >
       <NoirPhoto src={dish.photo_url ?? ""} alt={name} priority />
-      <div className="absolute inset-x-0 bottom-0 z-10 max-w-5xl p-6 md:p-12 lg:p-16">
+      <div className="absolute inset-x-0 bottom-0 z-10 max-w-5xl p-6 md:p-10 lg:p-12">
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
           {dish.status === "pending"
             ? lang === "th"
@@ -460,7 +460,7 @@ function HeroDish({ dish, rank, poolReady }: { dish: DishRow; rank: number; pool
               ? `${t("trusted_rank")} · #${rank}`
               : `${t("unranked_label")} · ${Number(dish.comparisons_count ?? 0)}/${PUBLIC_RANK_THRESHOLD}`}
         </p>
-        <h1 className="mt-3 break-words font-noir-display text-[clamp(3.25rem,14vw,8rem)] uppercase leading-[0.82] text-white">
+        <h1 className="mt-3 break-words font-noir-display text-[clamp(3.25rem,10vw,7rem)] uppercase leading-[0.82] text-white">
           {name}
         </h1>
         {alternate ? <p className="mt-3 font-thai text-lg text-white/65">{alternate}</p> : null}
@@ -498,9 +498,14 @@ function DishSection({
           {title}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">{description}</p>
-        <div className="mt-8 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
           {dishes.map((dish, index) => (
-            <CompactDish key={dish.id} dish={dish} rank={ranked ? index + 2 : undefined} />
+            <div
+              key={dish.id}
+              className={index % 3 === 1 ? "lg:translate-y-12" : undefined}
+            >
+              <CompactDish dish={dish} rank={ranked ? index + 2 : undefined} />
+            </div>
           ))}
         </div>
       </div>
@@ -515,7 +520,7 @@ function CompactDish({ dish, rank }: { dish: DishRow; rank?: number }) {
     <Link
       to="/dish/$id"
       params={{ id: dish.id }}
-      className="group relative min-h-[390px] overflow-hidden bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
+      className="group relative block aspect-[3/4] min-h-[390px] overflow-hidden border border-white/10 bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
     >
       {dish.photo_url ? (
         <NoirPhoto src={dish.photo_url} alt={name} />
