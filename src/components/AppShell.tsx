@@ -48,13 +48,52 @@ export function AppShell({
           : "min-h-screen bg-background text-foreground"
       }
     >
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-72 flex-col border-r border-white/10 bg-[#0e0e0e] px-5 py-9 shadow-2xl md:flex">
+        <Link to="/" className="flex items-center gap-3 px-3">
+          <span className="h-9 w-1.5 bg-primary" aria-hidden="true" />
+          <span className="brand-serif text-4xl leading-none text-[#faf8f4]">{t("brand")}</span>
+        </Link>
+        <p className="mt-4 px-3 text-[10px] font-bold uppercase leading-5 tracking-[0.15em] text-white/35">
+          {t("tagline")}
+        </p>
+        <nav className="mt-12 flex flex-1 flex-col gap-1">
+          {desktopNav.map((n) => (
+            <Link
+              key={n.to}
+              to={n.to}
+              className={`flex min-h-14 items-center gap-4 border-l-2 px-5 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
+                path === n.to
+                  ? "border-primary bg-white/[0.06] text-primary"
+                  : "border-transparent text-white/45 hover:bg-white/[0.03] hover:text-white"
+              }`}
+            >
+              <n.Icon className="h-5 w-5" aria-hidden="true" />
+              {n.label}
+            </Link>
+          ))}
+          <Link
+            to="/submit"
+            className="mt-7 flex min-h-14 items-center justify-between bg-primary px-5 text-[11px] font-bold uppercase tracking-[0.16em] text-white transition hover:bg-[#ef4934]"
+          >
+            {t("nav_submit")}
+            <Plus className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        </nav>
+        <Link
+          to={auth.status === "in" ? "/profile" : "/auth"}
+          className="flex min-h-14 items-center gap-4 border-t border-white/10 px-4 pt-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/55 hover:text-primary"
+        >
+          <UserRound className="h-5 w-5" aria-hidden="true" />
+          {auth.status === "in" ? t("nav_profile") : t("sign_in")}
+        </Link>
+      </aside>
       <header
-        className={`sticky top-0 z-40 backdrop-blur-xl ${noir ? "border-b border-white/10 bg-[#131313]/90" : "border-b-2 border-foreground bg-background/95"}`}
+        className={`sticky top-0 z-40 backdrop-blur-xl md:ml-72 ${noir ? "border-b border-white/10 bg-[#131313]/90" : "border-b-2 border-foreground bg-background/95"}`}
       >
         <div
           className={`mx-auto flex min-h-16 items-center justify-between ${noir ? "max-w-[112rem] px-5 py-3 md:px-8" : "max-w-[90rem] px-4 py-2.5 md:px-8 md:py-3"}`}
         >
-          <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md">
+          <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md md:hidden">
             <span
               className={`brand-serif text-3xl leading-none md:text-[2.6rem] ${noir ? "text-[#faf8f4]" : "text-foreground"}`}
             >
@@ -66,30 +105,9 @@ export function AppShell({
               {t("tagline")}
             </span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
-            {desktopNav.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={`border-b-2 px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors ${
-                  path === n.to
-                    ? "border-primary text-primary"
-                    : noir
-                      ? "border-transparent text-white/50 hover:border-white/25 hover:text-white"
-                      : "border-transparent text-muted-foreground hover:border-foreground/25 hover:text-foreground"
-                }`}
-              >
-                {n.label}
-              </Link>
-            ))}
-            <Link
-              to="/submit"
-              className="ml-3 inline-flex min-h-11 items-center gap-2 border border-primary bg-primary px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#ef4934]"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              {t("nav_submit")}
-            </Link>
-          </nav>
+          <p className="hidden text-[10px] font-bold uppercase tracking-[0.22em] text-white/35 md:block">
+            {path === "/" ? t("nav_feed") : path.startsWith("/rankings") ? t("nav_rankings") : t("brand")}
+          </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setLang(lang === "en" ? "th" : "en")}
@@ -122,8 +140,8 @@ export function AppShell({
       <main
         className={
           fullBleed
-            ? "mx-auto max-w-[112rem] pb-24 md:pb-0"
-            : `mx-auto max-w-[90rem] px-4 pb-24 pt-4 md:px-8 md:pt-8 ${noir ? "min-h-[calc(100vh-8rem)]" : ""}`
+            ? "pb-24 md:ml-72 md:w-[calc(100%-18rem)] md:pb-0"
+            : `mx-auto max-w-[90rem] px-4 pb-24 pt-4 md:ml-72 md:w-[calc(100%-18rem)] md:max-w-none md:px-8 md:pt-8 ${noir ? "min-h-[calc(100vh-8rem)]" : ""}`
         }
       >
         {children}
@@ -131,8 +149,8 @@ export function AppShell({
       <footer
         className={
           noir
-            ? "border-t border-white/10 bg-[#101010] py-7 pb-28 md:py-8 md:pb-8"
-            : "border-t-2 border-foreground bg-card py-8 pb-28 md:py-10 md:pb-8"
+            ? "border-t border-white/10 bg-[#101010] py-7 pb-28 md:ml-72 md:py-8 md:pb-8"
+            : "border-t-2 border-foreground bg-card py-8 pb-28 md:ml-72 md:py-10 md:pb-8"
         }
       >
         <div

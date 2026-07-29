@@ -40,8 +40,7 @@ export const Route = createFileRoute("/challenge/$dishAId/$dishBId")({
     const a = loaderData.a;
     const b = loaderData.b;
     const title = `${a?.name_en ?? a?.name_th ?? "Dish"} vs ${b?.name_en ?? b?.name_th ?? "Dish"} — JaanNee`;
-    const description =
-      "See the shared pick, then compare the two dishes yourself after trying both.";
+    const description = "See the shared pick, then compare the two dishes yourself after trying both.";
     const image = a?.photo_url || b?.photo_url;
     return {
       meta: [
@@ -105,7 +104,8 @@ function ChallengePage() {
   const a = pair.a as TriedDish;
   const b = pair.b as TriedDish;
   const sharedPick = search.pick === a.id || search.pick === b.id ? search.pick : null;
-  const challengerUserId = search.from && /^[0-9a-f-]{36}$/i.test(search.from) ? search.from : null;
+  const challengerUserId =
+    search.from && /^[0-9a-f-]{36}$/i.test(search.from) ? search.from : null;
   const triedIds = tried.data ?? [];
   const aTried = triedIds.includes(a.id);
   const bTried = triedIds.includes(b.id);
@@ -117,27 +117,34 @@ function ChallengePage() {
   const agreed = result && sharedPick ? result.winner.id === sharedPick : null;
 
   return (
-    <AppShell tone="noir">
-      <section className="stitch-masthead text-center md:text-left">
-        <div>
-          <p className="stitch-kicker">{t("challenge_title")}</p>
-          <h1 className="mt-3">{t("do_you_agree")}</h1>
+    <AppShell tone="noir" fullBleed>
+      <section className="relative min-h-[calc(100svh-4rem)] overflow-hidden bg-[#080808] text-white">
+        <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b border-white/15 bg-black/35 px-5 py-4 backdrop-blur md:px-8">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-primary">
+              {t("challenge_title")}
+            </p>
+            <h1 className="mt-1 font-noir-display text-3xl uppercase leading-none md:text-4xl">
+              {t("do_you_agree")}
+            </h1>
+          </div>
+          <p className="hidden max-w-sm text-right text-xs leading-5 text-white/55 md:block">
+            {t("challenge_intro")}
+          </p>
         </div>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          {t("challenge_intro")}
-        </p>
-      </section>
 
-      <div className="relative mt-7 grid gap-px bg-white/15 md:grid-cols-2">
-        <ChallengeDish dish={a} picked={sharedPick === a.id} />
-        <ChallengeDish dish={b} picked={sharedPick === b.id} />
-        <span className="absolute left-1/2 top-1/2 z-10 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-[#131313] bg-primary font-display text-xl text-white">
+        <div className="grid min-h-[calc(100svh-4rem)] md:grid-cols-2">
+          <ChallengeDish dish={a} picked={sharedPick === a.id} side="a" />
+          <ChallengeDish dish={b} picked={sharedPick === b.id} side="b" />
+        </div>
+
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-[#131313] font-noir-display text-2xl italic text-white shadow-2xl md:h-20 md:w-20 md:text-3xl">
           VS
-        </span>
-      </div>
+        </div>
 
+        <div className="relative z-30 border-t border-white/15 bg-[#111111] px-5 py-6 md:px-8">
       {result ? (
-        <div className="mt-7 space-y-4">
+        <div className="mx-auto max-w-5xl space-y-4">
           {agreed != null ? (
             <div className="rounded-lg border border-border bg-secondary p-4 text-sm font-semibold">
               {agreed ? t("challenge_agree") : t("challenge_disagree")}
@@ -146,20 +153,20 @@ function ChallengePage() {
           <ComparisonResultPanel winner={result.winner} loser={result.loser} />
         </div>
       ) : auth.status === "loading" ? (
-        <p className="mt-7 text-sm text-muted-foreground">{t("loading")}</p>
+        <p className="mx-auto max-w-5xl text-sm text-white/55">{t("loading")}</p>
       ) : auth.status === "out" ? (
-        <section className="mt-7 rounded-lg border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">{t("challenge_sign_in")}</p>
+        <section className="mx-auto max-w-5xl">
+          <p className="text-sm text-white/60">{t("challenge_sign_in")}</p>
           <Link to="/auth" search={{ redirect: returnPath }}>
             <Button className="mt-4 min-h-11">{t("sign_in")}</Button>
           </Link>
         </section>
       ) : completed ? (
-        <section className="mt-7 rounded-lg border border-border bg-card p-5">
+        <section className="mx-auto max-w-5xl">
           <h2 className="type-section-title">
             {copy("You already compared this pair", "คุณเปรียบเทียบคู่นี้แล้ว")}
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-white/55">
             {copy(
               "Past comparison choices are permanent and cannot be rewritten.",
               "ผลการเปรียบเทียบเดิมเป็นข้อมูลถาวรและแก้ไขย้อนหลังไม่ได้",
@@ -167,7 +174,7 @@ function ChallengePage() {
           </p>
         </section>
       ) : !aTried || !bTried ? (
-        <section className="mt-7 rounded-lg border border-border bg-card p-5">
+        <section className="mx-auto max-w-5xl">
           <h2 className="type-section-title">{t("challenge_mark_tried")}</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {!aTried ? (
@@ -193,7 +200,7 @@ function ChallengePage() {
           </div>
         </section>
       ) : (
-        <section className="mt-7">
+        <section className="mx-auto max-w-5xl">
           <div className="mb-4 flex items-center gap-4">
             <span className="h-px flex-1 bg-foreground/25" />
             <p className="label-caps text-primary">{t("which_better")}</p>
@@ -219,39 +226,57 @@ function ChallengePage() {
           />
         </section>
       )}
+        </div>
+      </section>
     </AppShell>
   );
 }
 
-function ChallengeDish({ dish, picked }: { dish: TriedDish; picked: boolean }) {
+function ChallengeDish({
+  dish,
+  picked,
+  side,
+}: {
+  dish: TriedDish;
+  picked: boolean;
+  side: "a" | "b";
+}) {
   const { t, lang } = useI18n();
   const name = localizedName(dish, lang);
   const alternate = secondaryName(dish, lang);
   return (
-    <article className="overflow-hidden bg-[#1c1b1b]">
-      <div className="relative aspect-[4/3] bg-muted">
+    <article
+      className={`group relative min-h-[50svh] overflow-hidden bg-black md:min-h-[calc(100svh-4rem)] ${
+        side === "a" ? "border-b border-white/15 md:border-b-0 md:border-r" : ""
+      }`}
+    >
+      <div className="absolute inset-0 bg-muted">
         {dish.photo_url ? (
           <img
             src={dish.photo_url}
             alt={name}
             width={900}
             height={675}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover saturate-[0.9] transition duration-700 group-hover:scale-[1.02]"
           />
         ) : null}
         {picked ? (
-          <span className="label-caps absolute left-3 top-3 bg-primary px-3 py-2 text-white">
+          <span className="label-caps absolute left-5 top-24 z-20 bg-primary px-3 py-2 text-white md:left-8">
             {t("their_pick")}
           </span>
         ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/5 to-black/25" />
       </div>
-      <div className="p-4">
-        <h2 className="type-card-title">{name}</h2>
-        {alternate ? (
-          <p className="mt-1 font-thai text-sm text-muted-foreground">{alternate}</p>
-        ) : null}
+      <div className="absolute inset-x-0 bottom-0 z-10 p-6 pb-10 md:p-10 md:pb-12">
+        <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
+          {side === "a" ? "Dish A" : "Dish B"}
+        </p>
+        <h2 className="font-noir-display text-5xl uppercase leading-[0.84] md:text-7xl">{name}</h2>
+        {alternate ? <p className="mt-2 font-thai text-base text-white/60">{alternate}</p> : null}
         {dish.place?.name ? (
-          <p className="mt-2 text-sm text-muted-foreground">{dish.place.name}</p>
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-white/55">
+            {dish.place.name}
+          </p>
         ) : null}
       </div>
     </article>
