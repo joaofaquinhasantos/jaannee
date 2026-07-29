@@ -92,11 +92,14 @@ export function CategoryPicker({
         />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85dvh] overflow-hidden p-0 sm:max-h-[72dvh] sm:max-w-md">
-          <DialogHeader className="border-b border-border px-4 py-4">
-            <DialogTitle>{placeholder}</DialogTitle>
+        <DialogContent className="inset-x-0 bottom-0 top-auto w-full max-w-none translate-x-0 translate-y-0 overflow-hidden border-white/10 bg-[#1c1b1b] p-0 text-white sm:left-1/2 sm:top-1/2 sm:max-h-[76dvh] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2">
+          <DialogHeader className="border-b border-white/10 px-5 py-5 text-left">
+            <p className="noir-label">{t("filter_all_categories")}</p>
+            <DialogTitle className="brand-serif mt-1 text-4xl font-normal">
+              {placeholder}
+            </DialogTitle>
           </DialogHeader>
-          <div className="border-b border-border p-4">
+          <div className="border-b border-white/10 p-4">
             <Input
               autoFocus
               value={query}
@@ -104,15 +107,15 @@ export function CategoryPicker({
               placeholder={t("search_categories")}
             />
           </div>
-          <div className="max-h-[60dvh] overflow-y-auto p-2 sm:max-h-[48dvh]">
+          <div className="max-h-[58dvh] overflow-y-auto p-3 sm:max-h-[50dvh]">
             {groups.map(([cuisine, items]) => (
               <div key={cuisine} className="py-2">
-                <p className="px-2 text-xs font-bold uppercase text-muted-foreground">
+                <p className="px-2 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                   {lang === "th"
                     ? items[0]?.cuisine_ref?.name_th || cuisineLabel(cuisine, t)
                     : items[0]?.cuisine_ref?.name_en || cuisineLabel(cuisine, t)}
                 </p>
-                <div className="mt-1 space-y-1">
+                <div className="mt-1 grid gap-px bg-white/10 sm:grid-cols-2">
                   {items.map((category) => (
                     <button
                       key={category.id}
@@ -122,13 +125,17 @@ export function CategoryPicker({
                         setOpen(false);
                         setQuery("");
                       }}
-                      className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring"
+                      className={`min-h-16 w-full bg-[#1c1b1b] px-4 py-3 text-left text-sm transition hover:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring ${
+                        value === category.id || value === category.slug
+                          ? "bg-primary text-white"
+                          : ""
+                      }`}
                     >
                       <span className="font-semibold">
                         {lang === "th" ? category.name_th : category.name_en}
                       </span>
                       {lang !== "th" && category.name_th ? (
-                        <span className="ml-2 text-xs text-muted-foreground">
+                        <span className="ml-2 font-thai text-xs text-white/45">
                           {category.name_th}
                         </span>
                       ) : null}

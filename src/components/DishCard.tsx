@@ -45,12 +45,12 @@ export function DishCard({
   const card = (
     <div className="group block">
       <article className="editorial-frame overflow-hidden transition-colors duration-200 group-hover:border-primary/70">
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted sm:aspect-[4/3]">
           {dish.photo_url ? (
             <img
               src={dish.photo_url}
               alt={primaryName}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover saturate-[0.9] transition duration-700 group-hover:scale-[1.025] group-hover:saturate-100"
               loading="lazy"
             />
           ) : (
@@ -61,15 +61,15 @@ export function DishCard({
               </span>
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/5" />
           {moderationStatus ? (
             <span className="absolute left-3 top-3 inline-flex items-center bg-black/75 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
               {moderationStatus}
             </span>
           ) : showRank ? (
-            <div className="absolute left-4 top-4 flex items-start gap-2 text-white">
-              <span className="font-display text-6xl leading-[0.8] drop-shadow-sm">{rank}</span>
-              <span className="mt-1 h-8 border-l border-white/45" aria-hidden="true" />
+            <div className="absolute left-4 top-4 flex items-start gap-2 text-gold">
+              <span className="brand-serif text-7xl leading-[0.75] drop-shadow-sm">{rank}</span>
+              <span className="mt-1 h-8 border-l border-gold/60" aria-hidden="true" />
             </div>
           ) : (
             <span
@@ -86,7 +86,9 @@ export function DishCard({
             </span>
           )}
           <div className="absolute inset-x-0 bottom-0 p-4">
-            <h3 className="type-card-title text-white drop-shadow-sm">{primaryName}</h3>
+            <h3 className="brand-serif text-[2.25rem] leading-[0.95] text-white drop-shadow-sm sm:text-[2.5rem]">
+              {primaryName}
+            </h3>
             {secondaryName ? (
               <p className="mt-1 line-clamp-1 font-thai text-base font-medium leading-tight text-white/90">
                 {secondaryName}
@@ -98,7 +100,7 @@ export function DishCard({
             </p>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 border-t-2 border-foreground px-4 py-3.5">
+        <div className="flex min-h-16 items-center justify-between gap-2 border-t border-white/10 px-4 py-3.5">
           <div className="space-y-1">
             {moderationStatus ? (
               <p className="text-[11px] font-semibold uppercase text-muted-foreground">

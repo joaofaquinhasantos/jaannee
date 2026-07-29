@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
-import { BarChart3, Home, PlusCircle, ShieldCheck, UserRound } from "lucide-react";
+import { BarChart3, Home, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { useAuthUser } from "@/lib/use-auth";
 
 export function AppShell({
@@ -30,11 +30,14 @@ export function AppShell({
   // Compare is deliberately NOT a primary destination. Comparisons are
   // reached contextually (My Dishes, Dish Detail, the tried drawer and
   // challenge links), never from a generic nav entry.
-  const nav = [
+  const desktopNav = [
     { to: "/", label: t("nav_feed"), Icon: Home },
     { to: "/rankings", label: t("nav_rankings"), Icon: BarChart3 },
-    { to: "/submit", label: t("nav_submit"), Icon: PlusCircle },
     ...(isAdmin ? [{ to: "/admin", label: t("nav_admin"), Icon: ShieldCheck }] : []),
+  ];
+  const mobileSideNav = [
+    { to: "/", label: t("nav_feed"), Icon: Home },
+    { to: "/rankings", label: t("nav_rankings"), Icon: BarChart3 },
   ];
 
   return (
@@ -46,14 +49,14 @@ export function AppShell({
       }
     >
       <header
-        className={`sticky top-0 z-40 backdrop-blur ${noir ? "border-b border-white/10 bg-[#111111]/95" : "border-b-2 border-foreground bg-background/95"}`}
+        className={`sticky top-0 z-40 backdrop-blur-xl ${noir ? "border-b border-white/10 bg-[#131313]/90" : "border-b-2 border-foreground bg-background/95"}`}
       >
         <div
-          className={`mx-auto flex items-center justify-between ${noir ? "max-w-[112rem] px-5 py-3 md:px-8" : "max-w-[90rem] px-4 py-2.5 md:px-8 md:py-3"}`}
+          className={`mx-auto flex min-h-16 items-center justify-between ${noir ? "max-w-[112rem] px-5 py-3 md:px-8" : "max-w-[90rem] px-4 py-2.5 md:px-8 md:py-3"}`}
         >
           <Link to="/" className="flex items-baseline gap-3 focus-visible:rounded-md">
             <span
-              className={`brand-serif text-3xl leading-none md:text-4xl ${noir ? "text-white" : "text-foreground"}`}
+              className={`brand-serif text-3xl leading-none md:text-[2.6rem] ${noir ? "text-[#faf8f4]" : "text-foreground"}`}
             >
               {t("brand")}
             </span>
@@ -64,7 +67,7 @@ export function AppShell({
             </span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
-            {nav.map((n) => (
+            {desktopNav.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
@@ -79,6 +82,13 @@ export function AppShell({
                 {n.label}
               </Link>
             ))}
+            <Link
+              to="/submit"
+              className="ml-3 inline-flex min-h-11 items-center gap-2 border border-primary bg-primary px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#ef4934]"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {t("nav_submit")}
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <button
@@ -93,7 +103,7 @@ export function AppShell({
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`gap-2 rounded-none text-xs font-bold uppercase tracking-[0.08em] ${noir ? "border-white/20 bg-transparent text-white hover:bg-white hover:text-black" : "border-foreground/25 bg-card"}`}
+                  className={`gap-2 rounded-none text-xs font-bold uppercase tracking-[0.08em] ${noir ? "border-white/20 bg-transparent text-white hover:border-primary hover:bg-primary hover:text-white" : "border-foreground/25 bg-card"}`}
                 >
                   <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("nav_profile")}
@@ -121,14 +131,19 @@ export function AppShell({
       <footer
         className={
           noir
-            ? "border-t border-white/10 bg-[#111111] py-8 pb-28 md:py-10 md:pb-8"
+            ? "border-t border-white/10 bg-[#101010] py-7 pb-28 md:py-8 md:pb-8"
             : "border-t-2 border-foreground bg-card py-8 pb-28 md:py-10 md:pb-8"
         }
       >
         <div
           className={`mx-auto flex items-center justify-between px-4 md:px-8 ${noir ? "max-w-[112rem]" : "max-w-[90rem]"}`}
         >
-          <p className="brand-serif text-2xl">JaanNee</p>
+          <div>
+            <p className="brand-serif text-2xl text-[#faf8f4]">JaanNee</p>
+            <p className="mt-1 hidden text-[10px] font-bold uppercase tracking-[0.16em] text-white/35 sm:block">
+              {t("tagline")}
+            </p>
+          </div>
           <div className="flex items-center gap-4">
             <Link
               to={auth.status === "in" ? "/restaurant" : "/auth"}
@@ -148,17 +163,17 @@ export function AppShell({
         </div>
       </footer>
       <nav
-        className={`fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden ${noir ? "border-white/10 bg-[#111111]/95" : "border-border bg-background/95"}`}
+        className={`fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl md:hidden ${noir ? "bg-[#131313]/92" : "border-border bg-background/95"}`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-around px-2 py-2">
-          {nav.map((n) => (
+        <div className="mx-auto grid max-w-md grid-cols-5 items-end rounded-full border border-white/10 bg-[#1c1b1b]/95 px-2 py-1.5 shadow-2xl">
+          {mobileSideNav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-center text-[11px] font-semibold transition-colors ${
+              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-[10px] font-bold uppercase tracking-[0.05em] transition-colors ${
                 path === n.to
                   ? noir
-                    ? "bg-white/10 text-primary"
+                    ? "text-primary"
                     : "bg-secondary text-primary"
                   : noir
                     ? "text-white/45"
@@ -169,6 +184,35 @@ export function AppShell({
               {n.label}
             </Link>
           ))}
+          <Link
+            to="/submit"
+            aria-label={t("nav_submit")}
+            className="-mt-5 flex h-14 w-14 place-self-center items-center justify-center rounded-full border-4 border-[#131313] bg-primary text-white shadow-2xl transition-transform active:scale-95"
+          >
+            <Plus className="h-6 w-6" aria-hidden="true" />
+          </Link>
+          <Link
+            to={auth.status === "in" ? "/profile" : "/auth"}
+            className={`flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-[10px] font-bold uppercase tracking-[0.05em] ${
+              path === "/profile" ? "text-primary" : "text-white/45"
+            }`}
+          >
+            <UserRound className="h-5 w-5" aria-hidden="true" />
+            {t("nav_profile")}
+          </Link>
+          {isAdmin ? (
+            <Link
+              to="/admin"
+              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-[10px] font-bold uppercase tracking-[0.05em] ${
+                path === "/admin" ? "text-primary" : "text-white/45"
+              }`}
+            >
+              <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+              {t("nav_admin")}
+            </Link>
+          ) : (
+            <span aria-hidden="true" />
+          )}
         </div>
       </nav>
     </div>
