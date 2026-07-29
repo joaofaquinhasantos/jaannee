@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Camera, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
@@ -14,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { myProfile, updateMyProfile } from "@/lib/dishes.functions";
 import { useI18n } from "@/lib/i18n";
 import { localizedName } from "@/lib/names";
+import { buildPhotoPath, PHOTO_ACCEPT_ATTR, validatePhotoFile } from "@/lib/photo-upload";
 import { useAuthUser } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -47,6 +49,7 @@ function Profile() {
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [bio, setBio] = useState("");
   const [triedPublic, setTriedPublic] = useState(true);
   const [profileSection, setProfileSection] = useState<
@@ -86,6 +89,30 @@ function Profile() {
     nav({ to: "/", replace: true });
   };
 
+  const uploadAvatar = async (file: File) => {
+    if (!userId) return;
+    setAvatarUploading(true);
+    try {
+      validatePhotoFile(file);
+      const path = buildPhotoPath(userId, file).replace(`${userId}/`, `${userId}/profile/`);
+      const { error } = await supabase.storage
+        .from("dish-photos")
+        .upload(path, file, { upsert: false, contentType: file.type });
+      if (error) throw new Error(error.message);
+      setAvatarUrl(`/photos/${path}`);
+      toast.success(
+        copy(
+          "Photo ready. Save your profile to publish it.",
+          "รูปพร้อมแล้ว บันทึกโปรไฟล์เพื่อเผยแพร่",
+        ),
+      );
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const invalidUsername = username.trim().length > 0 && username.trim().length < 3;
 
   return (
@@ -95,8 +122,8 @@ function Profile() {
         <div className="stitch-profile-identity flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4 md:gap-12">
             <div className="stitch-profile-avatar flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-primary font-display text-4xl md:text-6xl">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
               ) : (
                 displayName.slice(0, 1)
               )}
@@ -285,14 +312,60 @@ function Profile() {
             <span>{copy("Name", "ชื่อ")}</span>
             <Input value={name} onChange={(event) => setName(event.target.value)} />
           </label>
-          <label className="space-y-1 text-sm font-semibold md:col-span-2">
-            <span>{copy("Avatar URL", "ลิงก์รูปโปรไฟล์")}</span>
-            <Input
-              value={avatarUrl}
-              onChange={(event) => setAvatarUrl(event.target.value)}
-              placeholder="https://..."
-            />
-          </label>
+          <div className="md:col-span-2">
+            <p className="text-sm font-semibold">{copy("Profile photo", "รูปโปรไฟล์")}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-background/40 p-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-primary font-display text-3xl">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  displayName.slice(0, 1)
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-muted-foreground">
+                  {copy(
+                    "Choose a JPEG, PNG, or WebP image up to 8 MB.",
+                    "เลือกรูป JPEG, PNG หรือ WebP ขนาดไม่เกิน 8 MB",
+                  )}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                    <Camera className="h-4 w-4" aria-hidden="true" />
+                    {avatarUploading
+                      ? copy("Uploading…", "กำลังอัปโหลด…")
+                      : copy(
+                          avatarUrl ? "Change photo" : "Add photo",
+                          avatarUrl ? "เปลี่ยนรูป" : "เพิ่มรูป",
+                        )}
+                    <input
+                      type="file"
+                      accept={PHOTO_ACCEPT_ATTR}
+                      className="sr-only"
+                      disabled={avatarUploading}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.currentTarget.value = "";
+                        if (file) void uploadAvatar(file);
+                      }}
+                    />
+                  </label>
+                  {avatarUrl ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11 gap-2"
+                      disabled={avatarUploading}
+                      onClick={() => setAvatarUrl("")}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      {copy("Remove", "ลบ")}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
           <label className="space-y-1 text-sm font-semibold md:col-span-2">
             <span>{copy("Bio", "แนะนำตัว")}</span>
             <Textarea
