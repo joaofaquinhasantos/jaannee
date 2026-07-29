@@ -482,6 +482,19 @@ export const sendRestaurantOutreach = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await requireGrowth(context, data.placeId);
+    const consent = await (supabaseAdmin as any)
+      .from("restaurant_contact_permissions")
+      .select("allow_messages, allow_vouchers, revoked_at")
+      .eq("place_id", data.placeId)
+      .eq("user_id", data.recipientUserId)
+      .is("revoked_at", null)
+      .maybeSingle();
+    if (consent.error) throw new Error(consent.error.message);
+    const permitted =
+      data.kind === "message"
+        ? Boolean(consent.data?.allow_messages)
+        : Boolean(consent.data?.allow_vouchers);
+    if (!permitted) throw new Error("This diner has not permitted this outreach.");
     const { error } = await (supabaseAdmin as any).from("restaurant_outreach").insert({
       place_id: data.placeId,
       sender_user_id: context.userId,
