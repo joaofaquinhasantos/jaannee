@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -67,6 +67,7 @@ import {
   ClipboardCheck,
   FileWarning,
   ImageOff,
+  Eye,
   MapPin,
   RefreshCw,
   Tags,
@@ -274,6 +275,22 @@ function RestaurantClaims() {
   const items = claims.data?.claims ?? [];
   return (
     <div className="mt-5 space-y-4">
+      <section className="flex flex-col gap-4 rounded-lg border border-primary/40 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-primary">Public profile demo</p>
+          <h2 className="mt-2 font-display text-3xl uppercase">JaanNee Test Kitchen</h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Preview the complete diner-facing restaurant page with booking, official updates,
+            gallery and diner-added dishes. This is sample data and never appears in rankings.
+          </p>
+        </div>
+        <Link to="/restaurant-demo">
+          <Button className="w-full gap-2 sm:w-auto">
+            <Eye size={17} />
+            View public demo
+          </Button>
+        </Link>
+      </section>
       <div>
         <h2 className="type-section-title">Restaurant verification</h2>
         <p className="mt-1 text-sm text-muted-foreground">
