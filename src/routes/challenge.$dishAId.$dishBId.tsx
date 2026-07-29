@@ -40,7 +40,8 @@ export const Route = createFileRoute("/challenge/$dishAId/$dishBId")({
     const a = loaderData.a;
     const b = loaderData.b;
     const title = `${a?.name_en ?? a?.name_th ?? "Dish"} vs ${b?.name_en ?? b?.name_th ?? "Dish"} — JaanNee`;
-    const description = "See the shared pick, then compare the two dishes yourself after trying both.";
+    const description =
+      "See the shared pick, then compare the two dishes yourself after trying both.";
     const image = a?.photo_url || b?.photo_url;
     return {
       meta: [
@@ -104,8 +105,7 @@ function ChallengePage() {
   const a = pair.a as TriedDish;
   const b = pair.b as TriedDish;
   const sharedPick = search.pick === a.id || search.pick === b.id ? search.pick : null;
-  const challengerUserId =
-    search.from && /^[0-9a-f-]{36}$/i.test(search.from) ? search.from : null;
+  const challengerUserId = search.from && /^[0-9a-f-]{36}$/i.test(search.from) ? search.from : null;
   const triedIds = tried.data ?? [];
   const aTried = triedIds.includes(a.id);
   const bTried = triedIds.includes(b.id);
@@ -117,18 +117,23 @@ function ChallengePage() {
   const agreed = result && sharedPick ? result.winner.id === sharedPick : null;
 
   return (
-    <AppShell>
-      <section className="border-b border-border pb-6 pt-5">
-        <p className="editorial-kicker text-primary">{t("challenge_title")}</p>
-        <h1 className="type-page-title mt-3">{t("do_you_agree")}</h1>
+    <AppShell tone="noir">
+      <section className="stitch-masthead text-center md:text-left">
+        <div>
+          <p className="stitch-kicker">{t("challenge_title")}</p>
+          <h1 className="mt-3">{t("do_you_agree")}</h1>
+        </div>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
           {t("challenge_intro")}
         </p>
       </section>
 
-      <div className="mt-7 grid gap-4 md:grid-cols-2">
+      <div className="relative mt-7 grid gap-px bg-white/15 md:grid-cols-2">
         <ChallengeDish dish={a} picked={sharedPick === a.id} />
         <ChallengeDish dish={b} picked={sharedPick === b.id} />
+        <span className="absolute left-1/2 top-1/2 z-10 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-[#131313] bg-primary font-display text-xl text-white">
+          VS
+        </span>
       </div>
 
       {result ? (
@@ -223,7 +228,7 @@ function ChallengeDish({ dish, picked }: { dish: TriedDish; picked: boolean }) {
   const name = localizedName(dish, lang);
   const alternate = secondaryName(dish, lang);
   return (
-    <article className="overflow-hidden rounded-lg border-2 border-foreground bg-card">
+    <article className="overflow-hidden bg-[#1c1b1b]">
       <div className="relative aspect-[4/3] bg-muted">
         {dish.photo_url ? (
           <img
@@ -242,8 +247,12 @@ function ChallengeDish({ dish, picked }: { dish: TriedDish; picked: boolean }) {
       </div>
       <div className="p-4">
         <h2 className="type-card-title">{name}</h2>
-        {alternate ? <p className="mt-1 font-thai text-sm text-muted-foreground">{alternate}</p> : null}
-        {dish.place?.name ? <p className="mt-2 text-sm text-muted-foreground">{dish.place.name}</p> : null}
+        {alternate ? (
+          <p className="mt-1 font-thai text-sm text-muted-foreground">{alternate}</p>
+        ) : null}
+        {dish.place?.name ? (
+          <p className="mt-2 text-sm text-muted-foreground">{dish.place.name}</p>
+        ) : null}
       </div>
     </article>
   );

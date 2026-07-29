@@ -152,9 +152,8 @@ function Submit() {
   const selectCategory = (categoryOrId: CategoryRow | string) => {
     const category =
       typeof categoryOrId === "string"
-        ? ((categories.data ?? []).find(
-            (item: CategoryRow) => item.id === categoryOrId,
-          ) as CategoryRow | undefined)
+        ? ((categories.data ?? []).find((item: CategoryRow) => item.id === categoryOrId) as
+            CategoryRow | undefined)
         : categoryOrId;
     if (!category) return;
     setCategoryId(category.id);
@@ -242,18 +241,14 @@ function Submit() {
     try {
       const result = await submitDish({
         data: {
-          name_en:
-            selectedCategory?.name_en ?? (lang === "en" ? dishTerm.trim() : undefined),
-          name_th:
-            selectedCategory?.name_th ?? (lang === "th" ? dishTerm.trim() : undefined),
+          name_en: selectedCategory?.name_en ?? (lang === "en" ? dishTerm.trim() : undefined),
+          name_th: selectedCategory?.name_th ?? (lang === "th" ? dishTerm.trim() : undefined),
           place_id: selectedPlace?.id,
           place_name: selectedPlace ? undefined : placeTerm.trim(),
           area_id: selectedPlace?.area_id || areaId,
           category_id: categoryId || undefined,
-          requested_category_en:
-            categoryId || lang === "th" ? undefined : dishTerm.trim(),
-          requested_category_th:
-            !categoryId && lang === "th" ? dishTerm.trim() : undefined,
+          requested_category_en: categoryId || lang === "th" ? undefined : dishTerm.trim(),
+          requested_category_th: !categoryId && lang === "th" ? dishTerm.trim() : undefined,
           subtype_id: subtypeId || undefined,
           price_thb: price ? Number(price) : undefined,
           photo_url: photoUrl,
@@ -314,7 +309,7 @@ function Submit() {
 
   if (auth.status === "loading") {
     return (
-      <AppShell>
+      <AppShell tone="noir">
         <p className="py-10 text-sm text-muted-foreground">{t("loading")}</p>
       </AppShell>
     );
@@ -322,7 +317,7 @@ function Submit() {
 
   if (auth.status === "out") {
     return (
-      <AppShell>
+      <AppShell tone="noir">
         <section className="mx-auto mt-10 max-w-lg rounded-lg border border-border bg-card p-6">
           <h1 className="type-page-title">{t("nav_submit")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -341,7 +336,7 @@ function Submit() {
 
   if (step === "done") {
     return (
-      <AppShell>
+      <AppShell tone="noir">
         <SubmitProgress current={3} />
         <section className="mx-auto max-w-lg rounded-lg border border-border bg-card p-8 text-center">
           <p className="font-display text-7xl text-primary">OK</p>
@@ -354,11 +349,7 @@ function Submit() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {postedDishId ? (
-              <Button
-                onClick={() =>
-                  navigate({ to: "/dish/$id", params: { id: postedDishId } })
-                }
-              >
+              <Button onClick={() => navigate({ to: "/dish/$id", params: { id: postedDishId } })}>
                 {copy("View your post", "ดูโพสต์ของคุณ")}
               </Button>
             ) : null}
@@ -373,7 +364,7 @@ function Submit() {
 
   if (step === "duplicates" && duplicates) {
     return (
-      <AppShell>
+      <AppShell tone="noir">
         <SubmitProgress current={2} />
         <section className="mx-auto max-w-2xl">
           <p className="editorial-kicker text-primary">
@@ -420,9 +411,9 @@ function Submit() {
 
   if (!photoUrl) {
     return (
-      <AppShell>
+      <AppShell tone="noir">
         <SubmitProgress current={1} />
-        <section className="mx-auto max-w-xl text-center">
+        <section className="mx-auto max-w-2xl py-4 text-left md:py-10">
           <p className="editorial-kicker text-primary">{t("nav_submit")}</p>
           <h1 className="type-page-title mt-3">{copy("Start with the dish", "เริ่มจากรูปจาน")}</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -435,7 +426,7 @@ function Submit() {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="mt-8 flex min-h-[24rem] w-full flex-col items-center justify-center border-2 border-dashed border-foreground/30 bg-card p-8 transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="mt-8 flex min-h-[58svh] w-full flex-col items-center justify-center border border-dashed border-white/20 bg-[#1c1b1b] p-8 transition hover:border-primary hover:bg-[#211d1c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Camera className="h-12 w-12 text-primary" aria-hidden="true" />
             <span className="type-section-title mt-5">
@@ -449,9 +440,9 @@ function Submit() {
   }
 
   return (
-    <AppShell>
+    <AppShell tone="noir">
       <SubmitProgress current={2} />
-      <div className="mx-auto max-w-xl overflow-hidden rounded-lg border border-border bg-card">
+      <div className="mx-auto grid max-w-5xl overflow-hidden border border-white/10 bg-[#1c1b1b] lg:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]">
         <div className="relative aspect-[4/5] bg-muted">
           <img
             src={photoUrl}
@@ -469,7 +460,10 @@ function Submit() {
           </button>
         </div>
 
-        <form onSubmit={reviewBeforeSubmit} className="space-y-5 p-4 md:p-6">
+        <form
+          onSubmit={reviewBeforeSubmit}
+          className="space-y-5 p-5 md:p-8 lg:max-h-[78svh] lg:overflow-y-auto"
+        >
           <div>
             <p className="editorial-kicker text-primary">{t("nav_submit")}</p>
             <h1 className="type-page-title mt-2">{copy("Post this dish", "ส่งจานนี้")}</h1>
@@ -685,15 +679,12 @@ function Submit() {
 
 function SubmitProgress({ current }: { current: 1 | 2 | 3 }) {
   const { lang } = useI18n();
-  const labels =
-    lang === "th"
-      ? ["รูปภาพ", "รายละเอียด", "โพสต์"]
-      : ["Photo", "Dish", "Post"];
+  const labels = lang === "th" ? ["รูปภาพ", "รายละเอียด", "โพสต์"] : ["Photo", "Dish", "Post"];
 
   return (
     <ol
       aria-label={lang === "th" ? "ขั้นตอนการโพสต์" : "Post progress"}
-      className="mx-auto mb-6 grid max-w-xl grid-cols-3 gap-2"
+      className="mx-auto mb-8 grid max-w-2xl grid-cols-3 gap-3 pt-3"
     >
       {labels.map((label, index) => {
         const stepNumber = (index + 1) as 1 | 2 | 3;
