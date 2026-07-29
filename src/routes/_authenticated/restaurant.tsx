@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   Building2,
+  Camera,
   Gift,
   LockKeyhole,
   MessageCircle,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,13 +18,24 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 import {
+  addRestaurantGalleryPhoto,
+  createRestaurantUpdate,
+  deleteRestaurantGalleryPhoto,
+  deleteRestaurantUpdate,
   getMyRestaurantWorkspace,
   listClaimablePlaces,
   sendRestaurantOutreach,
+  startRestaurantGrowthTrial,
   submitRestaurantClaim,
   updateRestaurantProfile,
 } from "@/lib/restaurant.functions";
+import {
+  PHOTO_ACCEPT_ATTR,
+  buildPhotoPath,
+  validatePhotoFile,
+} from "@/lib/photo-upload";
 import { useAuthUser } from "@/lib/use-auth";
 import { useI18n } from "@/lib/i18n";
 
@@ -264,9 +277,13 @@ function DemoRestaurant({ onExit }: { onExit: () => void }) {
       official_description:
         "A sample restaurant workspace showing how verified restaurants can welcome interested diners without influencing JaanNee rankings.",
       menu_url: "https://example.com/menu",
+      reservation_url: "https://example.com/book",
       instagram_url: "https://instagram.com/",
       line_url: "",
       phone: "02 000 0000",
+      subscription_tier: "growth",
+      subscription_status: "trialing",
+      trial_ends_at: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
     },
     audience: [
       {
@@ -286,6 +303,19 @@ function DemoRestaurant({ onExit }: { onExit: () => void }) {
         allow_messages: true,
         allow_vouchers: false,
         diner: { display_name: "Nok", username: "noktries" },
+      },
+    ],
+    gallery: [],
+    updates: [
+      {
+        id: "demo-update-1",
+        title: "Friday chef's counter seats",
+        body: "Four seats just opened for this Friday's seasonal tasting menu.",
+      },
+      {
+        id: "demo-update-2",
+        title: "New mango dessert",
+        body: "Our summer mango and coconut dessert is now available after 6pm.",
       },
     ],
     sent: [],
@@ -320,9 +350,13 @@ function VerifiedRestaurantPanel({
   const { lang } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
+  const auth = useAuthUser();
   const profile = restaurant.profile ?? {};
   const [description, setDescription] = useState(profile.official_description ?? "");
   const [menuUrl, setMenuUrl] = useState(profile.menu_url ?? "");
+  const [reservationUrl, setReservationUrl] = useState(profile.reservation_url ?? "");
+  const [logoUrl, setLogoUrl] = useState(profile.logo_url ?? "");
+  const [coverUrl, setCoverUrl] = useState(profile.cover_url ?? "");
   const [lineUrl, setLineUrl] = useState(profile.line_url ?? "");
   const [instagramUrl, setInstagramUrl] = useState(profile.instagram_url ?? "");
   const [phone, setPhone] = useState(profile.phone ?? "");
@@ -333,7 +367,23 @@ function VerifiedRestaurantPanel({
   const [code, setCode] = useState("");
   const [terms, setTerms] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [uploading, setUploading] = useState("");
+  const [updateTitle, setUpdateTitle] = useState("");
+  const [updateBody, setUpdateBody] = useState("");
+  const [updatePhotoUrl, setUpdatePhotoUrl] = useState("");
+  const [updateCtaLabel, setUpdateCtaLabel] = useState("");
+  const [updateCtaUrl, setUpdateCtaUrl] = useState("");
+  const [updateExpiry, setUpdateExpiry] = useState("");
   const audience = restaurant.audience ?? [];
+  const gallery = restaurant.gallery ?? [];
+  const updates = restaurant.updates ?? [];
+  const growthActive =
+    demo ||
+    (profile.subscription_tier === "growth" &&
+      (profile.subscription_status === "active" ||
+        (profile.subscription_status === "trialing" &&
+          profile.trial_ends_at &&
+          new Date(profile.trial_ends_at).getTime() > Date.now())));
   const selectedDiner = audience.find((item: any) => item.user_id === recipientId);
   useEffect(() => {
     if (!selectedDiner) return;
@@ -344,10 +394,97 @@ function VerifiedRestaurantPanel({
     }
   }, [kind, selectedDiner]);
   const save = useMutation({
-    mutationFn: () => updateRestaurantProfile({ data: { placeId: restaurant.place_id, officialDescription: description, menuUrl, lineUrl, instagramUrl, phone } }),
+    mutationFn: () => updateRestaurantProfile({ data: {
+      placeId: restaurant.place_id,
+      officialDescription: description,
+      menuUrl,
+      reservationUrl,
+      logoUrl,
+      coverUrl,
+      lineUrl,
+      instagramUrl,
+      phone,
+    } }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }); toast.success(copy("Official profile saved", "บันทึกโปรไฟล์ทางการแล้ว")); },
     onError: (error: Error) => toast.error(error.message),
   });
+  const trial = useMutation({
+    mutationFn: () => startRestaurantGrowthTrial({ data: { placeId: restaurant.place_id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["restaurant-workspace"] });
+      toast.success(copy("Your 14-day Growth trial is active", "เริ่มทดลอง Growth 14 วันแล้ว"));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const addGallery = useMutation({
+    mutationFn: (photoUrl: string) => addRestaurantGalleryPhoto({
+      data: { placeId: restaurant.place_id, photoUrl },
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const removeGallery = useMutation({
+    mutationFn: (photoId: string) => deleteRestaurantGalleryPhoto({
+      data: { placeId: restaurant.place_id, photoId },
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const publishUpdate = useMutation({
+    mutationFn: () => createRestaurantUpdate({
+      data: {
+        placeId: restaurant.place_id,
+        title: updateTitle,
+        body: updateBody,
+        photoUrl: updatePhotoUrl || undefined,
+        ctaLabel: updateCtaLabel || undefined,
+        ctaUrl: updateCtaUrl || undefined,
+        expiresAt: updateExpiry ? new Date(updateExpiry).toISOString() : undefined,
+      },
+    }),
+    onSuccess: () => {
+      setUpdateTitle(""); setUpdateBody(""); setUpdatePhotoUrl("");
+      setUpdateCtaLabel(""); setUpdateCtaUrl(""); setUpdateExpiry("");
+      qc.invalidateQueries({ queryKey: ["restaurant-workspace"] });
+      toast.success(copy("Official update published", "เผยแพร่อัปเดตทางการแล้ว"));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const removeUpdate = useMutation({
+    mutationFn: (updateId: string) => deleteRestaurantUpdate({
+      data: { placeId: restaurant.place_id, updateId },
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["restaurant-workspace"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const uploadPhoto = async (
+    file: File,
+    purpose: "logo" | "cover" | "gallery" | "update",
+  ) => {
+    if (!auth.userId || demo) return;
+    setUploading(purpose);
+    try {
+      validatePhotoFile(file);
+      const path = buildPhotoPath(auth.userId, file).replace(
+        `${auth.userId}/`,
+        `${auth.userId}/restaurant/${restaurant.place_id}/`,
+      );
+      const { error } = await supabase.storage
+        .from("dish-photos")
+        .upload(path, file, { upsert: false, contentType: file.type });
+      if (error) throw new Error(error.message);
+      const url = `/photos/${path}`;
+      if (purpose === "logo") setLogoUrl(url);
+      if (purpose === "cover") setCoverUrl(url);
+      if (purpose === "update") setUpdatePhotoUrl(url);
+      if (purpose === "gallery") await addGallery.mutateAsync(url);
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setUploading("");
+    }
+  };
   const send = useMutation({
     mutationFn: () => sendRestaurantOutreach({ data: {
       placeId: restaurant.place_id,
@@ -381,23 +518,79 @@ function VerifiedRestaurantPanel({
         ) : null}
       </section>
 
+      <section className={`rounded-lg border p-5 ${growthActive ? "border-gold/50 bg-gold/10" : "border-border bg-card"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="editorial-kicker text-primary">
+              {growthActive ? copy("Growth active", "Growth เปิดใช้งาน") : copy("Free verified profile", "โปรไฟล์ยืนยันฟรี")}
+            </p>
+            <h2 className="mt-2 font-display text-3xl uppercase">
+              {growthActive
+                ? copy("Turn interest into repeat business", "เปลี่ยนความสนใจเป็นลูกค้าประจำ")
+                : copy("Unlock gallery, updates, messages and vouchers", "ปลดล็อกแกลเลอรี อัปเดต ข้อความ และบัตรกำนัล")}
+            </h2>
+            {profile.subscription_status === "trialing" && profile.trial_ends_at ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {copy("Trial ends", "ทดลองถึง")} {new Date(profile.trial_ends_at).toLocaleDateString()}
+              </p>
+            ) : null}
+          </div>
+          {!growthActive && !profile.trial_started_at && !demo ? (
+            <Button onClick={() => trial.mutate()} disabled={trial.isPending}>
+              {copy("Start 14-day Growth trial", "เริ่มทดลอง Growth 14 วัน")}
+            </Button>
+          ) : null}
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-border bg-card p-5">
           <h2 className="type-section-title">{copy("Official information", "ข้อมูลทางการ")}</h2>
           <div className="mt-4 space-y-3">
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} placeholder={copy("Official restaurant description", "คำอธิบายร้านอย่างเป็นทางการ")} />
+            <Input value={reservationUrl} onChange={(e) => setReservationUrl(e.target.value)} placeholder={copy("Reservation URL (SevenRooms, TableCheck, website…)", "ลิงก์จองโต๊ะ (SevenRooms, TableCheck, เว็บไซต์…)")} />
             <Input value={menuUrl} onChange={(e) => setMenuUrl(e.target.value)} placeholder={copy("Official menu URL", "ลิงก์เมนูทางการ")} />
             <Input value={lineUrl} onChange={(e) => setLineUrl(e.target.value)} placeholder="LINE URL" />
             <Input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="Instagram URL" />
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={copy("Phone", "โทรศัพท์")} />
+            <div className="grid grid-cols-2 gap-3">
+              <label className="cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-sm hover:border-primary">
+                <Camera className="mx-auto mb-2 h-5 w-5" />
+                {uploading === "logo" ? copy("Uploading…", "กำลังอัปโหลด…") : copy("Upload logo", "อัปโหลดโลโก้")}
+                <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file, "logo");
+                  event.target.value = "";
+                }} />
+              </label>
+              <label className="cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-sm hover:border-primary">
+                <Camera className="mx-auto mb-2 h-5 w-5" />
+                {uploading === "cover" ? copy("Uploading…", "กำลังอัปโหลด…") : copy("Upload cover", "อัปโหลดภาพปก")}
+                <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file, "cover");
+                  event.target.value = "";
+                }} />
+              </label>
+            </div>
+            {(logoUrl || coverUrl) ? (
+              <div className="grid grid-cols-2 gap-3">
+                {logoUrl ? <img src={logoUrl} alt="" className="aspect-square w-full rounded-md object-cover" /> : <div />}
+                {coverUrl ? <img src={coverUrl} alt="" className="aspect-square w-full rounded-md object-cover" /> : null}
+              </div>
+            ) : null}
             <Button onClick={() => save.mutate()} disabled={demo || save.isPending}>{copy("Save profile", "บันทึกโปรไฟล์")}</Button>
           </div>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-5">
+        <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
           <h2 className="type-section-title">{copy("Consenting diners", "นักชิมที่อนุญาต")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{copy("Only diners who marked one of your dishes and explicitly opted in appear here.", "แสดงเฉพาะนักชิมที่ทำเครื่องหมายจานของร้านและอนุญาตอย่างชัดเจน")}</p>
-          <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+          {!growthActive ? (
+            <p className="mt-4 rounded-md border border-border bg-background p-3 text-sm font-semibold">
+              {copy("Available with Growth. Start the trial to see consenting diners and contact them manually.", "ใช้ได้ในแพ็กเกจ Growth เริ่มทดลองเพื่อดูนักชิมที่อนุญาตและติดต่อด้วยตนเอง")}
+            </p>
+          ) : <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
             {audience.map((item: any) => {
               const name = item.diner?.display_name || item.diner?.username || copy("Private diner", "นักชิมส่วนตัว");
               return (
@@ -408,9 +601,80 @@ function VerifiedRestaurantPanel({
               );
             })}
             {!audience.length ? <p className="text-sm text-muted-foreground">{copy("No diners have opted in yet.", "ยังไม่มีนักชิมอนุญาต")}</p> : null}
-          </div>
+          </div>}
         </section>
       </div>
+
+      <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="editorial-kicker text-primary">{copy("Growth gallery", "แกลเลอรี Growth")}</p>
+            <h2 className="type-section-title mt-2">{copy("Show the restaurant experience", "แสดงประสบการณ์ในร้าน")}</h2>
+          </div>
+          <label className={`inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 font-semibold ${growthActive && gallery.length < 12 && !demo ? "cursor-pointer hover:border-primary" : "pointer-events-none"}`}>
+            <Camera size={17} />
+            {uploading === "gallery" ? copy("Uploading…", "กำลังอัปโหลด…") : copy("Add gallery photo", "เพิ่มภาพแกลเลอรี")}
+            <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} disabled={!growthActive || demo} onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void uploadPhoto(file, "gallery");
+              event.target.value = "";
+            }} />
+          </label>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {gallery.map((photo: any) => (
+            <div key={photo.id} className="group relative">
+              <img src={photo.photo_url} alt={photo.caption || ""} className="aspect-square w-full rounded-md object-cover" />
+              {!demo ? <button type="button" onClick={() => removeGallery.mutate(photo.id)} className="absolute right-2 top-2 rounded-full bg-black/75 p-2 text-white"><Trash2 size={15} /></button> : null}
+            </div>
+          ))}
+        </div>
+        {!growthActive ? <p className="mt-4 text-sm text-muted-foreground">{copy("Start Growth to add up to 12 official photos.", "เริ่ม Growth เพื่อเพิ่มภาพทางการสูงสุด 12 ภาพ")}</p> : null}
+      </section>
+
+      <section className={`rounded-lg border border-border bg-card p-5 ${growthActive ? "" : "opacity-60"}`}>
+        <p className="editorial-kicker text-primary">{copy("Official updates", "อัปเดตทางการ")}</p>
+        <h2 className="type-section-title mt-2">{copy("Give diners a reason to return", "สร้างเหตุผลให้นักชิมกลับมา")}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{copy("Publish up to two updates every 7 days. Updates are labeled as restaurant content and never affect rankings.", "เผยแพร่ได้สูงสุด 2 อัปเดตต่อ 7 วัน เนื้อหาจะแสดงว่าเป็นของร้านและไม่มีผลต่ออันดับ")}</p>
+        <div className="mt-5 grid gap-3">
+          <Input value={updateTitle} onChange={(e) => setUpdateTitle(e.target.value)} maxLength={100} placeholder={copy("Update title", "หัวข้ออัปเดต")} disabled={!growthActive || demo} />
+          <Textarea value={updateBody} onChange={(e) => setUpdateBody(e.target.value)} maxLength={1000} placeholder={copy("What should diners know?", "อยากบอกอะไรกับนักชิม?")} disabled={!growthActive || demo} />
+          <div className="grid gap-3 md:grid-cols-3">
+            <Input value={updateCtaLabel} onChange={(e) => setUpdateCtaLabel(e.target.value)} maxLength={40} placeholder={copy("Button label (optional)", "ข้อความปุ่ม (ไม่บังคับ)")} disabled={!growthActive || demo} />
+            <Input value={updateCtaUrl} onChange={(e) => setUpdateCtaUrl(e.target.value)} placeholder={copy("Button URL (optional)", "ลิงก์ปุ่ม (ไม่บังคับ)")} disabled={!growthActive || demo} />
+            <Input value={updateExpiry} onChange={(e) => setUpdateExpiry(e.target.value)} type="datetime-local" disabled={!growthActive || demo} />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <label className={`inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 font-semibold ${growthActive && !demo ? "cursor-pointer" : "pointer-events-none"}`}>
+              <Camera size={17} /> {updatePhotoUrl ? copy("Photo ready", "มีรูปแล้ว") : copy("Add update photo", "เพิ่มรูปอัปเดต")}
+              <input className="sr-only" type="file" accept={PHOTO_ACCEPT_ATTR} disabled={!growthActive || demo} onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadPhoto(file, "update");
+                event.target.value = "";
+              }} />
+            </label>
+            <Button onClick={() => publishUpdate.mutate()} disabled={!growthActive || demo || publishUpdate.isPending || !updateTitle.trim() || !updateBody.trim()}>
+              {copy("Publish official update", "เผยแพร่อัปเดตทางการ")}
+            </Button>
+          </div>
+        </div>
+        {updates.length ? (
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            {updates.map((item: any) => (
+              <article key={item.id} className="rounded-md border border-border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase text-primary">{copy("Official restaurant update", "อัปเดตทางการจากร้าน")}</p>
+                    <h3 className="mt-1 font-semibold">{item.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
+                  </div>
+                  {!demo ? <button type="button" onClick={() => removeUpdate.mutate(item.id)}><Trash2 size={17} /></button> : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       {selectedDiner ? (
         <section className="rounded-lg border border-border bg-secondary/30 p-5">

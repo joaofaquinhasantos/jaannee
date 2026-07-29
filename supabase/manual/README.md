@@ -95,6 +95,10 @@ repeated.
 23. Run `VERIFY_20260729_restaurant_monetization.sql` and confirm all five
     restaurant tables have RLS, the outreach guard exists, and the claim-review
     function is restricted to `service_role`.
+24. Paste `20260729_restaurant_growth_profile.sql` into the SQL editor.
+25. Run `VERIFY_20260729_restaurant_growth_profile.sql` and confirm the profile
+    fields, gallery/update tables, RLS policies, Growth guards, and frequency
+    limit triggers are present.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

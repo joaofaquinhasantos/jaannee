@@ -4,6 +4,19 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const missingRestaurantSchema = (error: any) => error?.code === "42P01";
 const optionalUrl = z.string().trim().url().max(500).or(z.literal(""));
+const optionalPhotoUrl = z
+  .string()
+  .trim()
+  .max(700)
+  .refine((value) => !value || value.startsWith("/photos/") || /^https:\/\//i.test(value), {
+    message: "Use an uploaded photo or a secure image URL.",
+  });
+const growthActive = (profile: any) =>
+  profile?.subscription_tier === "growth" &&
+  (profile?.subscription_status === "active" ||
+    (profile?.subscription_status === "trialing" &&
+      profile?.trial_ends_at &&
+      new Date(profile.trial_ends_at).getTime() > Date.now()));
 
 export const listClaimablePlaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -80,10 +93,10 @@ export const getMyRestaurantWorkspace = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const restaurants = await Promise.all(
       (memberships.data ?? []).map(async (membership: any) => {
-        const [profile, permissions, sent] = await Promise.all([
+        const [profile, permissions, sent, gallery, updates] = await Promise.all([
           (supabaseAdmin as any)
             .from("restaurant_profiles")
-            .select("place_id, is_verified, official_description, menu_url, line_url, instagram_url, phone")
+            .select("place_id, is_verified, official_description, menu_url, reservation_url, logo_url, cover_url, line_url, instagram_url, phone, subscription_tier, subscription_status, trial_started_at, trial_ends_at")
             .eq("place_id", membership.place_id)
             .maybeSingle(),
           (supabaseAdmin as any)
@@ -98,8 +111,29 @@ export const getMyRestaurantWorkspace = createServerFn({ method: "GET" })
             .eq("place_id", membership.place_id)
             .order("created_at", { ascending: false })
             .limit(50),
+          (supabaseAdmin as any)
+            .from("restaurant_gallery_photos")
+            .select("id, photo_url, caption, display_order, created_at")
+            .eq("place_id", membership.place_id)
+            .order("display_order")
+            .order("created_at"),
+          (supabaseAdmin as any)
+            .from("restaurant_updates")
+            .select("id, title, body, photo_url, cta_label, cta_url, published_at, expires_at, is_active")
+            .eq("place_id", membership.place_id)
+            .order("published_at", { ascending: false })
+            .limit(20),
         ]);
-        const userIds = (permissions.data ?? []).map((item: any) => item.user_id);
+        for (const result of [profile, permissions, sent]) {
+          if (result.error) throw new Error(result.error.message);
+        }
+        const galleryRows = gallery.error && missingRestaurantSchema(gallery.error) ? [] : gallery.data ?? [];
+        const updateRows = updates.error && missingRestaurantSchema(updates.error) ? [] : updates.data ?? [];
+        if (gallery.error && !missingRestaurantSchema(gallery.error)) throw new Error(gallery.error.message);
+        if (updates.error && !missingRestaurantSchema(updates.error)) throw new Error(updates.error.message);
+        const hasGrowth = growthActive(profile.data);
+        const visiblePermissions = hasGrowth ? permissions.data ?? [] : [];
+        const userIds = visiblePermissions.map((item: any) => item.user_id);
         const profiles = userIds.length
           ? await (supabaseAdmin as any)
               .from("profiles")
@@ -110,11 +144,13 @@ export const getMyRestaurantWorkspace = createServerFn({ method: "GET" })
         return {
           ...membership,
           profile: profile.data ?? null,
-          audience: (permissions.data ?? []).map((item: any) => ({
+          audience: visiblePermissions.map((item: any) => ({
             ...item,
             diner: profileById.get(item.user_id) ?? { id: item.user_id },
           })),
-          sent: sent.data ?? [],
+          sent: hasGrowth ? sent.data ?? [] : [],
+          gallery: galleryRows,
+          updates: updateRows,
         };
       }),
     );
@@ -131,6 +167,9 @@ export const updateRestaurantProfile = createServerFn({ method: "POST" })
       lineUrl?: string;
       instagramUrl?: string;
       phone?: string;
+      reservationUrl?: string;
+      logoUrl?: string;
+      coverUrl?: string;
     }) =>
       z
         .object({
@@ -140,6 +179,9 @@ export const updateRestaurantProfile = createServerFn({ method: "POST" })
           lineUrl: optionalUrl.optional(),
           instagramUrl: optionalUrl.optional(),
           phone: z.string().trim().max(40).optional(),
+          reservationUrl: optionalUrl.optional(),
+          logoUrl: optionalPhotoUrl.optional(),
+          coverUrl: optionalPhotoUrl.optional(),
         })
         .parse(input),
   )
@@ -160,11 +202,168 @@ export const updateRestaurantProfile = createServerFn({ method: "POST" })
         line_url: data.lineUrl || null,
         instagram_url: data.instagramUrl || null,
         phone: data.phone || null,
+        reservation_url: data.reservationUrl || null,
+        logo_url: data.logoUrl || null,
+        cover_url: data.coverUrl || null,
         updated_by: context.userId,
         updated_at: new Date().toISOString(),
       })
       .eq("place_id", data.placeId)
       .eq("is_verified", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+async function requireRestaurantMembership(context: any, placeId: string) {
+  const membership = await (context.supabase as any)
+    .from("restaurant_memberships")
+    .select("place_id")
+    .eq("place_id", placeId)
+    .eq("user_id", context.userId)
+    .maybeSingle();
+  if (!membership.data) throw new Error("Verified restaurant access is required.");
+  return membership.data;
+}
+
+async function requireGrowth(context: any, placeId: string) {
+  await requireRestaurantMembership(context, placeId);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const profile = await (supabaseAdmin as any)
+    .from("restaurant_profiles")
+    .select("subscription_tier, subscription_status, trial_ends_at")
+    .eq("place_id", placeId)
+    .maybeSingle();
+  if (!growthActive(profile.data)) throw new Error("Start or activate Growth to use this feature.");
+  return supabaseAdmin;
+}
+
+export const startRestaurantGrowthTrial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { placeId: string }) =>
+    z.object({ placeId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireRestaurantMembership(context, data.placeId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const current = await (supabaseAdmin as any)
+      .from("restaurant_profiles")
+      .select("trial_started_at, subscription_status")
+      .eq("place_id", data.placeId)
+      .maybeSingle();
+    if (!current.data) throw new Error("Restaurant profile not found.");
+    if (current.data.subscription_status === "active") {
+      throw new Error("Growth is already active for this restaurant.");
+    }
+    if (current.data.trial_started_at) throw new Error("The Growth trial has already been used.");
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const { error } = await (supabaseAdmin as any)
+      .from("restaurant_profiles")
+      .update({
+        subscription_tier: "growth",
+        subscription_status: "trialing",
+        trial_started_at: now.toISOString(),
+        trial_ends_at: trialEnd.toISOString(),
+        updated_by: context.userId,
+        updated_at: now.toISOString(),
+      })
+      .eq("place_id", data.placeId);
+    if (error) throw new Error(error.message);
+    return { ok: true, trialEndsAt: trialEnd.toISOString() };
+  });
+
+export const addRestaurantGalleryPhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { placeId: string; photoUrl: string; caption?: string }) =>
+    z.object({
+      placeId: z.string().uuid(),
+      photoUrl: z.string().trim().startsWith("/photos/").max(700),
+      caption: z.string().trim().max(160).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabaseAdmin = await requireGrowth(context, data.placeId);
+    const count = await (supabaseAdmin as any)
+      .from("restaurant_gallery_photos")
+      .select("id", { count: "exact", head: true })
+      .eq("place_id", data.placeId);
+    if ((count.count ?? 0) >= 12) throw new Error("A restaurant gallery can contain up to 12 photos.");
+    const { error } = await (supabaseAdmin as any).from("restaurant_gallery_photos").insert({
+      place_id: data.placeId,
+      photo_url: data.photoUrl,
+      caption: data.caption || null,
+      display_order: count.count ?? 0,
+      created_by: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteRestaurantGalleryPhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { placeId: string; photoId: string }) =>
+    z.object({ placeId: z.string().uuid(), photoId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabaseAdmin = await requireGrowth(context, data.placeId);
+    const { error } = await (supabaseAdmin as any)
+      .from("restaurant_gallery_photos")
+      .delete()
+      .eq("id", data.photoId)
+      .eq("place_id", data.placeId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const createRestaurantUpdate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    placeId: string;
+    title: string;
+    body: string;
+    photoUrl?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+    expiresAt?: string;
+  }) =>
+    z.object({
+      placeId: z.string().uuid(),
+      title: z.string().trim().min(2).max(100),
+      body: z.string().trim().min(2).max(1000),
+      photoUrl: z.string().trim().startsWith("/photos/").max(700).optional(),
+      ctaLabel: z.string().trim().max(40).optional(),
+      ctaUrl: optionalUrl.optional(),
+      expiresAt: z.string().datetime().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabaseAdmin = await requireGrowth(context, data.placeId);
+    const { error } = await (supabaseAdmin as any).from("restaurant_updates").insert({
+      place_id: data.placeId,
+      title: data.title,
+      body: data.body,
+      photo_url: data.photoUrl || null,
+      cta_label: data.ctaLabel || null,
+      cta_url: data.ctaUrl || null,
+      expires_at: data.expiresAt || null,
+      created_by: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteRestaurantUpdate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { placeId: string; updateId: string }) =>
+    z.object({ placeId: z.string().uuid(), updateId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabaseAdmin = await requireGrowth(context, data.placeId);
+    const { error } = await (supabaseAdmin as any)
+      .from("restaurant_updates")
+      .delete()
+      .eq("id", data.updateId)
+      .eq("place_id", data.placeId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -283,14 +482,7 @@ export const sendRestaurantOutreach = createServerFn({ method: "POST" })
         .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const membership = await (context.supabase as any)
-      .from("restaurant_memberships")
-      .select("place_id")
-      .eq("place_id", data.placeId)
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    if (!membership.data) throw new Error("Verified restaurant access is required.");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await requireGrowth(context, data.placeId);
     const { error } = await (supabaseAdmin as any).from("restaurant_outreach").insert({
       place_id: data.placeId,
       sender_user_id: context.userId,
@@ -368,17 +560,50 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const profile = await (supabaseAdmin as any)
       .from("restaurant_profiles")
-      .select("place_id, is_verified, official_description, menu_url, line_url, instagram_url, phone, place:places(id, name, address, google_maps_url, area:areas(name_en, name_th))")
+      .select("place_id, is_verified, official_description, menu_url, reservation_url, logo_url, cover_url, line_url, instagram_url, phone, place:places(id, name, address, google_maps_url, area:areas(name_en, name_th))")
       .eq("place_id", data.placeId)
       .eq("is_verified", true)
       .maybeSingle();
+    if (profile.error) {
+      if (missingRestaurantSchema(profile.error)) return null;
+      throw new Error(profile.error.message);
+    }
     if (!profile.data) return null;
-    const dishes = await (supabaseAdmin as any)
-      .from("dishes")
-      .select("id, name_en, name_th, photo_url, comparisons_count, elo, status, place:places(id, name)")
-      .eq("place_id", data.placeId)
-      .in("status", ["pending", "approved"])
-      .order("created_at", { ascending: false })
-      .limit(60);
-    return { ...profile.data, dishes: dishes.data ?? [] };
+    const [dishes, gallery, updates] = await Promise.all([
+      (supabaseAdmin as any)
+        .from("dishes")
+        .select("id, name_en, name_th, photo_url, comparisons_count, elo, status, place:places(id, name)")
+        .eq("place_id", data.placeId)
+        .in("status", ["pending", "approved"])
+        .order("created_at", { ascending: false })
+        .limit(60),
+      (supabaseAdmin as any)
+        .from("restaurant_gallery_photos")
+        .select("id, photo_url, caption, display_order")
+        .eq("place_id", data.placeId)
+        .order("display_order")
+        .limit(12),
+      (supabaseAdmin as any)
+        .from("restaurant_updates")
+        .select("id, title, body, photo_url, cta_label, cta_url, published_at, expires_at")
+        .eq("place_id", data.placeId)
+        .eq("is_active", true)
+        .lte("published_at", new Date().toISOString())
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .order("published_at", { ascending: false })
+        .limit(12),
+    ]);
+    if (dishes.error) throw new Error(dishes.error.message);
+    if (gallery.error && !missingRestaurantSchema(gallery.error)) {
+      throw new Error(gallery.error.message);
+    }
+    if (updates.error && !missingRestaurantSchema(updates.error)) {
+      throw new Error(updates.error.message);
+    }
+    return {
+      ...profile.data,
+      dishes: dishes.data ?? [],
+      gallery: gallery.error && missingRestaurantSchema(gallery.error) ? [] : gallery.data ?? [],
+      updates: updates.error && missingRestaurantSchema(updates.error) ? [] : updates.data ?? [],
+    };
   });
