@@ -70,6 +70,61 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     };
   });
 
+export const listRestaurantClaimsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await (supabaseAdmin as any)
+      .from("restaurant_claims")
+      .select("id, place_id, requested_by, business_role, verification_note, status, review_note, created_at, place:places(name, address)")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (result.error) {
+      if (result.error.code === "42P01") return { available: false, claims: [] };
+      throw new Error(result.error.message);
+    }
+    const userIds = [...new Set((result.data ?? []).map((claim: any) => claim.requested_by))];
+    const profiles = userIds.length
+      ? await (supabaseAdmin as any)
+          .from("profiles")
+          .select("id, display_name, username")
+          .in("id", userIds)
+      : { data: [] };
+    const profileById = new Map((profiles.data ?? []).map((profile: any) => [profile.id, profile]));
+    return {
+      available: true,
+      claims: (result.data ?? []).map((claim: any) => ({
+        ...claim,
+        profile: profileById.get(claim.requested_by) ?? null,
+      })),
+    };
+  });
+
+export const reviewRestaurantClaimAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { claimId: string; approve: boolean; reviewNote?: string }) =>
+    z
+      .object({
+        claimId: z.string().uuid(),
+        approve: z.boolean(),
+        reviewNote: z.string().trim().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await (supabaseAdmin as any).rpc("admin_review_restaurant_claim", {
+      _claim_id: data.claimId,
+      _approve: data.approve,
+      _reviewed_by: context.userId,
+      _review_note: data.reviewNote || null,
+    });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
+
 export const listPending = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

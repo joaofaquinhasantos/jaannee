@@ -14,6 +14,10 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { localizedName } from "@/lib/names";
 import { useAuthUser } from "@/lib/use-auth";
+import {
+  listMyRestaurantOutreach,
+  updateRestaurantOutreachState,
+} from "@/lib/restaurant.functions";
 
 type ProfileCounts = {
   posted: number;
@@ -33,6 +37,11 @@ export function RetentionSuite({ counts }: { counts: ProfileCounts }) {
   const q = useQuery({
     queryKey: ["retention", userId],
     queryFn: () => listMyRetention(),
+    enabled: Boolean(userId),
+  });
+  const restaurantInbox = useQuery({
+    queryKey: ["restaurant-outreach", userId],
+    queryFn: () => listMyRestaurantOutreach(),
     enabled: Boolean(userId),
   });
   const data = q.data;
@@ -61,6 +70,15 @@ export function RetentionSuite({ counts }: { counts: ProfileCounts }) {
   const read = useMutation({
     mutationFn: (notificationId: string) => markNotificationRead({ data: { notificationId } }),
     onSuccess: refresh,
+  });
+  const outreachState = useMutation({
+    mutationFn: (input: { outreachId: string; action: "read" | "redeem" }) =>
+      updateRestaurantOutreachState({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["restaurant-outreach", userId] });
+      toast.success(copy("Updated", "อัปเดตแล้ว"));
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const recap = useMemo(
@@ -117,6 +135,47 @@ export function RetentionSuite({ counts }: { counts: ProfileCounts }) {
       {tab === "inbox" ? (
         <div className="p-5 md:p-6">
           <h2 className="type-section-title">{copy("What changed", "มีอะไรใหม่")}</h2>
+          {restaurantInbox.data?.available && restaurantInbox.data.items.length ? (
+            <section className="mt-5 rounded-lg border border-primary/35 bg-primary/5 p-4">
+              <p className="label-caps text-primary">
+                {copy("Restaurant messages & gifts", "ข้อความและของขวัญจากร้าน")}
+              </p>
+              <ul className="mt-3 divide-y divide-border">
+                {restaurantInbox.data.items.map((item: any) => (
+                  <li key={item.id} className="py-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                          {item.place?.name} · {item.kind === "voucher" ? copy("Gift voucher", "บัตรกำนัล") : copy("Message", "ข้อความ")}
+                        </p>
+                        <h3 className="mt-1 font-semibold">{item.subject}</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
+                        {item.kind === "voucher" ? (
+                          <div className="mt-3 rounded-md border border-dashed border-primary bg-background p-3">
+                            <p className="font-mono text-lg font-bold text-primary">{item.voucher_code}</p>
+                            {item.voucher_terms ? <p className="mt-1 text-xs text-muted-foreground">{item.voucher_terms}</p> : null}
+                            {item.expires_at ? <p className="mt-1 text-xs text-muted-foreground">{copy("Expires", "หมดอายุ")} {new Date(item.expires_at).toLocaleDateString(lang === "th" ? "th-TH" : "en-GB")}</p> : null}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="flex gap-2">
+                        {!item.read_at ? (
+                          <Button variant="outline" size="sm" onClick={() => outreachState.mutate({ outreachId: item.id, action: "read" })}>
+                            {copy("Mark read", "อ่านแล้ว")}
+                          </Button>
+                        ) : null}
+                        {item.kind === "voucher" && !item.redeemed_at ? (
+                          <Button size="sm" onClick={() => outreachState.mutate({ outreachId: item.id, action: "redeem" })}>
+                            {copy("Mark used", "ใช้แล้ว")}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {data.notifications.length ? (
             <ul className="mt-4 divide-y divide-border">
               {data.notifications.map((item: any) => (

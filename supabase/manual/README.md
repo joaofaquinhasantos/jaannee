@@ -91,6 +91,10 @@ repeated.
 20. Paste `20260728_retention_suite.sql` into the SQL editor.
 21. Run `VERIFY_20260728_retention_suite.sql` and confirm all five tables have
     RLS plus the expected owner-only policies and grants.
+22. Paste `20260729_restaurant_monetization.sql` into the SQL editor.
+23. Run `VERIFY_20260729_restaurant_monetization.sql` and confirm all five
+    restaurant tables have RLS, the outreach guard exists, and the claim-review
+    function is restricted to `service_role`.
 
 Do not commit or execute either file automatically. Do not use the
 Lovable migration tool for these changes.

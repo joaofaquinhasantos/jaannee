@@ -34,6 +34,8 @@ import {
   mergePlacesAdmin,
   resolveGoogleMapsLinkAdmin,
   updatePlaceAdmin,
+  listRestaurantClaimsAdmin,
+  reviewRestaurantClaimAdmin,
 } from "@/lib/admin.functions";
 import { listCuisines, mapsDirectionsUrl } from "@/lib/dishes.functions";
 import { Button } from "@/components/ui/button";
@@ -108,6 +110,7 @@ function Admin() {
     "dishes",
     "places",
     "reports",
+    "restaurants",
     "taxonomy",
     "import",
   ] as const;
@@ -166,6 +169,7 @@ function Admin() {
           <TabsTrigger value="dishes">Dishes</TabsTrigger>
           <TabsTrigger value="places">Places</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="restaurants">Restaurant claims</TabsTrigger>
           <TabsTrigger value="taxonomy">Cuisines, Categories & Areas</TabsTrigger>
           <TabsTrigger value="import">Bulk import</TabsTrigger>
         </TabsList>
@@ -183,6 +187,9 @@ function Admin() {
         </TabsContent>
         <TabsContent value="reports">
           <Reports />
+        </TabsContent>
+        <TabsContent value="restaurants">
+          <RestaurantClaims />
         </TabsContent>
         <TabsContent value="taxonomy">
           <Taxonomy />
@@ -232,6 +239,102 @@ function AdminStat({
       <p className="mt-2 text-xs font-bold uppercase tracking-wide">{label}</p>
       <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
     </button>
+  );
+}
+
+function RestaurantClaims() {
+  const qc = useQueryClient();
+  const claims = useQuery({
+    queryKey: ["admin-restaurant-claims"],
+    queryFn: () => listRestaurantClaimsAdmin(),
+  });
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const review = useMutation({
+    mutationFn: (input: { claimId: string; approve: boolean }) =>
+      reviewRestaurantClaimAdmin({
+        data: {
+          ...input,
+          reviewNote: notes[input.claimId] || undefined,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-restaurant-claims"] });
+      toast.success("Restaurant claim reviewed");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  if (claims.isLoading) return <AdminLoading label="Loading restaurant claims…" />;
+  if (claims.data?.available === false) {
+    return (
+      <div className="mt-5 rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
+        Run the restaurant monetization manual SQL before reviewing claims.
+      </div>
+    );
+  }
+  const items = claims.data?.claims ?? [];
+  return (
+    <div className="mt-5 space-y-4">
+      <div>
+        <h2 className="type-section-title">Restaurant verification</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Verify real business ownership. Approval grants official-profile and consented-outreach
+          access, never ranking control.
+        </p>
+      </div>
+      {items.map((claim: any) => (
+        <article key={claim.id} className="rounded-lg border border-border bg-card p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-primary">{claim.status}</p>
+              <h3 className="mt-2 font-display text-2xl">{claim.place?.name}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{claim.place?.address}</p>
+              <p className="mt-3 text-sm">
+                <strong>Claimant:</strong>{" "}
+                {claim.profile?.display_name || claim.profile?.username || claim.requested_by}
+              </p>
+              <p className="mt-1 text-sm"><strong>Business role:</strong> {claim.business_role}</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-md bg-secondary p-4 text-sm leading-6">
+            {claim.verification_note}
+          </div>
+          {claim.status === "pending" ? (
+            <div className="mt-4 space-y-3">
+              <Textarea
+                value={notes[claim.id] ?? ""}
+                onChange={(event) =>
+                  setNotes((current) => ({ ...current, [claim.id]: event.target.value }))
+                }
+                placeholder="Review note (recommended when rejecting)"
+                maxLength={500}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => review.mutate({ claimId: claim.id, approve: true })}
+                  disabled={review.isPending}
+                >
+                  Approve verified owner
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => review.mutate({ claimId: claim.id, approve: false })}
+                  disabled={review.isPending}
+                >
+                  Reject claim
+                </Button>
+              </div>
+            </div>
+          ) : claim.review_note ? (
+            <p className="mt-4 text-sm text-muted-foreground">{claim.review_note}</p>
+          ) : null}
+        </article>
+      ))}
+      {!items.length ? (
+        <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
+          No restaurant claims yet.
+        </div>
+      ) : null}
+    </div>
   );
 }
 

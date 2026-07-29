@@ -60,5 +60,19 @@ Rules: comparisons rejected unless both dishes share the same pool; leaderboards
 - Tools that touch rankability respect §3 and §4 (pool + threshold).
 - `list_categories` returns `requires_subtype` and active sub-types so the caller can request the right pool.
 
+## 11. Restaurant participation
+- A verified restaurant may maintain official profile, menu, and contact
+  information for its place. Official information must remain visually separate
+  from diner-created dishes and diner-generated rankings.
+- Restaurants cannot add rankable dishes, mark dishes tried or wanted, submit
+  comparisons, inspect diner comparison choices, edit Elo, or influence rank.
+- A diner marking a dish as tried or wanted never grants contact permission by
+  itself. Restaurant contact requires a separate, explicit, revocable opt-in.
+- A verified restaurant may manually contact only a diner who both opted in and
+  currently has a tried/wanted relationship with one of that place's dishes.
+- Message and voucher consent are separate. Database-enforced frequency limits
+  apply, and vouchers must never depend on a favourable comparison or ranking.
+
 ---
-Any PR that touches ranking, comparisons, sub-types, deletion/merge, or photo handling must be checked against this file.
+Any PR that touches ranking, comparisons, sub-types, deletion/merge, photo
+handling, or restaurant access must be checked against this file.

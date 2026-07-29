@@ -9,33 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as RankingsRouteImport } from './routes/rankings'
-import { Route as CompareRouteImport } from './routes/compare'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as UUsernameRouteImport } from './routes/u.$username'
-import { Route as PhotosSplatRouteImport } from './routes/photos.$'
-import { Route as DishIdRouteImport } from './routes/dish.$id'
-import { Route as ChallengeDishAIdDishBIdRouteImport } from './routes/challenge.$dishAId.$dishBId'
-import { Route as AuthenticatedSubmitRouteImport } from './routes/_authenticated/submit'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CompareRouteImport } from './routes/compare'
+import { Route as RankingsRouteImport } from './routes/rankings'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedRestaurantRouteImport } from './routes/_authenticated/restaurant'
+import { Route as AuthenticatedSubmitRouteImport } from './routes/_authenticated/submit'
+import { Route as DishIdRouteImport } from './routes/dish.$id'
+import { Route as PhotosSplatRouteImport } from './routes/photos.$'
+import { Route as PlacePlaceIdRouteImport } from './routes/place.$placeId'
+import { Route as UUsernameRouteImport } from './routes/u.$username'
+import { Route as ChallengeDishAIdDishBIdRouteImport } from './routes/challenge.$dishAId.$dishBId'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RankingsRoute = RankingsRouteImport.update({
-  id: '/rankings',
-  path: '/rankings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompareRoute = CompareRouteImport.update({
-  id: '/compare',
-  path: '/compare',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -43,38 +39,24 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const RankingsRoute = RankingsRouteImport.update({
+  id: '/rankings',
+  path: '/rankings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UUsernameRoute = UUsernameRouteImport.update({
-  id: '/u/$username',
-  path: '/u/$username',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PhotosSplatRoute = PhotosSplatRouteImport.update({
-  id: '/photos/$',
-  path: '/photos/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DishIdRoute = DishIdRouteImport.update({
-  id: '/dish/$id',
-  path: '/dish/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChallengeDishAIdDishBIdRoute = ChallengeDishAIdDishBIdRouteImport.update({
-  id: '/challenge/$dishAId/$dishBId',
-  path: '/challenge/$dishAId/$dishBId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSubmitRoute = AuthenticatedSubmitRouteImport.update({
-  id: '/submit',
-  path: '/submit',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -82,10 +64,40 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedRestaurantRoute = AuthenticatedRestaurantRouteImport.update({
+  id: '/restaurant',
+  path: '/restaurant',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSubmitRoute = AuthenticatedSubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const DishIdRoute = DishIdRouteImport.update({
+  id: '/dish/$id',
+  path: '/dish/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotosSplatRoute = PhotosSplatRouteImport.update({
+  id: '/photos/$',
+  path: '/photos/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlacePlaceIdRoute = PlacePlaceIdRouteImport.update({
+  id: '/place/$placeId',
+  path: '/place/$placeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UUsernameRoute = UUsernameRouteImport.update({
+  id: '/u/$username',
+  path: '/u/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChallengeDishAIdDishBIdRoute = ChallengeDishAIdDishBIdRouteImport.update({
+  id: '/challenge/$dishAId/$dishBId',
+  path: '/challenge/$dishAId/$dishBId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -96,11 +108,13 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/restaurant': typeof AuthenticatedRestaurantRoute
   '/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
-  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
   '/photos/$': typeof PhotosSplatRoute
+  '/place/$placeId': typeof PlacePlaceIdRoute
   '/u/$username': typeof UUsernameRoute
+  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,11 +124,13 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/restaurant': typeof AuthenticatedRestaurantRoute
   '/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
-  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
   '/photos/$': typeof PhotosSplatRoute
+  '/place/$placeId': typeof PlacePlaceIdRoute
   '/u/$username': typeof UUsernameRoute
+  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -126,11 +142,13 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/restaurant': typeof AuthenticatedRestaurantRoute
   '/_authenticated/submit': typeof AuthenticatedSubmitRoute
   '/dish/$id': typeof DishIdRoute
-  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
   '/photos/$': typeof PhotosSplatRoute
+  '/place/$placeId': typeof PlacePlaceIdRoute
   '/u/$username': typeof UUsernameRoute
+  '/challenge/$dishAId/$dishBId': typeof ChallengeDishAIdDishBIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,11 +160,13 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/profile'
+    | '/restaurant'
     | '/submit'
     | '/dish/$id'
-    | '/challenge/$dishAId/$dishBId'
     | '/photos/$'
+    | '/place/$placeId'
     | '/u/$username'
+    | '/challenge/$dishAId/$dishBId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -156,11 +176,13 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/profile'
+    | '/restaurant'
     | '/submit'
     | '/dish/$id'
-    | '/challenge/$dishAId/$dishBId'
     | '/photos/$'
+    | '/place/$placeId'
     | '/u/$username'
+    | '/challenge/$dishAId/$dishBId'
   id:
     | '__root__'
     | '/'
@@ -171,11 +193,13 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/profile'
+    | '/_authenticated/restaurant'
     | '/_authenticated/submit'
     | '/dish/$id'
-    | '/challenge/$dishAId/$dishBId'
     | '/photos/$'
+    | '/place/$placeId'
     | '/u/$username'
+    | '/challenge/$dishAId/$dishBId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -186,39 +210,19 @@ export interface RootRouteChildren {
   RankingsRoute: typeof RankingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DishIdRoute: typeof DishIdRoute
-  ChallengeDishAIdDishBIdRoute: typeof ChallengeDishAIdDishBIdRoute
   PhotosSplatRoute: typeof PhotosSplatRoute
+  PlacePlaceIdRoute: typeof PlacePlaceIdRoute
   UUsernameRoute: typeof UUsernameRoute
+  ChallengeDishAIdDishBIdRoute: typeof ChallengeDishAIdDishBIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rankings': {
-      id: '/rankings'
-      path: '/rankings'
-      fullPath: '/rankings'
-      preLoaderRoute: typeof RankingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compare': {
-      id: '/compare'
-      path: '/compare'
-      fullPath: '/compare'
-      preLoaderRoute: typeof CompareRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -228,46 +232,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/u/$username': {
-      id: '/u/$username'
-      path: '/u/$username'
-      fullPath: '/u/$username'
-      preLoaderRoute: typeof UUsernameRouteImport
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/photos/$': {
-      id: '/photos/$'
-      path: '/photos/$'
-      fullPath: '/photos/$'
-      preLoaderRoute: typeof PhotosSplatRouteImport
+    '/rankings': {
+      id: '/rankings'
+      path: '/rankings'
+      fullPath: '/rankings'
+      preLoaderRoute: typeof RankingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dish/$id': {
-      id: '/dish/$id'
-      path: '/dish/$id'
-      fullPath: '/dish/$id'
-      preLoaderRoute: typeof DishIdRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/challenge/$dishAId/$dishBId': {
-      id: '/challenge/$dishAId/$dishBId'
-      path: '/challenge/$dishAId/$dishBId'
-      fullPath: '/challenge/$dishAId/$dishBId'
-      preLoaderRoute: typeof ChallengeDishAIdDishBIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/submit': {
-      id: '/_authenticated/submit'
-      path: '/submit'
-      fullPath: '/submit'
-      preLoaderRoute: typeof AuthenticatedSubmitRouteImport
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
@@ -277,12 +274,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/restaurant': {
+      id: '/_authenticated/restaurant'
+      path: '/restaurant'
+      fullPath: '/restaurant'
+      preLoaderRoute: typeof AuthenticatedRestaurantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/submit': {
+      id: '/_authenticated/submit'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof AuthenticatedSubmitRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/dish/$id': {
+      id: '/dish/$id'
+      path: '/dish/$id'
+      fullPath: '/dish/$id'
+      preLoaderRoute: typeof DishIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photos/$': {
+      id: '/photos/$'
+      path: '/photos/$'
+      fullPath: '/photos/$'
+      preLoaderRoute: typeof PhotosSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/place/$placeId': {
+      id: '/place/$placeId'
+      path: '/place/$placeId'
+      fullPath: '/place/$placeId'
+      preLoaderRoute: typeof PlacePlaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$username': {
+      id: '/u/$username'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof UUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/challenge/$dishAId/$dishBId': {
+      id: '/challenge/$dishAId/$dishBId'
+      path: '/challenge/$dishAId/$dishBId'
+      fullPath: '/challenge/$dishAId/$dishBId'
+      preLoaderRoute: typeof ChallengeDishAIdDishBIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -290,12 +329,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedRestaurantRoute: typeof AuthenticatedRestaurantRoute
   AuthenticatedSubmitRoute: typeof AuthenticatedSubmitRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedRestaurantRoute: AuthenticatedRestaurantRoute,
   AuthenticatedSubmitRoute: AuthenticatedSubmitRoute,
 }
 
@@ -310,10 +351,21 @@ const rootRouteChildren: RootRouteChildren = {
   RankingsRoute: RankingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DishIdRoute: DishIdRoute,
-  ChallengeDishAIdDishBIdRoute: ChallengeDishAIdDishBIdRoute,
   PhotosSplatRoute: PhotosSplatRoute,
+  PlacePlaceIdRoute: PlacePlaceIdRoute,
   UUsernameRoute: UUsernameRoute,
+  ChallengeDishAIdDishBIdRoute: ChallengeDishAIdDishBIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
