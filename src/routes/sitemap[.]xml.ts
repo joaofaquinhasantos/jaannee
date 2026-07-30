@@ -16,7 +16,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "daily", priority: "1.0" },
           { path: "/rankings", changefreq: "daily", priority: "0.9" },
-          { path: "/compare", changefreq: "weekly", priority: "0.7" },
+          // /compare is contextual-only and noindex — never advertised in the sitemap.
           { path: "/auth", changefreq: "monthly", priority: "0.3" },
         ];
 
