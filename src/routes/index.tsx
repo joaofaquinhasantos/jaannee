@@ -227,6 +227,8 @@ function Index() {
         </div>
       </div>
 
+      <TriedActivation dishes={dishRows} />
+
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
         <SubtypeChooser
           category={selectedCategory!}
@@ -251,7 +253,6 @@ function Index() {
           />
 
           <div className="border-t border-white/10 bg-[#111111] px-5 pt-8 md:px-8">
-            <TriedActivation dishes={dishRows} />
             <ReturnHub />
           </div>
 
