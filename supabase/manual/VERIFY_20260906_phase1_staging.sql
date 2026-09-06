@@ -1,6 +1,7 @@
--- Read-only verification for 20260906_phase1_staging.sql (DRAFT).
+-- Read-only verification for 20260906_phase1_staging.sql
 -- Every row should report OK. Do not mutate data.
--- Also asserts live ranking surface was not altered by this script's intent.
+-- Owner greenlit companion apply 2026-09-06.
+
 
 -- Enums
 select 'enum pipeline_status' as check_name,
