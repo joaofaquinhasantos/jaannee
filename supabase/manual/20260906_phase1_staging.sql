@@ -1,6 +1,6 @@
--- JaanNee Phase 1 — staging / provenance / validation (DRAFT)
+-- JaanNee Phase 1 — staging / provenance / validation
 -- Manual execution only. Do NOT apply through Lovable migrations.
--- Do NOT execute until owner (Johny) greenlights.
+-- Owner (Johny) greenlit apply 2026-09-06 via JAANNEE DIRECTOR.
 --
 -- Scope: ADDITIVE ops/staging tables only.
 -- Hard rules (JAANNEE_PRODUCT_RULES.md):
