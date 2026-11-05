@@ -1,0 +1,61 @@
+name: One-time TanStack security lockfile refresh
+on:
+  push:
+    branches:
+      - fix/tanstack-start-cve-2026-102989
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.0'
+      - name: Regenerate both package manager lockfiles
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          bun install --lockfile-only --ignore-scripts
+      - name: Assert vulnerability is patched
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+          const cases = [
+            ['@tanstack/react-start', [1, 168, 60]],
+            ['@tanstack/start-server-core', [1, 169, 39]],
+          ];
+          for (const [name, min] of cases) {
+            const version = lock.packages['node_modules/' + name]?.version;
+            if (!version) throw new Error('Missing dependency: ' + name);
+            const parts = version.split('.').slice(0, 3).map(Number);
+            const safe = parts[0] > min[0] || (parts[0] === min[0] &&
+              (parts[1] > min[1] || (parts[1] === min[1] && parts[2] >= min[2])));
+            if (!safe) throw new Error(name + '@' + version + ' is vulnerable');
+            console.log(name + '@' + version + ' meets security minimum');
+          }
+          NODE
+      - name: Commit regenerated locks to fix branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json bun.lock
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: refresh TanStack security lockfiles'
+            git push origin HEAD:"$GITHUB_REF"
+          fi
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run unit tests
+        run: npm run test -- --run
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
