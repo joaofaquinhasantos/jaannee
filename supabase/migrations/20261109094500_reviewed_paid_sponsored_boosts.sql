@@ -142,19 +142,17 @@ GRANT EXECUTE ON FUNCTION public.activate_paid_restaurant_boost(uuid,uuid,text,t
   TO service_role;
 
 -- HMAC-verified full refunds/disputes revoke a placement immediately.
--- The scheduled public query selects payment_status='paid' only.
+-- The public query selects payment_status='paid' only.
 CREATE FUNCTION public.revoke_restaurant_sponsored_boost(
   _payment_intent_id text, _event_id text, _reason text
 ) RETURNS boolean
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp
-AS $
+AS $$
 DECLARE
   boost public.restaurant_sponsored_boosts%ROWTYPE;
 BEGIN
-  IF _payment_intent_id !~ '^pi_[A-Za-z0-9]+
-
-    OR _event_id !~ '^evt_[A-Za-z0-9]+
-
+  IF _payment_intent_id !~ '^pi_[A-Za-z0-9]+$'
+    OR _event_id !~ '^evt_[A-Za-z0-9]+$'
     OR _reason NOT IN ('refunded','disputed') THEN
     RAISE EXCEPTION 'Invalid sponsored revocation';
   END IF;
@@ -169,7 +167,7 @@ BEGIN
   WHERE id=boost.id;
   RETURN true;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.revoke_restaurant_sponsored_boost(text,text,text)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.revoke_restaurant_sponsored_boost(text,text,text)
