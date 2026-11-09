@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft, ArrowRight, Bookmark, Check, Coffee, Compass, Heart,
   MapPin, RotateCcw, Search, Share2, Sparkles, Trophy, UserRound,
-  Users, UtensilsCrossed, X,
+  Users, UtensilsCrossed, Store, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { canCompareDemoDishes, countTrustedDemoPicks, discoverTrustedDemoDishes } from "@/lib/demo-discovery";
@@ -267,9 +267,15 @@ function DemoExperience() {
             </button>;
           })}
         </nav>
-        <button type="button" onClick={reset} className={buttonStyle + " min-h-10 px-2 sm:px-3"}>
-          <RotateCcw size={14}/><span className="hidden sm:inline">Reset demo</span><span className="sm:hidden">Reset</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to="/demo-business" search={{ screen: "home" }}
+            className="inline-flex min-h-10 items-center gap-1.5 border border-[#f77b61]/70 px-2 text-[11px] font-bold uppercase tracking-wide text-[#ffa38d] hover:bg-white/10 sm:px-3">
+            <Store size={15}/><span className="hidden sm:inline">For restaurants</span><span className="sm:hidden">Business</span>
+          </Link>
+          <button type="button" onClick={reset} className={buttonStyle + " min-h-10 px-2 sm:px-3"}>
+            <RotateCcw size={14}/><span className="hidden lg:inline">Reset demo</span>
+          </button>
+        </div>
       </div>
     </header>
 
