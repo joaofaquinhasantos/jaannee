@@ -19,16 +19,53 @@ export const Route=createFileRoute("/api/billing/stripe-webhook")({
         const {
           stripeBillingConfig,verifyStripeSignature,parseStripeSubscriptionEvent,
         }=await import("@/lib/stripe-billing.server");
-        let config:ReturnType<typeof stripeBillingConfig>;
-        try{config=stripeBillingConfig();}
-        catch{return new Response("Billing unavailable",{status:503});}
+        const webhookSecret=process.env.STRIPE_WEBHOOK_SECRET;
+        if(!webhookSecret ||
+          (process.env.ENABLE_RESTAURANT_BILLING!=="true" &&
+           process.env.ENABLE_SPONSORED_BOOSTS!=="true")){
+          return new Response("Payment integrations unavailable",{status:503});
+        }
         if(!verifyStripeSignature(
-          raw,request.headers.get("stripe-signature"),config.webhookSecret,
+          raw,request.headers.get("stripe-signature"),webhookSecret,
         )){
           return new Response("Invalid signature",{status:400});
         }
         let event:unknown;
         try{event=JSON.parse(raw);}catch{return new Response("Invalid JSON",{status:400});}
+
+        // One-time, prepaid and *admin-reviewed* Sponsored placements are
+        // completely separate from restaurant subscriptions.
+        if((event as any)?.type==="checkout.session.completed") {
+          if(process.env.ENABLE_SPONSORED_BOOSTS!=="true"){
+            return new Response("Sponsored payments disabled",{status:503});
+          }
+          try{
+            const {parsePaidBoostEvent,verifyBoostCheckoutLineItem}
+              =await import("@/lib/sponsored-billing.server");
+            const paid=parsePaidBoostEvent(event);
+            if(!paid)return new Response("Ignored non-boost checkout",{status:200});
+            await verifyBoostCheckoutLineItem(paid);
+            const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
+            const service=supabaseAdmin as any;
+            const result=await service.rpc("activate_paid_restaurant_boost",{
+              _boost_id:paid.boostId,_business_id:paid.businessId,
+              _session_id:paid.sessionId,_event_id:paid.eventId,
+              _payment_intent_id:paid.paymentIntentId,
+              _amount_total:paid.amountTotal,_currency:paid.currency,
+            });
+            if(result.error)throw new Error("Sponsorship payment recording failed");
+            return new Response("Sponsor payment recorded",{status:200});
+          }catch{
+            return new Response("Retry sponsored payment processing",{status:503});
+          }
+        }
+
+        if(process.env.ENABLE_RESTAURANT_BILLING!=="true"){
+          return new Response("Subscription billing disabled",{status:503});
+        }
+        let config:ReturnType<typeof stripeBillingConfig>;
+        try{config=stripeBillingConfig();}
+        catch{return new Response("Billing unavailable",{status:503});}
         let parsed:ReturnType<typeof parseStripeSubscriptionEvent>;
         try{parsed=parseStripeSubscriptionEvent(event,{pro:config.pro,growth:config.growth});}
         catch{
