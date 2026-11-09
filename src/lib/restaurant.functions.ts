@@ -586,7 +586,7 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
         .from("dishes")
         .select("id, name_en, name_th, photo_url, comparisons_count, elo, status, place:places(id, name)")
         .eq("place_id", data.placeId)
-        .in("status", ["pending", "approved"])
+        .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(60),
       (supabaseAdmin as any)

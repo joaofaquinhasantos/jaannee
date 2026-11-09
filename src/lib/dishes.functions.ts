@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { PUBLIC_RANK_THRESHOLD } from "@/lib/ranking";
+import { isPublicActivity } from "@/lib/activity-privacy";
 
 export { PUBLIC_RANK_THRESHOLD };
 
@@ -790,7 +791,7 @@ export const listActivityFeed = createServerFn({ method: "GET" })
     const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     return raw
       .map((item) => ({ ...item, profile: byId.get(item.user_id) ?? null }))
-      .filter((item) => item.type !== "tried" || (item.profile as any)?.tried_public !== false)
+      .filter(isPublicActivity)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 20);
   });
@@ -843,7 +844,7 @@ export const listFollowingActivityFeed = createServerFn({ method: "GET" })
     const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     return raw
       .map((item) => ({ ...item, profile: byId.get(item.user_id) ?? null }))
-      .filter((item) => item.type !== "tried" || (item.profile as any)?.tried_public !== false)
+      .filter(isPublicActivity)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 20);
   });
@@ -1363,7 +1364,7 @@ export const publicProfile = createServerFn({ method: "GET" })
         .from("dishes")
         .select(profileDishSelect)
         .eq("submitted_by", profile.id)
-        .in("status", ["pending", "approved"])
+        .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(60),
       profile.tried_public
