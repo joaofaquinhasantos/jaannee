@@ -163,6 +163,10 @@ function DemoExperience() {
     setRecommended({});
     setEditingPick(false);
     setComparison(null);
+    setCategory("");
+    setArea("");
+    setSearch("");
+    setShowCount(12);
     toast.message("Demo reset — no real account or database was changed");
   };
 
@@ -287,8 +291,8 @@ function DemoExperience() {
         {!search && !category && !area ? <section className="border-b border-white/10 bg-[#1b1917] px-4 py-10 sm:px-8">
           <Heading eyebrow="The social layer" title="Picks from people you trust"
             description="A recommendation is an intentional endorsement, not just a tried mark. All diners and endorsements below are fictional."/>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {demoPeople.slice(0, 3).map((person) => {
+          {demoPeople.some((person) => following.has(person.username)) ? <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {demoPeople.filter((person) => following.has(person.username)).slice(0, 3).map((person) => {
               const pick = person.picks[0];
               const sample = demoDishes.find((item) => item.id === pick.dishId)!;
               return <article key={person.username} className={border + " flex flex-col overflow-hidden"}>
@@ -311,7 +315,9 @@ function DemoExperience() {
                 </div>
               </article>;
             })}
-          </div>
+          </div> : <EmptyState title="Your demo circle is empty"
+            message="Follow fictional diners to see their deliberate recommendations here."
+            action="Explore people" onClick={() => go("people")}/>}
         </section> : null}
 
         <section className="px-4 py-10 sm:px-8">
