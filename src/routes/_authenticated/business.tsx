@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { BusinessAiImport, BusinessAiTranslate } from "@/components/BusinessAiMenu";
 import { BusinessBillingPanel } from "@/components/BusinessBillingPanel";
 import { BusinessGrowthPanel } from "@/components/BusinessGrowthPanel";
+import { BusinessSponsoredPanel } from "@/components/BusinessSponsoredPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -367,6 +368,7 @@ function BusinessWorkspace() {
 
           {businessId ? <BusinessBillingPanel businessId={businessId}/> : null}
           {businessId ? <BusinessGrowthPanel businessId={businessId}/> : null}
+          {businessId ? <BusinessSponsoredPanel businessId={businessId}/> : null}
         </> : null}
       </> : null}
     </div>
