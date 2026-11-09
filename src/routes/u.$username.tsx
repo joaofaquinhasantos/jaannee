@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Grid3X3, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { PublicPickGrid } from "@/components/PublicPickGrid";
+import { ShareButton } from "@/components/ShareButton";
+import { listPublicPicks } from "@/lib/recommendations.functions";
 import { followUser, myFollowingIds, publicProfile } from "@/lib/dishes.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -62,10 +65,18 @@ function PublicProfilePage() {
   const { lang, t } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"posts" | "tried">("tried");
+  const [activeTab, setActiveTab] = useState<"picks" | "posts" | "tried">("picks");
+  const [shareOrigin, setShareOrigin] = useState("");
+  useEffect(() => setShareOrigin(window.location.origin), []);
   const q = useQuery({
     ...publicProfileQuery(username),
     initialData: loadedProfile,
+  });
+  const picks = useQuery({
+    queryKey: ["public-picks", username],
+    queryFn: () => listPublicPicks({ data: { username } }),
+    enabled: Boolean(q.data),
+    staleTime: 60_000,
   });
   const [authed, setAuthed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -160,6 +171,14 @@ function PublicProfilePage() {
               ) : null}
             </div>
           </div>
+          {shareOrigin ? (
+            <ShareButton
+              url={`${shareOrigin}/u/${username}`}
+              title={`@${username} on JaanNee`}
+              text={copy("See the dishes I recommend on JaanNee.", "ดูจานที่ฉันแนะนำบน JaanNee")}
+              label={copy("Share profile", "แชร์โปรไฟล์")}
+            />
+          ) : null}
           {isSelf ? (
             <Link to="/profile">
               <Button variant="outline">{copy("Edit", "แก้ไข")}</Button>
@@ -185,7 +204,13 @@ function PublicProfilePage() {
       </section>
 
       <section className="mx-auto mt-8 max-w-5xl">
-        <div className="grid grid-cols-2 border-b border-border" role="tablist">
+        <div className="grid grid-cols-3 border-b border-border" role="tablist">
+          <ProfileTab
+            active={activeTab === "picks"}
+            label={copy("My picks", "จานแนะนำ")}
+            icon={<Utensils className="h-4 w-4" />}
+            onClick={() => setActiveTab("picks")}
+          />
           <ProfileTab
             active={activeTab === "tried"}
             label={t("profile_tried")}
@@ -201,7 +226,19 @@ function PublicProfilePage() {
         </div>
 
         <div className="mt-1">
-          {activeTab === "posts" ? (
+          {activeTab === "picks" ? (
+            picks.isError ? (
+              <Empty text={copy("Recommendations are unavailable right now.", "ยังไม่สามารถแสดงคำแนะนำได้")} />
+            ) : picks.isLoading ? (
+              <Empty text={copy("Loading recommendations…", "กำลังโหลดคำแนะนำ…")} />
+            ) : (
+              <PublicPickGrid
+                picks={picks.data ?? []}
+                lang={lang}
+                emptyText={copy("No recommendations shared yet.", "ยังไม่มีจานที่แนะนำ")}
+              />
+            )
+          ) : activeTab === "posts" ? (
             <ProfileDishGrid
               dishes={posted}
               lang={lang}
