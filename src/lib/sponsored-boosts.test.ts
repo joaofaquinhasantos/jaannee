@@ -9,6 +9,7 @@ const actions=readFileSync(new URL("./sponsored-boosts.functions.ts",import.meta
 const checkout=readFileSync(new URL("./sponsored-billing.server.ts",import.meta.url),"utf8");
 const webhook=readFileSync(new URL("../routes/api/billing/stripe-webhook.ts",import.meta.url),"utf8");
 const index=readFileSync(new URL("../routes/index.tsx",import.meta.url),"utf8");
+const socialFeed=readFileSync(new URL("../components/StitchSocialNewsFeed.tsx",import.meta.url),"utf8");
 const card=readFileSync(new URL("../components/SponsoredDiscoveryPlacement.tsx",import.meta.url),"utf8");
 const owner=readFileSync(new URL("../components/BusinessSponsoredPanel.tsx",import.meta.url),"utf8");
 const reviewer=readFileSync(new URL("../routes/_authenticated/sponsored-reviews.tsx",import.meta.url),"utf8");
@@ -86,8 +87,10 @@ describe("restaurant sponsored advertising safeguards",()=>{
     expect(webhook).toContain('details?.refunded!==true');
   });
   it("separates the sponsored slot from rankings and clearly discloses payment",()=>{
-    expect(index).toContain("<SponsoredDiscoveryPlacement categorySlug={categorySlug} areaSlug={areaSlug} />");
-    expect(index.indexOf("<SponsoredDiscoveryPlacement")).toBeGreaterThan(index.indexOf("<TrustedPicks"));
+    expect(index).toContain("StitchSocialNewsFeed");
+    expect(socialFeed).toContain("<SponsoredDiscoveryPlacement/>");
+    expect(socialFeed).toContain("forYouFeed");
+    expect(socialFeed).toContain("mostComparedFeed");
     expect(card).toContain('aria-label="Paid restaurant advertisement"');
     expect(card).toContain("Sponsored");
     expect(card).toContain("not a diner recommendation or ranking");
