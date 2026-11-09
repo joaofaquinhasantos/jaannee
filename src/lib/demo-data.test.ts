@@ -58,7 +58,7 @@ describe("isolated development demo", () => {
     expect(route).toContain('"noindex, nofollow, noarchive"');
     expect(route).toContain("DEMO_DISCLAIMER");
     expect(route).not.toMatch(/createServerFn|supabase\.|from\("dishes"\)|fetch\(/);
-    expect(root).toContain('if (pathname === "/demo") return;');
+    expect(root).toContain('pathname === "/demo" || pathname === "/demo-business"');
     expect(data).not.toMatch(/createServerFn|supabase\.|fetch\(/);
   });
 });
