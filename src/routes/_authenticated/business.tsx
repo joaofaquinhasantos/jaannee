@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, BookOpen, Check, Copy, LockKeyhole, Plus, QrCode, ShieldCheck, Store, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { BusinessAiImport, BusinessAiTranslate } from "@/components/BusinessAiMenu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,11 +36,14 @@ type MenuDraft = {
   priceThb: number;
   available: boolean;
   sortOrder: number;
+  priceReviewed: boolean;
+  approvedTranslations: Partial<Record<"zh"|"ja"|"fr",{name:string;description:string}>>;
 };
 
 const emptyItem = (): MenuDraft => ({
   category: "Mains", nameEn: "", nameTh: "", descriptionEn: "",
   descriptionTh: "", priceThb: 0, available: true, sortOrder: 0,
+  priceReviewed: true, approvedTranslations: {},
 });
 
 function BusinessWorkspace() {
@@ -103,7 +107,7 @@ function BusinessWorkspace() {
       priceThb: item.priceThb,
       available: item.available,
       sortOrder: item.sortOrder,
-      approvedTranslations: {},
+      approvedTranslations: item.approvedTranslations,
     } }),
     onSuccess: async () => {
       setMenuEditing(null);
@@ -253,6 +257,7 @@ function BusinessWorkspace() {
                 itemId: item.id, category: item.category, nameEn: item.name_en, nameTh: item.name_th || "",
                 descriptionEn: item.description_en || "", descriptionTh: item.description_th || "",
                 priceThb: Number(item.price_thb), available: item.available, sortOrder: item.sort_order,
+                priceReviewed: true, approvedTranslations: item.approved_translations || {},
               })}>Edit</Button>
               <Button size="sm" variant="outline" disabled={removeMenu.isPending}
                 onClick={() => { if (window.confirm("Remove this dish from your menu?")) removeMenu.mutate(item.id); }}
@@ -260,7 +265,7 @@ function BusinessWorkspace() {
             </div>)}
             {!menu.isLoading && !(menu.data ?? []).length ? <p className="text-sm text-muted-foreground">Your menu is empty. Add your first dish.</p> : null}
 
-            {menuEditing ? <div className="space-y-4 border-t border-border pt-5">
+            {menuEditing ? <div id="business-menu-editor" className="scroll-mt-24 space-y-4 border-t border-border pt-5">
               <h3 className="font-display text-2xl">{menuEditing.itemId ? "Edit dish" : "New dish"}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Dish name (English)" value={menuEditing.nameEn}
@@ -271,7 +276,7 @@ function BusinessWorkspace() {
                   onChange={(value) => setMenuEditing({ ...menuEditing, category: value })}/>
                 <label className="block space-y-1"><span className="text-sm font-semibold">Price (THB)</span>
                   <Input type="number" min={0} max={100000} step={1} value={menuEditing.priceThb}
-                    onChange={(e) => setMenuEditing({ ...menuEditing, priceThb: Number(e.target.value) || 0 })}/>
+                    onChange={(e) => setMenuEditing({ ...menuEditing, priceThb: Number(e.target.value) || 0, priceReviewed: true })}/>
                 </label>
               </div>
               <label className="block space-y-2"><span className="text-sm font-semibold">English description</span>
@@ -286,12 +291,39 @@ function BusinessWorkspace() {
                 <input type="checkbox" className="h-5 w-5" checked={menuEditing.available}
                   onChange={(e) => setMenuEditing({ ...menuEditing, available: e.target.checked })}/> Available
               </label>
+              {!menuEditing.priceReviewed ? <p role="alert" className="border-l-2 border-amber-400 p-3 text-xs leading-6">
+                AI could not verify the printed price. Check and edit the price before saving.
+              </p> : null}
+              {businessId && menuEditing.nameEn.trim() ? <BusinessAiTranslate
+                businessId={businessId}
+                original={{name:menuEditing.nameEn,description:menuEditing.descriptionEn}}
+                onApproveDraft={(language,draft)=>{
+                  setMenuEditing((current)=>current ? language==="th"
+                    ? {...current,nameTh:draft.name,descriptionTh:draft.description}
+                    : {...current,approvedTranslations:{...current.approvedTranslations,[language]:draft}}
+                    : current);
+                }}/>:null}
+              {Object.keys(menuEditing.approvedTranslations).length ?
+                <p className="text-xs text-muted-foreground">
+                  Approved translations: {Object.keys(menuEditing.approvedTranslations).join(", ")}. Save this dish to apply.
+                </p> : null}
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => saveMenu.mutate(menuEditing)} disabled={saveMenu.isPending || !menuEditing.nameEn.trim()}>Save dish</Button>
+                <Button onClick={() => saveMenu.mutate(menuEditing)}
+                  disabled={saveMenu.isPending || !menuEditing.nameEn.trim() || !menuEditing.priceReviewed}>Save dish</Button>
                 <Button variant="outline" onClick={() => setMenuEditing(null)}>Cancel</Button>
               </div>
             </div> : null}
           </section>
+
+          {businessId ? <BusinessAiImport businessId={businessId} onReview={(item)=>{
+            setMenuEditing({
+              category:item.category, nameEn:item.name, nameTh:"",
+              descriptionEn:item.description, descriptionTh:"",
+              priceThb:item.priceThb, available:true, sortOrder:menu.data?.length ?? 0,
+              priceReviewed:!item.needsPriceReview, approvedTranslations:{},
+            });
+            window.requestAnimationFrame(()=>document.getElementById("business-menu-editor")?.scrollIntoView({behavior:"smooth",block:"start"}));
+          }}/> : null}
 
           <section className="space-y-4 border border-border p-5 sm:p-7">
             <div className="flex items-center gap-3"><QrCode className="text-primary" size={22}/>
