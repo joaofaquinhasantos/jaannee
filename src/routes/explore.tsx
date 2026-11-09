@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, Plus } from "lucide-react";
-import { AppShell } from "@/components/AppShell";
+import { ArrowUpRight } from "lucide-react";
+import { StitchSocialShell } from "@/components/StitchSocialShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
 import { ReturnHub } from "@/components/ReturnHub";
@@ -208,7 +208,8 @@ function Index() {
   };
 
   return (
-    <AppShell tone="noir" fullBleed>
+    <StitchSocialShell>
+      <div className="noir-theme min-h-screen bg-[#111111] pb-24 text-white md:pb-0">
       <div className="sticky top-[61px] z-30 border-b border-white/10 bg-[#111111]/95 px-4 py-3 backdrop-blur md:top-[65px] md:px-8">
         <div className="grid items-center gap-3 lg:grid-cols-[auto_1fr]">
           <p className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/75 lg:block">
@@ -333,14 +334,9 @@ function Index() {
         <EmptyDiscover />
       )}
 
-      <Link
-        to="/submit"
-        aria-label={t("nav_submit")}
-        className="fixed bottom-24 right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:bottom-7 md:right-7"
-      >
-        <Plus className="h-5 w-5" aria-hidden="true" />
-      </Link>
-    </AppShell>
+
+      </div>
+    </StitchSocialShell>
   );
 }
 
