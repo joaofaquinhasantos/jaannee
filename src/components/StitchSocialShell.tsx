@@ -9,7 +9,7 @@ import "./StitchSocial.css";
 
 const mainNav = [
   { to: "/" as const, Icon: Home, en: "Home", th: "หน้าแรก" },
-  { to: "/rankings" as const, Icon: Compass, en: "Explore", th: "ค้นหา" },
+  { to: "/explore" as const, Icon: Compass, en: "Explore", th: "ค้นหา" },
   { to: "/submit" as const, Icon: Plus, en: "Add", th: "เพิ่มจาน" },
   { to: "/activity" as const, Icon: Bell, en: "Activity", th: "กิจกรรม" },
   { to: "/profile" as const, Icon: UserRound, en: "Profile", th: "โปรไฟล์" },
@@ -46,10 +46,10 @@ export function StitchSocialShell({ children }: { children: ReactNode }) {
       <p className="stitch-brand-subtitle">{copy("Your city. One delicious dish at a time.", "ค้นพบจานเด็ดในเมืองของคุณ")}</p>
       <nav className="stitch-sidebar-links">
         {mainNav.map(({to,Icon,en,th})=>{
-          const target=to==="/profile" && auth.status !=="in" ? "/auth" : to;
+          const target=(to==="/profile"||to==="/activity") && auth.status !=="in" ? "/auth" : to;
           const active=to==="/" ? path==="/" : path.startsWith(to);
           return <Link key={to} to={target}
-            search={target==="/auth"?{redirect:"/profile"}:undefined}
+            search={target==="/auth"?{redirect:to==="/activity"?"/activity":"/profile"}:undefined}
             aria-current={active?"page":undefined}
             title={copy(en,th)}
             className={"stitch-sidebar-link" + (active?" is-active":"")}>
@@ -86,7 +86,7 @@ export function StitchSocialShell({ children }: { children: ReactNode }) {
           <span className="stitch-topbar-caption">{copy("Bangkok food discoveries", "จานเด็ดกรุงเทพฯ")}</span>
         </div>
         <div className="stitch-top-actions">
-          <Link to="/rankings" aria-label={copy("Search dishes", "ค้นหาอาหาร")} className="stitch-icon-action">
+          <Link to="/explore" aria-label={copy("Search dishes", "ค้นหาอาหาร")} className="stitch-icon-action">
             <Search size={20} aria-hidden="true"/>
           </Link>
           <button type="button" onClick={changeTheme} className="stitch-icon-action"
@@ -108,7 +108,7 @@ export function StitchSocialShell({ children }: { children: ReactNode }) {
           onClick={()=>setMore(false)}>
           <Store size={18}/>{copy("Restaurant workspace", "เครื่องมือร้านอาหาร")}
         </Link>
-        <Link to="/rankings" onClick={()=>setMore(false)}>
+        <Link to="/explore" onClick={()=>setMore(false)}>
           <Search size={18}/>{copy("Find dishes", "ค้นหาอาหาร")}
         </Link>
       </div>:null}
@@ -121,7 +121,7 @@ export function StitchSocialShell({ children }: { children: ReactNode }) {
     <nav className="stitch-bottom-navigation" aria-label={copy("Mobile navigation", "เมนูมือถือ")}>
       {mainNav.map(({to,Icon,en,th})=>{
         const active=to==="/" ? path==="/" : path.startsWith(to);
-        const target=to==="/profile" && auth.status!=="in"?"/auth":to;
+        const target=(to==="/profile"||to==="/activity") && auth.status!=="in"?"/auth":to;
         return <Link key={to} to={target}
           search={target==="/auth"?{redirect:"/profile"}:undefined}
           aria-current={active?"page":undefined}
