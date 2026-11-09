@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomBytes } from "node:crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { hasBusinessFeature } from "@/lib/business-entitlements";
 
@@ -219,6 +218,7 @@ export const claimFollowerVoucher=createServerFn({method:"POST"})
       .eq("campaign_id",c.id).eq("user_id",context.userId).maybeSingle();
     fail(old);
     if(old.data)return old.data;
+    const {randomBytes}=await import("node:crypto");
     const code="JNN-"+randomBytes(9).toString("base64url").toUpperCase();
     const insert=await db.from("restaurant_voucher_claims").insert({
       campaign_id:c.id,user_id:context.userId,claim_code:code,expires_at:c.ends_at,
