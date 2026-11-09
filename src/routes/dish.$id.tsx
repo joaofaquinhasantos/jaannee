@@ -23,6 +23,7 @@ import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
 import { FoodPostCreator } from "@/components/FoodPostCreator";
 import { DishRecommendation } from "@/components/DishRecommendation";
+import { FollowingDishPicks } from "@/components/FollowingDishPicks";
 import { RestaurantConnection } from "@/components/RestaurantConnection";
 import { Button } from "@/components/ui/button";
 import {
@@ -459,6 +460,8 @@ function DishPage() {
                 {t("tried_by")} {triedCount} {t(triedCount === 1 ? "diner" : "diners")}
               </p>
             ) : null}
+
+            <FollowingDishPicks dishId={id} enabled={isApproved && auth.status === "in"} />
 
             {auth.status === "in" && isTried && currentTriedDish && eligiblePartner ? (
               <section className="mt-8 border border-white/10 bg-white/[0.04] p-5 sm:p-6">
