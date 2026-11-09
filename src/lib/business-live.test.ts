@@ -42,7 +42,6 @@ describe("business onboarding security and data integrity", () => {
     expect(server).toContain('.eq("available", true)');
     expect(server).toContain('if (business.review_status !== "verified" || !business.verified_place_id)');
     expect(server).toContain('if (!items.data?.length)');
-    expect(server).toContain("No") === false;
     expect(publicUi).toContain('createFileRoute("/menu/$slug")');
     expect(publicUi).toContain("English fallback");
   });
