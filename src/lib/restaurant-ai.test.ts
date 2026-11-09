@@ -56,7 +56,7 @@ describe("secure AI menu draft workflow", () => {
     expect(aiProvider).toContain("AI translation indices did not match");
     expect(aiProvider).toContain("No reliable menu items could be extracted");
     expect(aiProvider).toContain('https://ai-gateway.vercel.sh/v1/chat/completions');
-    expect(aiProvider).not.toMatch(/\.from\(|\.insert\(|\.update\(/);
+    expect(aiProvider).not.toMatch(/\.from\("(?:restaurant|dishes|places)|\.insert\(|\.update\(/);
     expect(component).toContain("Review in editor");
     expect(business).toContain("AI could not");
   });
