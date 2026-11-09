@@ -33,6 +33,34 @@ export const Route=createFileRoute("/api/billing/stripe-webhook")({
         let event:unknown;
         try{event=JSON.parse(raw);}catch{return new Response("Invalid JSON",{status:400});}
 
+        // Full payment refunds and disputes end sponsored exposure immediately.
+        // This is server-only and is processed only after Stripe HMAC verification.
+        const webhookEvent=event as any;
+        if(webhookEvent?.type==="charge.refunded" ||
+           webhookEvent?.type==="charge.dispute.created") {
+          const details=webhookEvent.data?.object;
+          const reason=webhookEvent.type==="charge.refunded"?"refunded":"disputed";
+          if(reason==="refunded" && details?.refunded!==true){
+            return new Response("Partial charge adjustment ignored",{status:200});
+          }
+          const intent=details?.payment_intent;
+          if(typeof intent!=="string" || !/^pi_[A-Za-z0-9]+$/.test(intent)){
+            return new Response("Non-sponsored payment event ignored",{status:200});
+          }
+          try{
+            const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
+            const result=await (supabaseAdmin as any).rpc("revoke_restaurant_sponsored_boost",{
+              _payment_intent_id:intent,
+              _event_id:webhookEvent.id,
+              _reason:reason,
+            });
+            if(result.error)throw new Error("Refund revocation failed");
+            return new Response("Payment revocation processed",{status:200});
+          }catch{
+            return new Response("Retry payment revocation",{status:503});
+          }
+        }
+
         // One-time, prepaid and *admin-reviewed* Sponsored placements are
         // completely separate from restaurant subscriptions.
         if((event as any)?.type==="checkout.session.completed") {
