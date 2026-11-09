@@ -6,6 +6,7 @@ import {
   Users, UtensilsCrossed, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { countTrustedDemoPicks, discoverTrustedDemoDishes } from "@/lib/demo-discovery";
 import {
   DEMO_DISCLAIMER, demoAreas, demoCategories, demoDishes,
   demoPeople, demoRestaurants, filterDemoDishes, rankDemoDishes,
@@ -74,25 +75,30 @@ function Avatar({ person }: { person: DemoPerson }) {
 }
 
 function SampleDishCard({
-  dish, navigate, saved, toggleSave,
+  dish, navigate, saved, toggleSave, trustedCount = 0,
 }: {
   dish: DemoDish; navigate: DemoNavigation; saved: boolean; toggleSave: (id: string) => void;
+  trustedCount?: number;
 }) {
   const place = restaurantFor(dish);
   return <article className={border + " group relative flex flex-col overflow-hidden"}>
-    <button type="button" onClick={() => navigate("dish", dish.id)} className="relative aspect-[5/4] overflow-hidden text-left">
+    <button type="button" onClick={() => navigate("dish", dish.id)} className="relative aspect-[5/4] overflow-hidden bg-[#28231e] text-left">
       <Photo dish={dish} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
       <span className="absolute left-3 top-3 bg-[#151414]/85 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200">Demo dish</span>
       <span className="absolute bottom-3 left-3 bg-black/75 px-2.5 py-1 text-xs font-bold">Sample score {dish.score}</span>
     </button>
-    <div className="flex flex-1 flex-col gap-2 p-4">
-      <p className={caption + " text-[#f67b65]"}>{dish.category}</p>
+    <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
+      <p className={caption + " truncate text-[#f67b65]"}>{dish.category}</p>
       <button type="button" onClick={() => navigate("dish", dish.id)}
-        className="text-left font-display text-[1.75rem] leading-tight hover:text-[#fb725d]">{dish.name}</button>
+        className="min-h-12 text-left font-display text-xl leading-tight hover:text-[#fb725d] sm:text-[1.75rem]">{dish.name}</button>
       <button type="button" onClick={() => navigate("place", place.id)}
-        className="text-left text-xs text-white/65 hover:text-white">{place.name} · {place.area}</button>
+        className="line-clamp-2 text-left text-xs leading-5 text-white/65 hover:text-white">{place.name} · {place.area}</button>
+      {trustedCount > 0 ? <p className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-200">
+        <Heart size={13} aria-hidden="true" />
+        {trustedCount} {trustedCount === 1 ? "pick" : "picks"} from your circle
+      </p> : null}
       <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-3">
-        <span className="text-sm font-semibold">฿{dish.price}<span className="ml-2 text-[10px] font-normal text-white/40">sample price</span></span>
+        <span className="text-sm font-semibold">฿{dish.price}<span className="ml-2 hidden text-[10px] font-normal text-white/40 sm:inline">sample price</span></span>
         <button type="button" onClick={() => toggleSave(dish.id)} aria-label={saved ? "Unsave demo dish" : "Save demo dish"}
           aria-pressed={saved} className="grid h-10 w-10 place-items-center border border-white/20 text-white hover:border-[#f45a45]">
           <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
@@ -109,6 +115,7 @@ function DemoExperience() {
   const [category, setCategory] = useState("");
   const [area, setArea] = useState("");
   const [showCount, setShowCount] = useState(12);
+  const [showFriendsOnly, setShowFriendsOnly] = useState(false);
   const [saved, setSaved] = useState<Set<string>>(() => new Set());
   const [tried, setTried] = useState<Set<string>>(() => new Set());
   const [recommended, setRecommended] = useState<Record<string, string>>({});
@@ -119,6 +126,7 @@ function DemoExperience() {
 
   const go: DemoNavigation = (nextView, nextId) => {
     setEditingPick(false);
+    setComparison(null);
     void navigate({ to: "/demo", search: { view: nextView, id: nextId } });
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
@@ -167,6 +175,7 @@ function DemoExperience() {
     setArea("");
     setSearch("");
     setShowCount(12);
+    setShowFriendsOnly(false);
     toast.message("Demo reset — no real account or database was changed");
   };
 
@@ -186,6 +195,18 @@ function DemoExperience() {
     () => filterDemoDishes(demoDishes, { category, area, query: search }),
     [search, category, area],
   );
+  const trustedCounts = useMemo(
+    () => countTrustedDemoPicks(demoPeople, following),
+    [following],
+  );
+  const personalMatches = useMemo(
+    () => discoverTrustedDemoDishes(matching, trustedCounts),
+    [matching, trustedCounts],
+  );
+  const visibleDishes = showFriendsOnly ? personalMatches : rankDemoDishes(matching);
+  const jumpToResults = () => {
+    document.getElementById("demo-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const dish = demoDishes.find((entry) => entry.id === id);
   const restaurant = demoRestaurants.find((entry) => entry.id === id);
   const profile = demoPeople.find((entry) => entry.username === id);
@@ -225,10 +246,10 @@ function DemoExperience() {
   </div>;
 
   return <div className="noir-theme min-h-screen bg-[#131211] pb-24 text-[#faf8f4] md:pb-0">
-    <div className="sticky top-0 z-50 border-b border-amber-300/30 bg-[#3b281b] px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide text-amber-100 sm:text-xs">
+    <div className="border-b border-amber-300/30 bg-[#3b281b] px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide text-amber-100 sm:text-xs">
       {DEMO_DISCLAIMER}
     </div>
-    <header className="sticky top-[33px] z-40 border-b border-white/10 bg-[#171615]/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#171615]/95 backdrop-blur">
       <div className="mx-auto flex min-h-16 max-w-[92rem] items-center justify-between gap-4 px-4 sm:px-7">
         <button type="button" onClick={() => go("discover")} aria-label="Open JaanNee demo homepage"
           className="flex items-center gap-2 text-left"><span className="h-8 w-1 bg-[#df4530]"/><span className="font-display text-3xl">JaanNee</span><span className="self-start text-[9px] font-black uppercase tracking-widest text-amber-300">Demo</span></button>
@@ -254,9 +275,12 @@ function DemoExperience() {
     <main className="mx-auto min-h-[75vh] max-w-[92rem]">
       {view === "discover" ? <>
         <section className="grid border-b border-white/10 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="flex min-h-[25rem] flex-col justify-center px-5 py-12 sm:px-9 lg:px-12">
+          <div className="relative flex min-h-[22rem] flex-col justify-center overflow-hidden px-5 py-10 sm:px-9 lg:min-h-[31rem] lg:px-12 lg:py-14">
+            <Photo dish={demoDishes[8]} className="absolute inset-0 h-full w-full object-cover opacity-[0.23] lg:hidden" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#111]/80 via-[#111]/65 to-[#111]/60 lg:hidden" />
+            <div className="relative z-10">
             <Label>Bangkok, dish by dish · Interactive preview</Label>
-            <h1 className="mt-6 max-w-3xl font-display text-[clamp(4rem,8vw,8.5rem)] leading-[0.82] tracking-[-0.055em]">
+            <h1 className="mt-5 max-w-3xl font-display text-[clamp(3.6rem,8vw,8.5rem)] leading-[0.9] tracking-[-0.05em]">
               What are you <em className="text-[#e45540]">craving?</em>
             </h1>
             <p className="mt-6 max-w-lg text-base leading-7 text-white/65">
@@ -267,9 +291,19 @@ function DemoExperience() {
               <span className="sr-only">Search sample food, restaurants and areas</span>
               <input type="search" placeholder="Search pad kra pao, noodles, Ari…" value={search}
                 onChange={(event) => { setSearch(event.target.value); setShowCount(12); }}
-                className="h-14 w-full border border-white/25 bg-white/10 pl-12 pr-4 text-base text-white outline-none placeholder:text-white/40 focus:border-[#f76e58]"/>
+                onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); jumpToResults(); } }}
+                className="h-14 w-full border border-white/25 bg-[#141313]/85 pl-12 pr-4 text-base text-white outline-none placeholder:text-white/50 focus:border-[#f76e58]"/>
             </label>
-            <p className="mt-4 text-xs text-white/45">40 fictional dishes · 10 fictional venues · 6 sample diners</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["Pad Kra Pao", "Khao Soi", "Specialty Coffee"] as const).map((item) => (
+                <button type="button" key={item} onClick={() => { setCategory(item); setShowCount(12); jumpToResults(); }}
+                  className="min-h-10 border border-white/30 bg-black/45 px-3 text-xs font-semibold text-white hover:border-[#e85f4a]">
+                  {item}
+                </button>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-white/60">40 fictional dishes · 10 fictional venues · 6 sample diners</p>
+            </div>
           </div>
           <button type="button" onClick={() => go("dish", "khao-soi-chicken")}
             className="group relative hidden min-h-[31rem] overflow-hidden bg-[#241c17] text-left lg:block">
@@ -283,7 +317,7 @@ function DemoExperience() {
           </button>
         </section>
 
-        <section className="border-b border-white/10 px-4 py-9 sm:px-8">
+        <section id="demo-filters" className="border-b border-white/10 px-4 py-7 sm:px-8 sm:py-9">
           <Heading eyebrow="Find your next meal" title="Browse by dish and area" description="Search by food, cuisine, restaurant concept or Bangkok neighborhood."/>
           {filters}
         </section>
@@ -320,25 +354,44 @@ function DemoExperience() {
             action="Explore people" onClick={() => go("people")}/>}
         </section> : null}
 
-        <section className="px-4 py-10 sm:px-8">
+        <section id="demo-results" className="scroll-mt-24 px-4 py-10 sm:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <Heading eyebrow="The catalog" title={search || category || area ? "Your search results" : "Dishes worth discovering"}
-              description={"Showing " + matching.length + " fictional entries. Scores, prices and photos are illustrative."}/>
+              description={showFriendsOnly
+                ? "Only explicit sample recommendations from diners you follow. These are not ranking votes."
+                : "Scores, prices and photos are illustrative; sort order is a sample leaderboard."}/>
+            <p role="status" aria-live="polite" className="text-xs text-white/55">
+              {visibleDishes.length} {visibleDishes.length === 1 ? "dish" : "dishes"} shown
+            </p>
             <button type="button" onClick={() => go("rankings")} className={buttonStyle}>View sample rankings <ArrowRight size={16}/></button>
           </div>
-          {matching.length ? <>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {rankDemoDishes(matching).slice(0, showCount).map((item) =>
-                <SampleDishCard key={item.id} dish={item} navigate={go} saved={saved.has(item.id)} toggleSave={toggleSaved}/>)}
+          <div className="mt-5 flex flex-wrap gap-2" aria-label="Discovery preference">
+            <Pill selected={!showFriendsOnly} onClick={() => { setShowFriendsOnly(false); setShowCount(12); }}>
+              All dishes
+            </Pill>
+            <Pill selected={showFriendsOnly} onClick={() => { setShowFriendsOnly(true); setShowCount(12); }}>
+              From my circle ({personalMatches.length})
+            </Pill>
+            {showFriendsOnly ? <button type="button" className="min-h-10 px-3 text-xs font-semibold text-[#f8927f] hover:text-white"
+              onClick={() => go("people")}>Manage follows <ArrowRight size={13} className="inline"/></button> : null}
+          </div>
+          {visibleDishes.length ? <>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleDishes.slice(0, showCount).map((item) =>
+                <SampleDishCard key={item.id} dish={item} navigate={go} saved={saved.has(item.id)}
+                  trustedCount={trustedCounts.get(item.id) ?? 0} toggleSave={toggleSaved}/>)}
             </div>
-            {matching.length > showCount ? <button type="button" onClick={() => setShowCount(showCount + 12)} className={buttonStyle + " mt-7 w-full"}>
-              Show more dishes ({matching.length - showCount} remaining)
+            {visibleDishes.length > showCount ? <button type="button" onClick={() => setShowCount(showCount + 12)} className={buttonStyle + " mt-7 w-full"}>
+              Show more dishes ({visibleDishes.length - showCount} remaining)
             </button> : null}
           </> : <div className={border + " mt-6 p-8 text-center"}>
             <Search className="mx-auto text-white/40" size={28}/>
             <h3 className="mt-3 font-display text-3xl">No matches found</h3>
-            <p className="mt-2 text-sm text-white/60">Try another search or reset the filters.</p>
-            <button type="button" onClick={() => { setSearch(""); setCategory(""); setArea(""); }} className={buttonStyle + " mt-4"}>Clear filters</button>
+            <p className="mt-2 text-sm text-white/60">
+              {showFriendsOnly ? "None of the people you follow recommended a dish matching these filters." : "Try another search or reset the filters."}
+            </p>
+            <button type="button" onClick={() => { setSearch(""); setCategory(""); setArea(""); setShowFriendsOnly(false); }}
+              className={buttonStyle + " mt-4"}>Show all sample dishes</button>
           </div>}
         </section>
 
