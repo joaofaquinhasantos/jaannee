@@ -116,6 +116,8 @@ CREATE INDEX restaurant_loyalty_actions_program_idx ON public.restaurant_loyalty
 ALTER TABLE public.restaurant_loyalty_actions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.restaurant_loyalty_actions FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.restaurant_loyalty_actions TO service_role;
+CREATE POLICY "loyalty audit denied to browsers" ON public.restaurant_loyalty_actions
+ FOR ALL TO authenticated USING(false) WITH CHECK(false);
 
 -- Atomic, staff-confirmed visit/reward; must be called only through the
 -- authenticated server after validating the guest's signed short-lived code.
