@@ -581,7 +581,7 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
       throw new Error(profile.error.message);
     }
     if (!profile.data) return null;
-    const [dishes, gallery, updates] = await Promise.all([
+    const [dishes, gallery, updates, officialMenu] = await Promise.all([
       (supabaseAdmin as any)
         .from("dishes")
         .select("id, name_en, name_th, photo_url, comparisons_count, elo, status, place:places(id, name)")
@@ -604,7 +604,17 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order("published_at", { ascending: false })
         .limit(12),
+      (supabaseAdmin as any)
+        .from("restaurant_businesses")
+        .select("slug")
+        .eq("verified_place_id", data.placeId)
+        .eq("review_status", "verified")
+        .not("published_at", "is", null)
+        .maybeSingle(),
     ]);
+    if (officialMenu.error && !missingRestaurantSchema(officialMenu.error)) {
+      throw new Error(officialMenu.error.message);
+    }
     if (dishes.error) throw new Error(dishes.error.message);
     if (gallery.error && !missingRestaurantSchema(gallery.error)) {
       throw new Error(gallery.error.message);
@@ -614,6 +624,7 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
     }
     return {
       ...profile.data,
+      menu_url: officialMenu.data?.slug ? "/menu/" + officialMenu.data.slug : profile.data.menu_url,
       dishes: dishes.data ?? [],
       gallery: gallery.error && missingRestaurantSchema(gallery.error) ? [] : gallery.data ?? [],
       updates: updates.error && missingRestaurantSchema(updates.error) ? [] : updates.data ?? [],
