@@ -191,7 +191,7 @@ export function sampleQrDestination(origin: string): string {
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("QR menu requires an HTTP(S) destination");
   }
-  return new URL("/demo-business?screen=guest&sample=1", url).toString();
+  return new URL("/demo-business?screen=preview&sample=1", url).toString();
 }
 
 export function previewQrImageUrl(destination: string, customBrand = false): string {
