@@ -1,0 +1,24 @@
+name: Validate Stitch responsive social UI
+on:
+  push:
+    branches: ["feature/stitch-responsive-social-feed"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Unit and regression tests
+        run: npm run test -- --run
+      - name: Build and generate TanStack routes
+        run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
