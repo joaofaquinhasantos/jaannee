@@ -173,6 +173,16 @@ function Admin() {
         <span>Bangkok catalogue</span>
         <span>Live moderation</span>
       </div>
+      <nav aria-label="Additional moderation queues" className="mt-6 flex flex-wrap gap-3 text-sm">
+        <Link to="/business-reviews"
+          className="inline-flex min-h-11 items-center border border-primary/30 px-4 font-semibold hover:border-primary">
+          Verify restaurant ownership
+        </Link>
+        <Link to="/sponsored-reviews"
+          className="inline-flex min-h-11 items-center border border-primary/30 px-4 font-semibold hover:border-primary">
+          Moderate Sponsored advertisements
+        </Link>
+      </nav>
       <Tabs value={section} onValueChange={changeSection} className="stitch-workspace mt-8">
         <TabsList className="stitch-workspace-nav h-auto w-full justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
