@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useI18n } from "@/lib/i18n";
-import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
@@ -40,7 +39,7 @@ function AuthPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
-  const redirectTo = redirect?.startsWith("/") ? redirect : "/";
+  const redirectTo = redirect && /^\/(?!\/)/.test(redirect) ? redirect : "/";
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -65,16 +64,18 @@ function AuthPage() {
 
   const signInGoogle = async () => {
     setGoogleLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}${redirectTo}`,
+    // Send OAuth back through this route, which completes the Supabase session
+    // before navigating to the originally requested local page.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth?redirect=${encodeURIComponent(redirectTo)}`,
+      },
     });
-    if (result.error) {
+    if (error) {
       setGoogleLoading(false);
-      toast.error(result.error.message ?? "Google sign-in failed");
-      return;
+      toast.error(error.message ?? "Google sign-in failed");
     }
-    if (result.redirected) return;
-    navigate({ to: redirectTo });
   };
 
   return (
