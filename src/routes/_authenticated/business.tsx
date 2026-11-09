@@ -145,7 +145,7 @@ function BusinessWorkspace() {
           One account works for both diners and businesses. No payment is required for basic menu tools.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-xs">
-          <Link to="/restaurant" className="underline underline-offset-4">Claim an existing restaurant instead</Link>
+          <Link to="/restaurant" search={{ demo: false }} className="underline underline-offset-4">Claim an existing restaurant instead</Link>
           <Link to="/demo-business" search={{ screen: "home" }} className="underline underline-offset-4">
             Explore the business concept demo
           </Link>
