@@ -3,6 +3,7 @@ import {
   Outlet,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -13,7 +14,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -175,15 +175,28 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      // Private query keys are not allowed to survive an account boundary.
-      queryClient.clear();
-      router.invalidate();
+    // The isolated demo must never initialize the Supabase auth client.
+    // Import it lazily only while navigating the real application.
+    if (pathname === "/demo") return;
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+    void import("@/integrations/supabase/client").then(({ supabase }) => {
+      if (cancelled) return;
+      const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        // Private query keys must never survive an account boundary.
+        queryClient.clear();
+        router.invalidate();
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
     });
-    return () => sub.subscription.unsubscribe();
-  }, [router, queryClient]);
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [router, queryClient, pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>
