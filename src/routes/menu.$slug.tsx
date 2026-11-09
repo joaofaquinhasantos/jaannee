@@ -41,6 +41,11 @@ function PublishedBusinessMenu() {
   }
 
   const sections: string[] = Array.from(new Set<string>(menu.dishes.map((dish: any) => String(dish.category || "Menu"))));
+  const offeredLanguages = (Object.keys(languages) as Language[]).filter((lang) =>
+    lang === "en" ||
+    (lang === "th" ? menu.dishes.some((dish: any) => Boolean(dish.name_th?.trim())) :
+      menu.dishes.some((dish: any) => Boolean(dish.approved_translations?.[lang]?.name))),
+  );
   const langName = (item: any) => {
     if (language === "en") return item.name_en;
     if (language === "th") return item.name_th || item.name_en;
@@ -74,7 +79,7 @@ function PublishedBusinessMenu() {
           <Globe size={16}/> Menu language
         </p>
         <div className="mt-3 flex flex-wrap gap-2" aria-label="Menu languages">
-          {(Object.keys(languages) as Language[]).map((lang) =>
+          {offeredLanguages.map((lang) =>
             <button type="button" key={lang} onClick={() => setLanguage(lang)} aria-pressed={lang === language}
               className={"min-h-10 border px-3 text-xs font-bold " +
                 (language === lang ? "border-[#a63f2e] bg-[#a63f2e] text-white" : "border-[#cabdaf] text-[#5b5149] hover:border-[#b74835]")}>
