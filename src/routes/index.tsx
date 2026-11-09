@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
 import { ReturnHub } from "@/components/ReturnHub";
+import { TrustedPicks } from "@/components/TrustedPicks";
 import {
   InterestFollowControls,
   useInterestFollows,
@@ -227,6 +228,7 @@ function Index() {
         </div>
       </div>
 
+      {!hasFilters ? <TrustedPicks /> : null}
       <TriedActivation dishes={dishRows} />
 
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
