@@ -11,13 +11,22 @@ import { followUser, myFollowingIds, publicProfile } from "@/lib/dishes.function
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { getRequestOrigin } from "@/lib/origin.functions";
 
 export const Route = createFileRoute("/u/$username")({
-  loader: ({ params }) => publicProfile({ data: { username: params.username } }),
-  head: ({ params }) => {
-    const url = `https://jaannee.lovable.app/u/${params.username}`;
+  loader: async ({ params }) => {
+    const [profile, origin] = await Promise.all([
+      publicProfile({ data: { username: params.username } }),
+      getRequestOrigin(),
+    ]);
+    return { profile, origin };
+  },
+  head: ({ params, loaderData }) => {
+    const url = loaderData?.origin
+      ? `${loaderData.origin}/u/${params.username}`
+      : `/u/${params.username}`;
     const title = `@${params.username} on JaanNee`;
-    const desc = `See the dishes @${params.username} has tried, posted, and compared as a diner on JaanNee's dish-by-dish leaderboard.`;
+    const desc = `See the dishes @${params.username} explicitly recommends on JaanNee. Their picks are separate from community rankings.`;
     return {
       meta: [
         { title },
@@ -29,7 +38,7 @@ export const Route = createFileRoute("/u/$username")({
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: desc },
       ],
-      links: [{ rel: "canonical", href: url }],
+      links: loaderData?.origin ? [{ rel: "canonical", href: url }] : [],
       scripts: [
         {
           type: "application/ld+json",
@@ -61,7 +70,7 @@ function publicProfileQuery(username: string) {
 
 function PublicProfilePage() {
   const { username } = Route.useParams();
-  const loadedProfile = Route.useLoaderData();
+  const { profile: loadedProfile } = Route.useLoaderData();
   const { lang, t } = useI18n();
   const copy = (en: string, th: string) => (lang === "th" ? th : en);
   const qc = useQueryClient();
