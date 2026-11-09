@@ -29,3 +29,18 @@ export function discoverTrustedDemoDishes(
       a.id.localeCompare(b.id),
     );
 }
+
+/**
+ * The real ranking mechanic is only available when a diner has tried both
+ * distinct dishes in the same dish type. Keep the demo faithful to that rule.
+ */
+export function canCompareDemoDishes(
+  first: DemoDish,
+  second: DemoDish,
+  triedIds: ReadonlySet<string>,
+): boolean {
+  return first.id !== second.id &&
+    first.category === second.category &&
+    triedIds.has(first.id) &&
+    triedIds.has(second.id);
+}
