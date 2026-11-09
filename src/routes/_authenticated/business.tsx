@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Check, Copy, LockKeyhole, Plus, QrCode, ShieldChe
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BusinessAiImport, BusinessAiTranslate } from "@/components/BusinessAiMenu";
+import { BusinessBillingPanel } from "@/components/BusinessBillingPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +15,7 @@ import {
   setBusinessMenuPublished, submitBusinessForReview, updateBusinessDraft,
   upsertBusinessMenuItem,
 } from "@/lib/business-live.functions";
-import { businessMenuUrl, RESTAURANT_BILLING_ENABLED } from "@/lib/business-entitlements";
+import { businessMenuUrl } from "@/lib/business-entitlements";
 
 export const Route = createFileRoute("/_authenticated/business")({
   head: () => ({
@@ -363,17 +364,7 @@ function BusinessWorkspace() {
             </>}
           </section>
 
-          <section className="flex flex-wrap items-center justify-between gap-4 border border-border p-5 sm:p-7">
-            <div><h2 className="font-display text-2xl">Upgrade to Pro or Growth</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                AI menu translation, branded QR, vouchers and loyalty are planned. No charges can be taken yet.
-              </p>
-            </div>
-            {RESTAURANT_BILLING_ENABLED ? null : <span className="border border-border px-3 py-2 text-xs font-bold uppercase">Coming soon · No payments</span>}
-            <Link to="/demo-business" search={{ screen: "plans" }} className="text-sm underline underline-offset-4">
-              See proposed prices
-            </Link>
-          </section>
+          {businessId ? <BusinessBillingPanel businessId={businessId}/> : null}
         </> : null}
       </> : null}
     </div>
