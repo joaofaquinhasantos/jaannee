@@ -162,6 +162,9 @@ export const listSponsoredDiscovery=createServerFn({method:"GET"})
       areaSlug:z.string().regex(/^[a-z0-9-]+$/).max(80).optional(),
     }).parse(v??{}))
   .handler(async({data})=>{
+    // Emergency off-switch: no sponsored content is exposed until reviewed
+    // pricing, refund handling and platform monitoring have been approved.
+    if(process.env.ENABLE_SPONSORED_BOOSTS!=="true")return null;
     const service=await db();
     const now=new Date().toISOString();
     const q=await service.from("restaurant_sponsored_boosts")
