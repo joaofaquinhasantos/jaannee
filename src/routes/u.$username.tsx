@@ -113,6 +113,7 @@ function PublicProfilePage() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["following"] });
       qc.invalidateQueries({ queryKey: ["public-profile", username] });
+      qc.invalidateQueries({ queryKey: ["following-picks"] });
       toast.success(vars.follow ? "Following" : "Unfollowed");
     },
     onError: (e: any) => toast.error(e.message),
