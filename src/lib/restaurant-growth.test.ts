@@ -78,7 +78,7 @@ describe("restaurant follows, vouchers and staff-verified loyalty",()=>{
   it("requires active Growth for promotions, offers and loyalty",()=>{
     expect(follow).toContain('hasBusinessFeature(b,"loyalty")');
     expect(loyalty).toContain('hasBusinessFeature(b.data,"loyalty")');
-    expect(loyalty).toContain("verified published Growth");
+    expect(loyalty).toContain("Verified Growth restaurant ownership required.");
     expect(migration).toContain("business.plan_tier<>'growth'");
     expect(migration).toContain("business.review_status<>'verified'");
   });
