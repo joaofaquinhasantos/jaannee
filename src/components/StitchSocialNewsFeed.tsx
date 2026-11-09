@@ -49,6 +49,7 @@ function shareDish(id:string){
 export function SocialFeedCard({row,lang}:{row:SocialFeedRow;lang:"en"|"th"}){
   const isPick=row.type==="pick";
   const dish=isPick?row.pick.dish:row.dish;
+  const discoveryDish=row.type==="discovery"?row.dish:null;
   const title=displayName(dish.name_en,dish.name_th,lang);
   const subtitle=lang==="en"?dish.name_th:dish.name_en;
   const img=dish.photo_url;
@@ -90,8 +91,8 @@ export function SocialFeedCard({row,lang}:{row:SocialFeedRow;lang:"en"|"th"}){
         {restaurant?<span className="inline-flex items-center gap-1">
           <MapPin size={14} aria-hidden="true"/>{restaurant}
         </span>:null}
-        {!isPick && dish.price_thb!=null?<span className="font-semibold">
-          ฿{Number(dish.price_thb).toLocaleString("en-TH")}
+        {discoveryDish && discoveryDish.price_thb!=null?<span className="font-semibold">
+          ฿{Number(discoveryDish.price_thb).toLocaleString("en-TH")}
         </span>:null}
       </div>
       {isPick?<p className="stitch-feed-copy">
@@ -116,8 +117,8 @@ export function SocialFeedCard({row,lang}:{row:SocialFeedRow;lang:"en"|"th"}){
           <Share2 size={15} aria-hidden="true"/>
           {lang==="th"?"แชร์":"Share"}
         </button>
-        {!isPick && (dish.comparisons_count??0)>0?<span className="stitch-feed-stat">
-          {dish.comparisons_count} {lang==="th"?"การเปรียบเทียบ":"comparisons"}
+        {discoveryDish && (discoveryDish.comparisons_count??0)>0?<span className="stitch-feed-stat">
+          {discoveryDish.comparisons_count} {lang==="th"?"การเปรียบเทียบ":"comparisons"}
         </span>:null}
         {isPick?<span className="stitch-feed-stat inline-flex items-center gap-1">
           <HeartHandshake size={14} aria-hidden="true"/>
