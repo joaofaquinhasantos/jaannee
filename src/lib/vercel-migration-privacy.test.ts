@@ -22,6 +22,15 @@ describe("Vercel migration privacy contract", () => {
     expect(publicSection).not.toContain('.in("status", ["pending", "approved"])');
   });
 
+  it("requires a verified user for private media previews", () => {
+    const photos = read("src/routes/photos.$.ts");
+    expect(photos).toContain("supabaseAdmin.auth.getUser(token)");
+    expect(photos).toContain('.eq("role", "admin")');
+    expect(photos).toContain("canPreviewPrivatePhoto(path, request)");
+    const admin = read("src/components/AdminPhoto.tsx");
+    expect(admin).toContain("Authorization: `Bearer ${token}`");
+  });
+
   it("does not serve arbitrary storage paths anonymously", () => {
     const photos = read("src/routes/photos.$.ts");
     expect(photos).toContain("isPublishedPhoto(path)");
