@@ -7,6 +7,7 @@ import { DishBrowser } from "@/components/DishBrowser";
 import { TriedActivation } from "@/components/TriedActivation";
 import { ReturnHub } from "@/components/ReturnHub";
 import { TrustedPicks } from "@/components/TrustedPicks";
+import { SponsoredDiscoveryPlacement } from "@/components/SponsoredDiscoveryPlacement";
 import {
   InterestFollowControls,
   useInterestFollows,
@@ -229,6 +230,7 @@ function Index() {
       </div>
 
       {!hasFilters ? <TrustedPicks /> : null}
+      <SponsoredDiscoveryPlacement categorySlug={categorySlug} areaSlug={areaSlug} />
       <TriedActivation dishes={dishRows} />
 
       {categorySlug && subtypeScoped && !subtypeSlug && activeSubtypes.length > 1 ? (
