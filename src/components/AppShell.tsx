@@ -164,8 +164,8 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-4">
             <Link
-              to={auth.status === "in" ? "/restaurant" : "/auth"}
-              search={auth.status === "out" ? { redirect: "/restaurant" } : undefined}
+              to={auth.status === "in" ? "/business" : "/auth"}
+              search={auth.status === "out" ? { redirect: "/business" } : undefined}
               className={
                 noir
                   ? "text-xs font-semibold text-white/75 hover:text-primary"
