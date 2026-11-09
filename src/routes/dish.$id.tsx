@@ -22,6 +22,7 @@ import { DishCard, statusLabel } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
 import { FoodPostCreator } from "@/components/FoodPostCreator";
+import { DishRecommendation } from "@/components/DishRecommendation";
 import { RestaurantConnection } from "@/components/RestaurantConnection";
 import { Button } from "@/components/ui/button";
 import {
@@ -529,6 +530,7 @@ function DishPage() {
                   {isSaved ? t("saved_for_later") : t("want_to_try")}
                 </Button>
               ) : null}
+              <DishRecommendation dishId={id} isApproved={isApproved} isTried={isTried} isSignedIn={auth.status === "in"} />
               <FoodPostCreator dish={dish} url={shareUrl} isTried={isTried} isSaved={isSaved} />
               {rank > 0 ? <RankingShare dish={dish} rank={rank} /> : null}
               {auth.status === "in" && auth.userId === dish.submitted_by ? (
