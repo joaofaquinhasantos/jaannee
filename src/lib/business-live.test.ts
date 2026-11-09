@@ -44,6 +44,8 @@ describe("business onboarding security and data integrity", () => {
     expect(server).toContain('if (!items.data?.length)');
     expect(publicUi).toContain('createFileRoute("/menu/$slug")');
     expect(publicUi).toContain("English fallback");
+    expect(publicUi).toContain("Menu temporarily unavailable");
+    expect(publicUi).toContain("unavailable: true");
   });
 
   it("keeps reviewer approval restricted to DB-authenticated administrators", () => {
