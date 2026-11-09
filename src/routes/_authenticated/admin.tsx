@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { AdminPhotoLink, AdminPhotoImage } from "@/components/AdminPhoto";
 import {
   amIAdmin,
   getAdminOverview,
@@ -943,21 +944,7 @@ function PendingList() {
             key={d.id}
             className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
           >
-            <a
-              href={d.photo_url || undefined}
-              target={d.photo_url ? "_blank" : undefined}
-              rel="noreferrer"
-              className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted"
-              aria-label={d.photo_url ? `Open photo for ${d.name_en}` : undefined}
-            >
-              {d.photo_url ? (
-                <img src={d.photo_url} className="h-full w-full object-cover" alt="" />
-              ) : (
-                <span className="flex h-full items-center justify-center text-center text-[10px] text-muted-foreground">
-                  No photo
-                </span>
-              )}
-            </a>
+            <AdminPhotoLink src={d.photo_url} name={d.name_en} />
             <PendingDishRow
               d={d}
               catsList={catsList}
@@ -1181,7 +1168,7 @@ function DishAdmin() {
           >
             <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
               {d.photo_url ? (
-                <img src={d.photo_url} alt="" className="h-full w-full object-cover" />
+                <AdminPhotoImage src={d.photo_url} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
                   No photo
