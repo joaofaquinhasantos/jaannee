@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BusinessAiImport, BusinessAiTranslate } from "@/components/BusinessAiMenu";
 import { BusinessBillingPanel } from "@/components/BusinessBillingPanel";
+import { BusinessGrowthPanel } from "@/components/BusinessGrowthPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -365,6 +366,7 @@ function BusinessWorkspace() {
           </section>
 
           {businessId ? <BusinessBillingPanel businessId={businessId}/> : null}
+          {businessId ? <BusinessGrowthPanel businessId={businessId}/> : null}
         </> : null}
       </> : null}
     </div>
