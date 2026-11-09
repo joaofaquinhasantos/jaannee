@@ -37,13 +37,33 @@ async function isPublishedPhoto(path: string): Promise<boolean> {
   return (verified.data?.length ?? 0) > 0;
 }
 
+/**
+ * Authenticated uploads remain private until published. Owners may preview
+ * their own uploads; administrators may review pending submissions. Browser
+ * images cannot attach auth headers, so admin UI fetches the blob explicitly.
+ */
+async function canPreviewPrivatePhoto(path: string, request: Request): Promise<boolean> {
+  const authorization = request.headers.get("authorization") ?? "";
+  if (!authorization.startsWith("Bearer ")) return false;
+  const token = authorization.slice("Bearer ".length).trim();
+  if (!token) return false;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data.user) return false;
+  if (path.startsWith(`${data.user.id}/`)) return true;
+  const role = await supabaseAdmin.from("user_roles").select("user_id")
+    .eq("user_id", data.user.id).eq("role", "admin").maybeSingle();
+  if (role.error) throw new Error("Unable to verify administrator photo access.");
+  return Boolean(role.data);
+}
+
 export const Route = createFileRoute("/photos/$")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
         const path = params._splat ?? "";
         if (!PHOTO_PATH.test(path)) return new Response("Bad request", { status: 400 });
-        if (!(await isPublishedPhoto(path))) {
+        if (!(await isPublishedPhoto(path)) && !(await canPreviewPrivatePhoto(path, request))) {
           return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
