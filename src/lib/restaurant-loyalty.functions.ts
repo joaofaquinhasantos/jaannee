@@ -56,12 +56,18 @@ export const configureRestaurantLoyalty=createServerFn({method:"POST"})
       check(c);
       if((c.count??0)>0)throw new Error("Visit threshold cannot change after diners join.");
     }
-    const r=await service.from("restaurant_loyalty_programs").upsert({
-      business_id:data.businessId,
+    const updates={
       title:data.title,reward_description:data.rewardDescription,
       visits_required:data.visitsRequired,active:data.active,
       updated_at:new Date().toISOString(),
-    },{onConflict:"business_id"}).select("id,active").single();
+    };
+    const r=existing.data
+      ? await service.from("restaurant_loyalty_programs").update(updates)
+          .eq("id",existing.data.id).eq("business_id",data.businessId)
+          .select("id,active").single()
+      : await service.from("restaurant_loyalty_programs").insert({
+          ...updates,business_id:data.businessId,
+        }).select("id,active").single();
     check(r);
     return r.data;
   });
