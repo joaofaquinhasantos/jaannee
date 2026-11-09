@@ -58,7 +58,7 @@ describe("secure AI menu draft workflow", () => {
     expect(aiProvider).toContain('https://ai-gateway.vercel.sh/v1/chat/completions');
     expect(aiProvider).not.toMatch(/\.from\(|\.insert\(|\.update\(/);
     expect(component).toContain("Review in editor");
-    expect(component).toContain("AI could not");
+    expect(business).toContain("AI could not");
   });
 
   it("requires explicit human approval and the normal menu Save action", () => {
