@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Globe, MapPin, ShieldCheck, UtensilsCrossed } from "lucide-react";
-import { AppShell } from "@/components/AppShell";
+
 import { getPublicBusinessMenu } from "@/lib/business-live.functions";
 
 type Language = "en" | "th" | "zh" | "fr" | "ja";
@@ -10,34 +10,46 @@ const languages: Record<Language,string> = {
 };
 
 export const Route = createFileRoute("/menu/$slug")({
-  loader: ({ params }) => getPublicBusinessMenu({ data: { slug: params.slug } }),
+  loader: async ({ params }) => {
+    try {
+      const menu = await getPublicBusinessMenu({ data: { slug: params.slug } });
+      return { menu, unavailable: false };
+    } catch {
+      // Do not silently invent a menu when Supabase is over quota or offline.
+      return { menu: null, unavailable: true };
+    }
+  },
   head: ({ loaderData }) => ({
     meta: [
-      { title: loaderData ? loaderData.name + " · Menu · JaanNee" : "Menu unavailable · JaanNee" },
-      { name: "description", content: loaderData ? "Browse the official menu of " + loaderData.name : "This menu has not been published." },
-      { name: "robots", content: loaderData ? "index,follow" : "noindex,nofollow" },
+      { title: loaderData?.menu ? loaderData.menu.name + " · Menu · JaanNee" : "Menu unavailable · JaanNee" },
+      { name: "description", content: loaderData?.menu
+        ? "Browse the official menu of " + loaderData.menu.name
+        : "This restaurant menu is not currently accessible." },
+      { name: "robots", content: loaderData?.menu ? "index,follow" : "noindex,nofollow" },
     ],
   }),
   component: PublishedBusinessMenu,
 });
 
 function PublishedBusinessMenu() {
-  const menu = Route.useLoaderData();
+  const { menu, unavailable } = Route.useLoaderData();
   const [language, setLanguage] = useState<Language>("en");
 
   if (!menu) {
-    return <AppShell tone="noir">
-      <main className="mx-auto max-w-lg py-20 text-center">
-        <ShieldCheck className="mx-auto text-primary" size={36}/>
-        <h1 className="mt-4 font-display text-4xl">Menu not available</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          This restaurant menu is unpublished, under review, or no longer available.
+    return <div className="flex min-h-screen items-center justify-center bg-[#171615] px-5 text-[#f9f5ed]">
+      <main className="w-full max-w-lg border border-white/15 p-8 text-center">
+        <ShieldCheck className="mx-auto text-[#f17a62]" size={36}/>
+        <h1 className="mt-4 font-display text-4xl">{unavailable ? "Menu temporarily unavailable" : "Menu not available"}</h1>
+        <p className="mt-4 text-sm leading-7 text-white/65">
+          {unavailable
+            ? "We cannot load this restaurant's published menu right now. Please try again later."
+            : "This restaurant menu has not been published, or is no longer available."}
         </p>
         <Link to="/" className="mt-6 inline-flex min-h-11 items-center gap-2 underline underline-offset-4">
           <ArrowLeft size={17}/> Explore JaanNee
         </Link>
       </main>
-    </AppShell>;
+    </div>;
   }
 
   const sections: string[] = Array.from(new Set<string>(menu.dishes.map((dish: any) => String(dish.category || "Menu"))));
