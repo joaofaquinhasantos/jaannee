@@ -19,10 +19,12 @@ CREATE TABLE public.restaurant_sponsored_boosts (
   review_note text,
   reviewed_at timestamptz,
   payment_status text NOT NULL DEFAULT 'unpaid'
-    CHECK (payment_status IN ('unpaid','paid','refunded')),
+    CHECK (payment_status IN ('unpaid','paid','refunded','disputed')),
   stripe_checkout_session_id text UNIQUE,
   stripe_payment_event_id text UNIQUE,
-  stripe_payment_intent_id text,
+  stripe_payment_intent_id text UNIQUE,
+  stripe_revocation_event_id text UNIQUE,
+  revoked_at timestamptz,
   paid_at timestamptz,
   starts_at timestamptz,
   ends_at timestamptz,
@@ -138,4 +140,38 @@ REVOKE ALL ON FUNCTION public.activate_paid_restaurant_boost(uuid,uuid,text,text
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.activate_paid_restaurant_boost(uuid,uuid,text,text,text,bigint,text)
   TO service_role;
+
+-- HMAC-verified full refunds/disputes revoke a placement immediately.
+-- The scheduled public query selects payment_status='paid' only.
+CREATE FUNCTION public.revoke_restaurant_sponsored_boost(
+  _payment_intent_id text, _event_id text, _reason text
+) RETURNS boolean
+LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp
+AS $
+DECLARE
+  boost public.restaurant_sponsored_boosts%ROWTYPE;
+BEGIN
+  IF _payment_intent_id !~ '^pi_[A-Za-z0-9]+
+
+    OR _event_id !~ '^evt_[A-Za-z0-9]+
+
+    OR _reason NOT IN ('refunded','disputed') THEN
+    RAISE EXCEPTION 'Invalid sponsored revocation';
+  END IF;
+  SELECT * INTO boost FROM public.restaurant_sponsored_boosts
+    WHERE stripe_payment_intent_id=_payment_intent_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+  IF boost.stripe_revocation_event_id=_event_id THEN RETURN false; END IF;
+  IF boost.payment_status<>'paid' THEN RETURN false; END IF;
+  UPDATE public.restaurant_sponsored_boosts SET
+    payment_status=_reason, stripe_revocation_event_id=_event_id,
+    revoked_at=now(), starts_at=NULL, ends_at=NULL, updated_at=now()
+  WHERE id=boost.id;
+  RETURN true;
+END;
+$;
+REVOKE ALL ON FUNCTION public.revoke_restaurant_sponsored_boost(text,text,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.revoke_restaurant_sponsored_boost(text,text,text)
+ TO service_role;
 COMMIT;
