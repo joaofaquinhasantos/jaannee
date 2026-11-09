@@ -267,6 +267,16 @@ function DemoBusinessPage() {
                   </label>
                   <div className="border-t border-white/10 pt-4">
                     <p className={kicker}>Multilingual menu</p>
+                    {!planHasFeature(plan, "ai_translation") ? <div className="mt-3 space-y-3 border border-white/10 p-3">
+                      <p className="text-xs text-white/65">Thai translation can be entered manually on Free. AI-assisted translation and more languages belong to Pro.</p>
+                      <Field label="Thai dish name (manual)" value={item.names.th}
+                        onChange={(text) => updateTranslation(item.id, "names", "th", text)}/>
+                      <label className="block space-y-2">
+                        <span className="text-xs font-bold uppercase tracking-wide text-white/75">Thai description (manual)</span>
+                        <textarea rows={2} maxLength={240} value={item.descriptions.th} className={field}
+                          onChange={(event) => updateTranslation(item.id, "descriptions", "th", event.target.value)}/>
+                      </label>
+                    </div> : null}
                     {planHasFeature(plan,"ai_translation") ? <>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {MENU_LANGUAGES.filter((lang) => lang !== "en").map((lang) =>
@@ -414,6 +424,16 @@ function DemoBusinessPage() {
                   }}>{tier === plan ? "Current preview tier" : "Preview " + offer.name} <ArrowRight size={15}/></button>
               </article>;
             })}
+          </div>
+          <div className={card}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className={kicker}>Optional advertising add-on</p>
+                <h3 className="mt-2 font-display text-3xl">Sponsored boosts</h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-white/60">Pay per campaign to show a clearly labeled Sponsored dish or promotion. Ad pricing and billing are not set, and boosts never alter community rankings.</p>
+              </div>
+              <span className="border border-amber-200/30 px-3 py-2 text-xs text-amber-200">Pricing TBD</span>
+            </div>
           </div>
           <Notice/>
         </> : null}
