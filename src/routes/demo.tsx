@@ -6,7 +6,7 @@ import {
   Users, UtensilsCrossed, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { countTrustedDemoPicks, discoverTrustedDemoDishes } from "@/lib/demo-discovery";
+import { canCompareDemoDishes, countTrustedDemoPicks, discoverTrustedDemoDishes } from "@/lib/demo-discovery";
 import {
   DEMO_DISCLAIMER, demoAreas, demoCategories, demoDishes,
   demoPeople, demoRestaurants, filterDemoDishes, rankDemoDishes,
@@ -137,6 +137,7 @@ function DemoExperience() {
   };
 
   const toggleTried = (dishId: string) => {
+    setComparison(null);
     setTried((current) => setMembership(current, dishId));
     if (tried.has(dishId)) {
       setRecommended((current) => {
@@ -303,6 +304,9 @@ function DemoExperience() {
               ))}
             </div>
             <p className="mt-4 text-xs text-white/60">40 fictional dishes · 10 fictional venues · 6 sample diners</p>
+            <button type="button" onClick={jumpToResults} className="mt-4 inline-flex min-h-11 items-center gap-2 border-b border-white/60 text-xs font-bold uppercase tracking-wide text-white hover:border-[#ff7964] hover:text-[#ff7964]">
+              See the dishes <ArrowRight size={16}/>
+            </button>
             </div>
           </div>
           <button type="button" onClick={() => go("dish", "khao-soi-chicken")}
@@ -530,20 +534,50 @@ function DemoExperience() {
             </section>
 
             {demoDishes.filter((other) => other.category === dish.category && other.id !== dish.id).length ? <section className="mt-10">
-              <Heading eyebrow="Try the interaction" title="Head-to-head comparison" description="Choose between two fictional dishes. This demo records no vote and changes no ranking."/>
+              <Heading eyebrow="Try the interaction" title="Head-to-head comparison" description="The real ranking flow only allows comparisons between two dishes you have tried. Here, no vote is sent and scores never change."/>
               {(() => {
                 const opponent = demoDishes.find((other) => other.category === dish.category && other.id !== dish.id)!;
-                return <div className={border + " mt-5 p-5"}>
-                  <p className="text-sm text-white/55">{dish.name} <span className="px-2 text-[#fa7761]">VS</span> {opponent.name}</p>
+                const eligible = canCompareDemoDishes(dish, opponent, tried);
+                return <div className={border + " mt-5 p-4 sm:p-5"}>
+                  <p className="text-sm text-white/65">{dish.name} <span className="px-2 font-bold text-[#fa7761]">VS</span> {opponent.name}</p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
-                    {[dish, opponent].map((option) => <button type="button" onClick={() => setComparison(option.id)}
-                      key={option.id} className={"overflow-hidden border text-left transition hover:border-[#f65a42] " + (comparison === option.id ? "border-[#f65a42]" : "border-white/15")}>
-                      <div className="aspect-[4/3]"><Photo dish={option} className="h-full w-full object-cover"/></div>
-                      <div className="p-3 text-xs font-bold sm:text-sm">{option.name}</div>
-                    </button>)}
+                    {[dish, opponent].map((option) => (
+                      <div key={option.id} className={"overflow-hidden border " + (comparison === option.id ? "border-[#f65a42]" : "border-white/15")}>
+                        <Photo dish={option} className="aspect-[4/3] w-full object-cover"/>
+                        <div className="flex flex-col gap-2 p-3">
+                          <p className="min-h-10 text-xs font-semibold leading-5 sm:text-sm">{option.name}</p>
+                          {tried.has(option.id) ? (
+                            <p className="inline-flex min-h-9 items-center gap-1 text-xs text-emerald-300"><Check size={14}/> Marked tried</p>
+                          ) : (
+                            <button type="button" onClick={() => toggleTried(option.id)}
+                              className="min-h-10 border border-[#f56b54]/50 px-2 text-xs font-semibold hover:bg-white/10">
+                              Mark tried (demo)
+                            </button>
+                          )}
+                          {eligible ? (
+                            <button type="button" onClick={() => setComparison(option.id)}
+                              aria-pressed={comparison === option.id}
+                              className={"min-h-11 px-2 text-xs font-bold uppercase tracking-wide " +
+                                (comparison === option.id ? "bg-[#e4523b] text-white" : "bg-white/15 text-white hover:bg-[#e4523b]")}>
+                              {comparison === option.id ? "Chosen" : "Prefer this"}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {comparison ? <p role="status" className="mt-4 text-sm text-[#f8917e]">Sample choice recorded for this session only. No real vote was sent.</p> : null}
-                  <button type="button" className={buttonStyle + " mt-4"} onClick={() => setComparison(null)}>Reset comparison</button>
+                  {!eligible ? (
+                    <p role="status" className="mt-4 border-l-2 border-amber-300/75 bg-amber-300/5 p-3 text-sm leading-6 text-amber-100">
+                      To compare fairly, first mark both dishes as tried. This only changes your temporary demo state.
+                    </p>
+                  ) : comparison ? (
+                    <p role="status" className="mt-4 border-l-2 border-[#f8917e] p-3 text-sm text-[#f8917e]">
+                      Sample preference recorded in this browser tab only. No real vote was sent or ranking changed.
+                    </p>
+                  ) : (
+                    <p className="mt-4 text-xs text-white/60">You've tried both. Choose your favorite to preview the vote flow.</p>
+                  )}
+                  {comparison ? <button type="button" className={buttonStyle + " mt-4"} onClick={() => setComparison(null)}>Choose again</button> : null}
                 </div>;
               })()}
             </section> : null}
