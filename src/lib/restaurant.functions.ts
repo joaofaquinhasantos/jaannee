@@ -606,7 +606,7 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
         .limit(12),
       (supabaseAdmin as any)
         .from("restaurant_businesses")
-        .select("slug")
+        .select("id,slug")
         .eq("verified_place_id", data.placeId)
         .eq("review_status", "verified")
         .not("published_at", "is", null)
@@ -625,6 +625,7 @@ export const getPublicRestaurantProfile = createServerFn({ method: "GET" })
     return {
       ...profile.data,
       menu_url: officialMenu.data?.slug ? "/menu/" + officialMenu.data.slug : profile.data.menu_url,
+      business_id: officialMenu.data?.id ?? null,
       dishes: dishes.data ?? [],
       gallery: gallery.error && missingRestaurantSchema(gallery.error) ? [] : gallery.data ?? [],
       updates: updates.error && missingRestaurantSchema(updates.error) ? [] : updates.data ?? [],
