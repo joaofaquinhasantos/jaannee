@@ -1,0 +1,24 @@
+name: Validate AI menu operations
+on:
+  push:
+    branches: ["feature/ai-menu-operations"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Unit and security tests
+        run: npm run test -- --run
+      - name: Generate TanStack route tree and production build
+        run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
