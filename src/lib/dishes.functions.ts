@@ -1364,7 +1364,7 @@ export const publicProfile = createServerFn({ method: "GET" })
         .from("dishes")
         .select(profileDishSelect)
         .eq("submitted_by", profile.id)
-        .in("status", ["pending", "approved"])
+        .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(60),
       profile.tried_public
