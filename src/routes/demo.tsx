@@ -322,38 +322,6 @@ function DemoExperience() {
           {filters}
         </section>
 
-        {!search && !category && !area ? <section className="border-b border-white/10 bg-[#1b1917] px-4 py-10 sm:px-8">
-          <Heading eyebrow="The social layer" title="Picks from people you trust"
-            description="A recommendation is an intentional endorsement, not just a tried mark. All diners and endorsements below are fictional."/>
-          {demoPeople.some((person) => following.has(person.username)) ? <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {demoPeople.filter((person) => following.has(person.username)).slice(0, 3).map((person) => {
-              const pick = person.picks[0];
-              const sample = demoDishes.find((item) => item.id === pick.dishId)!;
-              return <article key={person.username} className={border + " flex flex-col overflow-hidden"}>
-                <button type="button" onClick={() => go("dish", sample.id)} className="relative aspect-[16/9] overflow-hidden text-left">
-                  <Photo dish={sample} className="h-full w-full object-cover"/>
-                  <span className="absolute bottom-3 left-3 bg-black/75 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-200">Fictional pick</span>
-                </button>
-                <div className="flex flex-1 flex-col p-5">
-                  <button type="button" onClick={() => go("profile", person.username)} className="flex items-center gap-3 text-left">
-                    <Avatar person={person}/>
-                    <span className="text-sm font-semibold">{person.name}<span className="block text-xs font-normal text-white/45">@{person.username}</span></span>
-                  </button>
-                  <button type="button" onClick={() => go("dish", sample.id)} className="mt-4 text-left font-display text-3xl hover:text-[#fb725d]">{sample.name}</button>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-white/65">“{pick.note}”</p>
-                  <button type="button" onClick={() => toggleFollow(person.username)}
-                    className={buttonStyle + " mt-5 w-full " + (following.has(person.username) ? "border-[#eb5a42] text-[#ff8c79]" : "")}>
-                    {following.has(person.username) ? <Check size={15}/> : <Users size={15}/>}
-                    {following.has(person.username) ? "Following in demo" : "Follow in demo"}
-                  </button>
-                </div>
-              </article>;
-            })}
-          </div> : <EmptyState title="Your demo circle is empty"
-            message="Follow fictional diners to see their deliberate recommendations here."
-            action="Explore people" onClick={() => go("people")}/>}
-        </section> : null}
-
         <section id="demo-results" className="scroll-mt-24 px-4 py-10 sm:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <Heading eyebrow="The catalog" title={search || category || area ? "Your search results" : "Dishes worth discovering"}
@@ -394,6 +362,38 @@ function DemoExperience() {
               className={buttonStyle + " mt-4"}>Show all sample dishes</button>
           </div>}
         </section>
+
+        {!search && !category && !area ? <section className="border-b border-white/10 bg-[#1b1917] px-4 py-10 sm:px-8">
+          <Heading eyebrow="The social layer" title="Picks from people you trust"
+            description="A recommendation is an intentional endorsement, not just a tried mark. All diners and endorsements below are fictional."/>
+          {demoPeople.some((person) => following.has(person.username)) ? <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {demoPeople.filter((person) => following.has(person.username)).slice(0, 3).map((person) => {
+              const pick = person.picks[0];
+              const sample = demoDishes.find((item) => item.id === pick.dishId)!;
+              return <article key={person.username} className={border + " flex flex-col overflow-hidden"}>
+                <button type="button" onClick={() => go("dish", sample.id)} className="relative aspect-[16/9] overflow-hidden text-left">
+                  <Photo dish={sample} className="h-full w-full object-cover"/>
+                  <span className="absolute bottom-3 left-3 bg-black/75 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-200">Fictional pick</span>
+                </button>
+                <div className="flex flex-1 flex-col p-5">
+                  <button type="button" onClick={() => go("profile", person.username)} className="flex items-center gap-3 text-left">
+                    <Avatar person={person}/>
+                    <span className="text-sm font-semibold">{person.name}<span className="block text-xs font-normal text-white/45">@{person.username}</span></span>
+                  </button>
+                  <button type="button" onClick={() => go("dish", sample.id)} className="mt-4 text-left font-display text-3xl hover:text-[#fb725d]">{sample.name}</button>
+                  <p className="mt-2 flex-1 text-sm leading-6 text-white/65">“{pick.note}”</p>
+                  <button type="button" onClick={() => toggleFollow(person.username)}
+                    className={buttonStyle + " mt-5 w-full " + (following.has(person.username) ? "border-[#eb5a42] text-[#ff8c79]" : "")}>
+                    {following.has(person.username) ? <Check size={15}/> : <Users size={15}/>}
+                    {following.has(person.username) ? "Following in demo" : "Follow in demo"}
+                  </button>
+                </div>
+              </article>;
+            })}
+          </div> : <EmptyState title="Your demo circle is empty"
+            message="Follow fictional diners to see their deliberate recommendations here."
+            action="Explore people" onClick={() => go("people")}/>}
+        </section> : null}
 
         {!search && !category && !area ? <section className="border-t border-white/10 bg-[#191817] px-4 py-10 sm:px-8">
           <Heading eyebrow="The neighborhoods" title="Meet the places" description="Explore fictional venue pages and sample dishes without connecting to any real restaurant."/>
