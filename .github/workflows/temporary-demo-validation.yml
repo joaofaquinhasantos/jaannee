@@ -18,7 +18,9 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Unit tests
         run: npm run test -- --run
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Production build
+      # The TanStack Vite plugin generates routeTree.gen.ts during build.
+      # Building first ensures TypeScript knows about the new /demo route.
+      - name: Production build and generated route types
         run: npm run build
+      - name: Typecheck generated route tree
+        run: npm run typecheck
