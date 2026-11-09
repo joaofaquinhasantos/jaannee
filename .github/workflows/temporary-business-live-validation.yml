@@ -1,0 +1,24 @@
+name: Validate real restaurant backend
+on:
+  push:
+    branches: ["feature/restaurant-live-foundation"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Unit and security tests
+        run: npm run test -- --run
+      - name: Production build and route generation
+        run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
