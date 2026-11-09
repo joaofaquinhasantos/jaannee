@@ -1,0 +1,24 @@
+name: Check isolated JaanNee demo
+on:
+  push:
+    branches: ["feature/database-free-demo"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Unit tests
+        run: npm run test -- --run
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Production build
+        run: npm run build
