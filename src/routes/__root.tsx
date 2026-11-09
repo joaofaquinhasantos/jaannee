@@ -179,7 +179,7 @@ function RootComponent() {
   useEffect(() => {
     // The isolated demo must never initialize the Supabase auth client.
     // Import it lazily only while navigating the real application.
-    if (pathname === "/demo") return;
+    if (pathname === "/demo" || pathname === "/demo-business") return;
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
     void import("@/integrations/supabase/client").then(({ supabase }) => {
