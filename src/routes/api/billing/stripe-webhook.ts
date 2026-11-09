@@ -36,6 +36,12 @@ export const Route=createFileRoute("/api/billing/stripe-webhook")({
         // One-time, prepaid and *admin-reviewed* Sponsored placements are
         // completely separate from restaurant subscriptions.
         if((event as any)?.type==="checkout.session.completed") {
+          // Subscription Checkout sessions are not sponsored payments and must
+          // not be retried just because the sponsorship module is disabled.
+          const checkout=(event as any)?.data?.object;
+          if(checkout?.mode!=="payment" || !checkout?.metadata?.jaannee_boost_id) {
+            return new Response("Ignored non-sponsored checkout",{status:200});
+          }
           if(process.env.ENABLE_SPONSORED_BOOSTS!=="true"){
             return new Response("Sponsored payments disabled",{status:503});
           }
