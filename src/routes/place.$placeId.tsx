@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { PublicRestaurantGrowth } from "@/components/PublicRestaurantGrowth";
 import { Button } from "@/components/ui/button";
 import { getPublicRestaurantProfile } from "@/lib/restaurant.functions";
 import { useI18n } from "@/lib/i18n";
@@ -240,6 +241,8 @@ export function RestaurantProfileView({ data }: { data: any }) {
             </div>
           </section>
         ) : null}
+
+        {data.business_id ? <PublicRestaurantGrowth businessId={data.business_id} placeId={place.id}/> : null}
 
         <section className="stitch-section border-y border-white/10 bg-[#0e0e0e]">
           <div className="stitch-container">
