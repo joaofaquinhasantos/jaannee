@@ -40,7 +40,7 @@ function PublishedBusinessMenu() {
     </AppShell>;
   }
 
-  const sections = Array.from(new Set(menu.dishes.map((dish: any) => dish.category || "Menu")));
+  const sections: string[] = Array.from(new Set<string>(menu.dishes.map((dish: any) => String(dish.category || "Menu"))));
   const langName = (item: any) => {
     if (language === "en") return item.name_en;
     if (language === "th") return item.name_th || item.name_en;
