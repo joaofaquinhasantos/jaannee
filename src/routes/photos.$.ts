@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // The bucket is private. Only images referenced by published content may be
 // served anonymously; uploaded drafts, rejected dishes and deleted content
 // must not become readable merely because their storage path is known.
-const PHOTO_PATH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:jpg|png|webp)$/i;
+const PHOTO_PATH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[/][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[.](?:jpg|png|webp)$/i;
 
 async function isPublishedPhoto(path: string): Promise<boolean> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
