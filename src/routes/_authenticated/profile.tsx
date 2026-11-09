@@ -5,6 +5,8 @@ import { Camera, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DishCard } from "@/components/DishCard";
+import { PublicPickGrid } from "@/components/PublicPickGrid";
+import { listPublicPicks } from "@/lib/recommendations.functions";
 import { ReadyToComparePanel } from "@/components/ContextualCompare";
 import { RetentionSuite } from "@/components/RetentionSuite";
 import { PostActivity, PostProgressTimeline } from "@/components/PostActivity";
@@ -43,6 +45,12 @@ function Profile() {
   const compared = q.data?.compared ?? [];
   const posted = q.data?.posted ?? [];
   const profile = q.data?.profile;
+  const picks = useQuery({
+    queryKey: ["public-picks", profile?.username],
+    queryFn: () => listPublicPicks({ data: { username: profile!.username! } }),
+    enabled: Boolean(profile?.username),
+    staleTime: 60_000,
+  });
   const hasDisplayName = Boolean(profile?.display_name?.trim());
   const displayName =
     profile?.display_name || profile?.username || copy("Your profile", "โปรไฟล์ของคุณ");
@@ -53,8 +61,8 @@ function Profile() {
   const [bio, setBio] = useState("");
   const [triedPublic, setTriedPublic] = useState(true);
   const [profileSection, setProfileSection] = useState<
-    "tried" | "submissions" | "saved" | "settings"
-  >("tried");
+    "picks" | "tried" | "submissions" | "saved" | "settings"
+  >("picks");
 
   useEffect(() => {
     if (!profile) return;
@@ -157,12 +165,14 @@ function Profile() {
       </section>
 
       <div className="stitch-profile-stats grid border-b border-white/10 bg-[#181717] py-5 text-center">
+        <Stat label={copy("My picks", "จานแนะนำ")} value={picks.data?.length ?? 0} />
         <Stat label={t("profile_tried")} value={tried.length} />
         <Stat label={copy("Versus", "เปรียบเทียบ")} value={compared.length} />
       </div>
 
       <nav className="stitch-profile-tabs" aria-label={copy("Profile sections", "ส่วนต่าง ๆ ของโปรไฟล์")}>
         {[
+          ["picks", copy("My picks", "จานแนะนำ")],
           ["tried", t("profile_tried")],
           ["submissions", t("profile_submitted")],
           ["saved", t("want_to_try")],
@@ -171,7 +181,7 @@ function Profile() {
             key={value}
             type="button"
             onClick={() =>
-              setProfileSection(value as "tried" | "submissions" | "saved")
+              setProfileSection(value as "picks" | "tried" | "submissions" | "saved")
             }
             className={profileSection === value ? "is-active" : undefined}
           >
@@ -179,6 +189,33 @@ function Profile() {
           </button>
         ))}
       </nav>
+
+      <section className={profileSection === "picks" ? "mt-8" : "hidden"}>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="type-section-title">{copy("Food I recommend", "จานที่ฉันแนะนำ")}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {copy("Explicit public recommendations, separate from ranking votes. Recommend a dish after marking it tried.", "คำแนะนำสาธารณะ ไม่เกี่ยวกับคะแนนอันดับ แนะนำจานหลังทำเครื่องหมายว่าเคยกินแล้ว")}
+              </p>
+            </div>
+            {profile?.username ? (
+              <Link to="/u/$username" params={{ username: profile.username }} className="inline-flex min-h-11 items-center border border-foreground/30 px-4 py-2 text-xs font-bold uppercase hover:border-primary">
+                {copy("Open shareable profile", "เปิดโปรไฟล์ที่แชร์ได้")}
+              </Link>
+            ) : (
+              <Button variant="outline" onClick={() => setProfileSection("settings")}>
+                {copy("Choose a public username", "ตั้งชื่อผู้ใช้สาธารณะ")}
+              </Button>
+            )}
+          </div>
+          {profile?.username ? (
+            picks.isLoading ? <EmptyNote text={copy("Loading recommendations…", "กำลังโหลดคำแนะนำ…")} />
+            : picks.isError ? <EmptyNote text={copy("Recommendations are temporarily unavailable.", "ยังไม่สามารถโหลดคำแนะนำได้")} />
+            : <PublicPickGrid picks={picks.data ?? []} lang={lang} emptyText={copy("No public picks yet. Recommend a dish you have tried to start your list.", "ยังไม่มีจานแนะนำ เริ่มจากแนะนำจานที่คุณเคยกิน")} />
+          ) : (
+            <EmptyNote text={copy("Choose a public username to publish and share your picks.", "ตั้งชื่อผู้ใช้สาธารณะเพื่อแชร์จานที่คุณแนะนำ")} />
+          )}
+        </section>
 
       <div className={profileSection === "submissions" ? "stitch-section" : "hidden"}>
         <PostActivity dishes={posted} />

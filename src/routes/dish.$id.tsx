@@ -22,6 +22,8 @@ import { DishCard, statusLabel } from "@/components/DishCard";
 import { HowRankingWorks } from "@/components/HowRankingWorks";
 import { RankingShare } from "@/components/RankingShare";
 import { FoodPostCreator } from "@/components/FoodPostCreator";
+import { DishRecommendation } from "@/components/DishRecommendation";
+import { FollowingDishPicks } from "@/components/FollowingDishPicks";
 import { RestaurantConnection } from "@/components/RestaurantConnection";
 import { Button } from "@/components/ui/button";
 import {
@@ -459,6 +461,8 @@ function DishPage() {
               </p>
             ) : null}
 
+            <FollowingDishPicks dishId={id} enabled={isApproved && auth.status === "in"} />
+
             {auth.status === "in" && isTried && currentTriedDish && eligiblePartner ? (
               <section className="mt-8 border border-white/10 bg-white/[0.04] p-5 sm:p-6">
                 <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary">
@@ -529,6 +533,7 @@ function DishPage() {
                   {isSaved ? t("saved_for_later") : t("want_to_try")}
                 </Button>
               ) : null}
+              <DishRecommendation dishId={id} isApproved={isApproved} isTried={isTried} isSignedIn={auth.status === "in"} />
               <FoodPostCreator dish={dish} url={shareUrl} isTried={isTried} isSaved={isSaved} />
               {rank > 0 ? <RankingShare dish={dish} rank={rank} /> : null}
               {auth.status === "in" && auth.userId === dish.submitted_by ? (
