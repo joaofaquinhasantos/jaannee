@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, Check, Copy, LockKeyhole, Plus, QrCode, ShieldCheck, Store, Trash2 } from "lucide-react";
+import { ArrowRight, BookOpen, Check, LockKeyhole, Plus, QrCode, ShieldCheck, Store, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BusinessAiImport, BusinessAiTranslate } from "@/components/BusinessAiMenu";
@@ -9,6 +9,7 @@ import { BusinessBillingPanel } from "@/components/BusinessBillingPanel";
 import { BusinessGrowthPanel } from "@/components/BusinessGrowthPanel";
 import { BusinessSponsoredPanel } from "@/components/BusinessSponsoredPanel";
 import { BusinessWorkspaceNav } from "@/components/BusinessWorkspaceNav";
+import { BusinessQrStudio } from "@/components/BusinessQrStudio";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -345,26 +346,11 @@ function BusinessWorkspace() {
                 onClick={() => publish.mutate(!isPublished)}>
                 {isPublished ? "Unpublish menu" : "Publish menu"}
               </Button>
-              {isPublished && liveUrl ? <div className="space-y-4 border-t border-border pt-4">
-                <a href={liveUrl} target="_blank" rel="noreferrer" className="break-all text-sm underline underline-offset-4">
-                  {liveUrl} <ArrowRight size={14} className="inline"/>
-                </a>
-                <div className="flex flex-wrap gap-4">
-                  <img
-                    src={"https://quickchart.io/qr?size=260&margin=4&text=" + encodeURIComponent(liveUrl)}
-                    width={200} height={200}
-                    alt="QR code opening the verified public restaurant menu"
-                    className="border border-border bg-white p-3"
-                  />
-                  <div className="space-y-3">
-                    <p className="max-w-xs text-xs leading-6 text-muted-foreground">This QR uses a third-party renderer and contains only your already-public menu URL. In production we'll replace it with first-party generation.</p>
-                    <Button variant="outline" onClick={() => void navigator.clipboard.writeText(liveUrl)
-                      .then(() => toast.success("Public menu link copied")).catch(() => toast.error("Clipboard unavailable"))}>
-                      <Copy size={16} className="mr-2"/> Copy link
-                    </Button>
-                  </div>
-                </div>
-              </div> : null}
+              {isPublished && liveUrl ? <BusinessQrStudio
+                name={selected.name}
+                url={liveUrl}
+                slug={selected.slug}
+              /> : null}
             </>}
           </section>
 
