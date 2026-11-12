@@ -157,7 +157,7 @@ function PlaceView({id,props}:{id:string;props:Props}){
     <div className="stitch-demo-disclaimer">
       Restaurant profile and dishes are fictional. This read-only view is for food discovery, not table ordering, POS, payment or reservations.
     </div>
-    <Link to="/demo-business" search={{screen:"menu"}} className="stitch-demo-plain-link">
+    <Link to="/demo-business" search={{screen:"editor"}} className="stitch-demo-plain-link">
       Preview free business menu tools <ArrowRight size={16}/>
     </Link>
   </div>;
