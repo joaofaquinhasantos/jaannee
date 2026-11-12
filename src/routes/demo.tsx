@@ -27,7 +27,7 @@ export const Route = createFileRoute("/demo")({
     view: typeof search.view === "string" && allViews.includes(search.view as View)
       ? search.view as View : "discover",
     id: typeof search.id === "string" ? search.id.slice(0, 80) : undefined,
-    classic: search.classic === true || search.classic === "1" || search.classic === "true",
+    classic: search.classic === true || search.classic === 1 || search.classic === "1" || search.classic === "true",
   }),
   head: () => ({
     meta: [
