@@ -151,4 +151,3 @@ function AuthPage() {
     </div>
   </StitchSocialShell>;
 }
-}
