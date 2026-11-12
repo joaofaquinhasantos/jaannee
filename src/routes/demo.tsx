@@ -6,6 +6,7 @@ import {
   Users, UtensilsCrossed, Store, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DemoSocialPreview } from "@/components/DemoSocialPreview";
 import { canCompareDemoDishes, countTrustedDemoPicks, discoverTrustedDemoDishes } from "@/lib/demo-discovery";
 import {
   DEMO_DISCLAIMER, demoAreas, demoCategories, demoDishes,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/demo-data";
 
 type View = "discover" | "rankings" | "people" | "dish" | "place" | "profile" | "saved" | "me";
-type DemoSearch = { view?: View; id?: string };
+type DemoSearch = { view?: View; id?: string; classic?: boolean };
 type DemoNavigation = (view: View, id?: string) => void;
 const allViews: View[] = ["discover", "rankings", "people", "dish", "place", "profile", "saved", "me"];
 const border = "border border-white/10 bg-white/[0.035]";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/demo")({
     view: typeof search.view === "string" && allViews.includes(search.view as View)
       ? search.view as View : "discover",
     id: typeof search.id === "string" ? search.id.slice(0, 80) : undefined,
+    classic: search.classic === true || search.classic === 1 || search.classic === "1" || search.classic === "true",
   }),
   head: () => ({
     meta: [
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/demo")({
       { name: "robots", content: "noindex, nofollow, noarchive" },
     ],
   }),
-  component: DemoExperience,
+  component: DemoRouteExperience,
 });
 
 function setMembership(items: Set<string>, item: string) {
@@ -106,6 +108,13 @@ function SampleDishCard({
       </div>
     </div>
   </article>;
+}
+
+function DemoRouteExperience() {
+  const { view = "discover", classic } = Route.useSearch();
+  // The responsive social news feed is now the default /demo experience.
+  // All eight original interactive demo views remain accessible.
+  return view === "discover" && !classic ? <DemoSocialPreview /> : <DemoExperience />;
 }
 
 function DemoExperience() {
@@ -268,6 +277,10 @@ function DemoExperience() {
           })}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
+          <Link to="/demo" search={{ view: "discover" }}
+            className="inline-flex min-h-10 items-center gap-1.5 border border-amber-300/50 px-3 text-[11px] font-bold uppercase tracking-wide text-amber-200 hover:bg-white/10">
+            New social feed
+          </Link>
           <Link to="/demo-business" search={{ screen: "home" }}
             className="inline-flex min-h-10 items-center gap-1.5 border border-[#f77b61]/70 px-2 text-[11px] font-bold uppercase tracking-wide text-[#ffa38d] hover:bg-white/10 sm:px-3">
             <Store size={15}/><span className="hidden sm:inline">For restaurants</span><span className="sm:hidden">Business</span>

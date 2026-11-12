@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { amIAdmin } from "@/lib/admin.functions";
 import { BarChart3, Home, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { useAuthUser } from "@/lib/use-auth";
+import { StitchSocialShell } from "@/components/StitchSocialShell";
 
 export function AppShell({
   children,
@@ -26,6 +27,13 @@ export function AppShell({
   });
   const isAdmin = !!adminQ.data?.admin;
   const noir = tone === "noir";
+  // Unify navigation on diner-facing pages without rewriting their backend
+  // operations. Restaurant admin, public QR menus, and auth stay isolated.
+  const useSocialNavigation =
+    ["/profile", "/submit", "/rankings", "/offers"].includes(path) ||
+    path.startsWith("/dish/") || path.startsWith("/place/") ||
+    path.startsWith("/u/") || path.startsWith("/loyalty/");
+
 
   // Compare is deliberately NOT a primary destination. Comparisons are
   // reached contextually (My Dishes, Dish Detail, the tried drawer and
@@ -39,6 +47,18 @@ export function AppShell({
     { to: "/", label: t("nav_feed"), Icon: Home },
     { to: "/rankings", label: t("nav_rankings"), Icon: BarChart3 },
   ];
+
+  if (useSocialNavigation) {
+    return <StitchSocialShell>
+      <div className={
+        fullBleed
+          ? "noir-theme min-h-screen bg-[#131313] text-white"
+          : "noir-theme min-h-screen bg-[#131313] px-4 py-6 text-white md:px-8 md:py-8"
+      }>
+        {children}
+      </div>
+    </StitchSocialShell>;
+  }
 
   return (
     <div
