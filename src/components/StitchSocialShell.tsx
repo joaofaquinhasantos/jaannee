@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Bell, Compass, Home, Menu, Moon, Plus, Search, Store, Sun, UserRound,
+  Bell, Bookmark, Compass, Home, Menu, Moon, Plus, Search, Store, Sun, UserRound,
 } from "lucide-react";
 import { useAuthUser } from "@/lib/use-auth";
 import { useI18n } from "@/lib/i18n";
@@ -63,6 +63,12 @@ export function StitchSocialShell({ children }: { children: ReactNode }) {
         <span>{copy("Add a dish", "เพิ่มเมนู")}</span>
       </Link>
       <div className="stitch-sidebar-bottom">
+        <Link to={auth.status==="in"?"/saved":"/auth"}
+          search={auth.status==="in"?undefined:{redirect:"/saved"}}
+          className="stitch-sidebar-business">
+          <Bookmark size={19} aria-hidden="true"/>
+          <span>{copy("Want to Try", "อยากลอง")}</span>
+        </Link>
         <Link to={businessDestination} search={businessDestination==="/auth"?{redirect:"/business"}:undefined}
           className="stitch-sidebar-business">
           <Store size={19} aria-hidden="true"/>
@@ -104,6 +110,10 @@ export function StitchSocialShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       {more?<div className="stitch-mobile-shortcuts">
+        <Link to={auth.status==="in"?"/saved":"/auth"}
+          search={auth.status==="in"?undefined:{redirect:"/saved"}} onClick={()=>setMore(false)}>
+          <Bookmark size={18}/>{copy("Want to Try", "อยากลอง")}
+        </Link>
         <Link to={businessDestination} search={businessDestination==="/auth"?{redirect:"/business"}:undefined}
           onClick={()=>setMore(false)}>
           <Store size={18}/>{copy("Restaurant workspace", "เครื่องมือร้านอาหาร")}

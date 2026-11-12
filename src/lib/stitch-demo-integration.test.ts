@@ -4,19 +4,25 @@ import { DEMO_DISCLAIMER, demoDishes, demoPeople } from "./demo-data";
 
 const main = readFileSync(new URL("../routes/demo.tsx", import.meta.url), "utf8");
 const social = readFileSync(new URL("../components/DemoSocialPreview.tsx", import.meta.url), "utf8");
+const pages = readFileSync(new URL("../components/DemoSocialPages.tsx", import.meta.url), "utf8");
 const standalone = readFileSync(new URL("../routes/demo-social.tsx", import.meta.url), "utf8");
 
 describe("Stitch social preview as default demo experience", () => {
   it("opens the new responsive feed on the existing demo route", () => {
     expect(main).toContain('createFileRoute("/demo")');
     expect(main).toContain("component: DemoRouteExperience");
-    expect(main).toContain('view === "discover" && !classic ? <DemoSocialPreview /> : <DemoExperience />');
+    expect(main).toContain('!classic ? <DemoSocialPreview view={view} id={id} /> : <DemoExperience />');
     expect(main).toContain('search.classic === 1');
   });
   it("preserves the original interactive demo and its eight routes", () => {
     expect(main).toContain('type View = "discover" | "rankings" | "people" | "dish" | "place" | "profile" | "saved" | "me"');
     expect(main).toContain("function DemoExperience()");
     expect(main).toContain("New social feed");
+    expect(pages).toContain("function DishView");
+    expect(pages).toContain("function PlaceView");
+    expect(pages).toContain("function ProfileView");
+    expect(pages).toContain("function SavedView");
+    expect(pages).toContain("function RankingsView");
     expect(social).toContain("Classic discovery demo");
     expect(social).toContain("/demo?view=discover&classic=true");
     expect(social).toContain('/demo?view=dish&id=');

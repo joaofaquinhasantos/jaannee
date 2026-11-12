@@ -1,10 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { AppShell } from "@/components/AppShell";
+import { StitchSocialShell } from "@/components/StitchSocialShell";
+import { HeartHandshake, Mail, ShieldCheck, Store, Utensils } from "lucide-react";
+import "./auth.css";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -78,58 +80,74 @@ function AuthPage() {
     }
   };
 
-  return (
-    <AppShell>
-      <div className="mx-auto max-w-md overflow-hidden rounded-lg border border-border bg-card">
-        <div className="bg-secondary p-6">
-          <p className="text-xs font-bold uppercase text-primary">{t("auth_kicker")}</p>
-          <h1 className="type-page-title mt-2">{t("sign_in")}</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            {t("auth_intro")}
-          </p>
+  const businessMode=redirectTo.startsWith("/business") ||
+    redirectTo.startsWith("/restaurant");
+  const copy=(en:string,th:string)=>lang==="th"?th:en;
+
+  return <StitchSocialShell>
+    <div className="stitch-auth-layout">
+      <section className="stitch-auth-intro" aria-label={copy("Why join Jaannee","ทำไมต้องใช้ Jaannee")}>
+        <p className="stitch-feed-eyebrow">{copy("Your food community","ชุมชนคนรักอาหาร")}</p>
+        <h1>{businessMode?copy("Your restaurant, discovered.","ให้คนค้นพบร้านคุณ") :
+          copy("A better way to find your next dish.","ค้นพบจานโปรดจานใหม่")}</h1>
+        <p>{businessMode ?
+          copy("Manage your free restaurant page, menus and verified presence. No food ordering or POS integration.",
+            "จัดการหน้าร้านและเมนูของคุณ ไม่มีระบบรับออเดอร์หรือ POS"):
+          copy("Follow diners you trust, save dishes you want to try and recommend only what you've genuinely eaten.",
+            "ติดตามนักชิม บันทึกจานที่อยากลอง และแนะนำจานที่เคยกินจริง")}</p>
+        <div className="stitch-auth-value-list">
+          <p><Utensils size={19}/>{copy("Real dishes, not anonymous restaurant stars","ค้นพบจานอาหารจริง")}</p>
+          <p><HeartHandshake size={19}/>{copy("Recommendations from people you follow","คำแนะนำจากคนที่ติดตาม")}</p>
+          <p><ShieldCheck size={19}/>{copy("One account for diners and verified businesses","บัญชีเดียวใช้ได้ทั้งนักชิมและร้านอาหาร")}</p>
         </div>
-        <div className="p-5">
-          {sent ? (
-            <div className="rounded-lg border border-border bg-background p-5">
-              <p className="font-semibold">{t("auth_check_inbox")}</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                {t("auth_check_inbox_body")}
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={send} className="space-y-3">
-              <Input
-                type="email"
-                required
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t("auth_sending") : t("auth_email_link")}
-              </Button>
-            </form>
-          )}
-          {!sent && (
-            <>
-              <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                <span>{t("auth_or")}</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={googleLoading}
-                onClick={signInGoogle}
-              >
-                {googleLoading ? t("auth_opening_google") : t("auth_google")}
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    </AppShell>
-  );
+      </section>
+      <section className="stitch-auth-card" aria-label={copy("Sign in to Jaannee","เข้าสู่ระบบ Jaannee")}>
+        <p className="stitch-feed-eyebrow">{t("auth_kicker")}</p>
+        <h2>{t("sign_in")}</h2>
+        <p className="stitch-auth-subtitle">
+          {copy("One secure account. Choose where you'd like to continue.",
+            "ใช้บัญชีเดียว เลือกวิธีใช้งาน")}
+        </p>
+        <nav className="stitch-auth-mode-select" aria-label={copy("Continue as","เข้าสู่ระบบในฐานะ")}>
+          <Link to="/auth" search={{redirect:"/"}}
+            aria-current={!businessMode?"page":undefined}
+            className={!businessMode?"is-selected":undefined}>
+            <Utensils size={20}/><span>{copy("Diner","นักชิม")}</span>
+          </Link>
+          <Link to="/auth" search={{redirect:"/business"}}
+            aria-current={businessMode?"page":undefined}
+            className={businessMode?"is-selected":undefined}>
+            <Store size={20}/><span>{copy("Restaurant","ร้านอาหาร")}</span>
+          </Link>
+        </nav>
+        {sent?<div className="stitch-auth-notice" role="status">
+          <Mail size={23}/>
+          <strong>{t("auth_check_inbox")}</strong>
+          <p>{t("auth_check_inbox_body")}</p>
+          <button type="button" onClick={()=>setSent(false)}>
+            {copy("Use a different email","ใช้อีเมลอื่น")}
+          </button>
+        </div>:<form onSubmit={send} className="stitch-auth-form">
+          <label htmlFor="stitch-email">{copy("Email address","อีเมล")}</label>
+          <Input id="stitch-email" type="email" required autoComplete="email"
+            placeholder="you@example.com" value={email}
+            onChange={e=>setEmail(e.target.value)} />
+          <Button type="submit" disabled={loading} className="w-full min-h-12">
+            {loading?t("auth_sending"):t("auth_email_link")}
+          </Button>
+        </form>}
+        {!sent?<div className="stitch-auth-google">
+          <div className="stitch-auth-separator"><span/>{t("auth_or")}<span/></div>
+          <Button type="button" variant="outline" className="w-full min-h-12"
+            disabled={googleLoading} onClick={signInGoogle}>
+            {googleLoading?t("auth_opening_google"):t("auth_google")}
+          </Button>
+        </div>:null}
+        <p className="stitch-auth-footnote">
+          {copy("Diner and restaurant views share the same login. Restaurant management still requires ownership verification.",
+            "นักชิมและร้านใช้บัญชีเดียวกัน แต่การจัดการร้านต้องยืนยันสิทธิ์ก่อน")}
+        </p>
+      </section>
+    </div>
+  </StitchSocialShell>;
 }

@@ -1,13 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, Check, Copy, LockKeyhole, Plus, QrCode, ShieldCheck, Store, Trash2 } from "lucide-react";
+import { ArrowRight, BookOpen, Check, LockKeyhole, Plus, QrCode, ShieldCheck, Store, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BusinessAiImport, BusinessAiTranslate } from "@/components/BusinessAiMenu";
 import { BusinessBillingPanel } from "@/components/BusinessBillingPanel";
 import { BusinessGrowthPanel } from "@/components/BusinessGrowthPanel";
 import { BusinessSponsoredPanel } from "@/components/BusinessSponsoredPanel";
+import { BusinessWorkspaceNav } from "@/components/BusinessWorkspaceNav";
+import { BusinessQrStudio } from "@/components/BusinessQrStudio";
+import { BusinessAudiencePanel } from "@/components/BusinessAudiencePanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -159,6 +162,7 @@ function BusinessWorkspace() {
         </div>
       </header>
 
+      <BusinessWorkspaceNav hasRestaurant={Boolean(selected)}/>
       {businesses.isLoading ? <p className="text-sm text-muted-foreground">Loading your restaurant workspace…</p> : null}
       {businesses.isError ? <div role="alert" className="border border-primary/30 bg-secondary/30 p-6">
         <h2 className="font-semibold">Restaurant data temporarily unavailable</h2>
@@ -182,7 +186,7 @@ function BusinessWorkspace() {
           </div>
         </section> : null}
 
-        <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section id="business-overview" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-5 border border-border p-5 sm:p-7">
             <div className="flex items-center gap-3"><Store size={21} className="text-primary"/>
               <div><h2 className="font-display text-3xl">{rows.length ? "Add another restaurant" : "Create your first restaurant"}</h2>
@@ -243,7 +247,7 @@ function BusinessWorkspace() {
                 <p className="inline-flex items-center gap-2 text-sm text-emerald-500"><Check size={18}/> Ownership verified</p>}
           </section>
 
-          <section className="space-y-5 border border-border p-5 sm:p-7">
+          <section id="business-menu" className="space-y-5 border border-border p-5 sm:p-7">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><p className="text-xs font-bold uppercase tracking-wider text-primary">Free menu builder</p>
                 <h2 className="mt-2 font-display text-3xl">Your dishes</h2></div>
@@ -318,7 +322,7 @@ function BusinessWorkspace() {
             </div> : null}
           </section>
 
-          {businessId ? <BusinessAiImport businessId={businessId} onReview={(item)=>{
+          {businessId ? <div id="business-ai"><BusinessAiImport businessId={businessId} onReview={(item)=>{
             setMenuEditing({
               category:item.category, nameEn:item.name, nameTh:"",
               descriptionEn:item.description, descriptionTh:"",
@@ -326,9 +330,9 @@ function BusinessWorkspace() {
               priceReviewed:!item.needsPriceReview, approvedTranslations:{},
             });
             window.requestAnimationFrame(()=>document.getElementById("business-menu-editor")?.scrollIntoView({behavior:"smooth",block:"start"}));
-          }}/> : null}
+          }}/></div> : null}
 
-          <section className="space-y-4 border border-border p-5 sm:p-7">
+          <section id="business-qr" className="space-y-4 border border-border p-5 sm:p-7">
             <div className="flex items-center gap-3"><QrCode className="text-primary" size={22}/>
               <h2 className="font-display text-3xl">Your public menu & QR</h2>
             </div>
@@ -343,32 +347,18 @@ function BusinessWorkspace() {
                 onClick={() => publish.mutate(!isPublished)}>
                 {isPublished ? "Unpublish menu" : "Publish menu"}
               </Button>
-              {isPublished && liveUrl ? <div className="space-y-4 border-t border-border pt-4">
-                <a href={liveUrl} target="_blank" rel="noreferrer" className="break-all text-sm underline underline-offset-4">
-                  {liveUrl} <ArrowRight size={14} className="inline"/>
-                </a>
-                <div className="flex flex-wrap gap-4">
-                  <img
-                    src={"https://quickchart.io/qr?size=260&margin=4&text=" + encodeURIComponent(liveUrl)}
-                    width={200} height={200}
-                    alt="QR code opening the verified public restaurant menu"
-                    className="border border-border bg-white p-3"
-                  />
-                  <div className="space-y-3">
-                    <p className="max-w-xs text-xs leading-6 text-muted-foreground">This QR uses a third-party renderer and contains only your already-public menu URL. In production we'll replace it with first-party generation.</p>
-                    <Button variant="outline" onClick={() => void navigator.clipboard.writeText(liveUrl)
-                      .then(() => toast.success("Public menu link copied")).catch(() => toast.error("Clipboard unavailable"))}>
-                      <Copy size={16} className="mr-2"/> Copy link
-                    </Button>
-                  </div>
-                </div>
-              </div> : null}
+              {isPublished && liveUrl ? <BusinessQrStudio
+                name={selected.name}
+                url={liveUrl}
+                slug={selected.slug}
+              /> : null}
             </>}
           </section>
 
-          {businessId ? <BusinessBillingPanel businessId={businessId}/> : null}
-          {businessId ? <BusinessGrowthPanel businessId={businessId}/> : null}
-          {businessId ? <BusinessSponsoredPanel businessId={businessId}/> : null}
+          {businessId ? <div id="business-plan"><BusinessBillingPanel businessId={businessId}/></div> : null}
+          {businessId ? <div id="business-audience"><BusinessAudiencePanel businessId={businessId}/></div> : null}
+          {businessId ? <div id="business-growth"><BusinessGrowthPanel businessId={businessId}/></div> : null}
+          {businessId ? <div id="business-ads"><BusinessSponsoredPanel businessId={businessId}/></div> : null}
         </> : null}
       </> : null}
     </div>

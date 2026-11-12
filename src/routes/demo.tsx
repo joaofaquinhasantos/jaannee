@@ -111,10 +111,10 @@ function SampleDishCard({
 }
 
 function DemoRouteExperience() {
-  const { view = "discover", classic } = Route.useSearch();
-  // The responsive social news feed is now the default /demo experience.
-  // All eight original interactive demo views remain accessible.
-  return view === "discover" && !classic ? <DemoSocialPreview /> : <DemoExperience />;
+  const { view = "discover", id, classic } = Route.useSearch();
+  // The responsive social UI now covers all demo views, not only Home.
+  // The original functional demo remains available via classic=true.
+  return !classic ? <DemoSocialPreview view={view} id={id} /> : <DemoExperience />;
 }
 
 function DemoExperience() {
