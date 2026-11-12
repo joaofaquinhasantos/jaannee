@@ -10,6 +10,7 @@ import { BusinessGrowthPanel } from "@/components/BusinessGrowthPanel";
 import { BusinessSponsoredPanel } from "@/components/BusinessSponsoredPanel";
 import { BusinessWorkspaceNav } from "@/components/BusinessWorkspaceNav";
 import { BusinessQrStudio } from "@/components/BusinessQrStudio";
+import { BusinessAudiencePanel } from "@/components/BusinessAudiencePanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -355,6 +356,7 @@ function BusinessWorkspace() {
           </section>
 
           {businessId ? <div id="business-plan"><BusinessBillingPanel businessId={businessId}/></div> : null}
+          {businessId ? <div id="business-audience"><BusinessAudiencePanel businessId={businessId}/></div> : null}
           {businessId ? <div id="business-growth"><BusinessGrowthPanel businessId={businessId}/></div> : null}
           {businessId ? <div id="business-ads"><BusinessSponsoredPanel businessId={businessId}/></div> : null}
         </> : null}
