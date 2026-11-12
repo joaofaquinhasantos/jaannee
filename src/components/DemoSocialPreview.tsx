@@ -78,10 +78,12 @@ export function DemoSocialPreview({view="discover",id}: {view?:SocialDemoView;id
   const [menuOpen,setMenuOpen]=useState(false);
   const cards=fullPreviewTab(tab,area);
   const areas=[...new Set(demoRestaurants.map(r=>r.area))].sort();
-  const demoLink=(id:string)=>"/demo?view=dish&id="+encodeURIComponent(id);
+  const demoLink=(dishId:string)=>"/demo?view=dish&id="+encodeURIComponent(dishId);
+  const navView=(label:string):SocialDemoView=>
+    label==="Explore"?"rankings":label==="Activity"?"people":label==="Profile"?"me":"discover";
   return <div className={"stitch-social min-h-[100dvh]"+(dark?" stitch-social-dark":"")}>
     <aside className="stitch-social-sidebar" aria-label="Preview navigation">
-      <a href="/demo-social" className="stitch-brand">
+      <a href="/demo?view=discover" onClick={e=>{e.preventDefault();go("discover");}} className="stitch-brand">
         <span className="stitch-brand-mark">จ</span>
         <span className="stitch-brand-name">Jaannee</span>
       </a>
@@ -90,7 +92,8 @@ export function DemoSocialPreview({view="discover",id}: {view?:SocialDemoView;id
         {nav.map(({name,Icon})=><a key={name}
           href={name==="Explore"?"/demo?view=discover&classic=true":name==="Profile"?"/demo?view=me":
             name==="Activity"?"/demo?view=people":name==="Add"?"/demo?view=discover&classic=true":"/demo-social"}
-          className={"stitch-sidebar-link"+(name==="Home"?" is-active":"")}>
+          onClick={name==="Add"?undefined:e=>{e.preventDefault();go(navView(name));}}
+          className={"stitch-sidebar-link"+(name==="Home"&&view==="discover"?" is-active":"")}>
           <Icon size={21}/><span>{name}</span>
         </a>)}
       </nav>
@@ -107,18 +110,18 @@ export function DemoSocialPreview({view="discover",id}: {view?:SocialDemoView;id
             aria-label="Preview shortcuts" onClick={()=>setMenuOpen(!menuOpen)}>
             <Menu size={22}/>
           </button>
-          <a href="/demo-social" className="stitch-top-brand"><span className="stitch-top-brand-symbol">จ</span> Jaannee</a>
+          <a href="/demo?view=discover" onClick={e=>{e.preventDefault();go("discover");}} className="stitch-top-brand"><span className="stitch-top-brand-symbol">จ</span> Jaannee</a>
           <span className="stitch-topbar-caption">Bangkok food discoveries</span>
         </div>
         <div className="stitch-top-actions">
-          <a href="/demo?view=discover&classic=true" className="stitch-icon-action" aria-label="Explore demo dishes"><Search size={19}/></a>
+          <a href="/demo?view=rankings" onClick={e=>{e.preventDefault();go("rankings");}} className="stitch-icon-action" aria-label="Explore demo dishes"><Search size={19}/></a>
           <button className="stitch-icon-action" type="button" onClick={()=>setDark(!dark)}
             aria-label={dark?"Light preview":"Dark preview"}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button>
           <span className="stitch-lang-toggle" aria-label="Sample preview language">EN</span>
         </div>
       </header>
       {menuOpen?<div className="stitch-mobile-shortcuts">
-        <a href="/demo?view=discover&classic=true"><Compass size={18}/> Explore sample dishes</a>
+        <a href="/demo?view=rankings" onClick={e=>{e.preventDefault();go("rankings");setMenuOpen(false);}}><Compass size={18}/> Explore sample dishes</a>
         <a href="/demo-business?screen=home"><Store size={18}/> Business concept</a>
       </div>:null}
       <div role="status" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wide"
@@ -178,10 +181,7 @@ export function DemoSocialPreview({view="discover",id}: {view?:SocialDemoView;id
                       className="inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-xs font-semibold"
                       style={{borderColor:"var(--ss-line)"}}><Bookmark size={16} fill={saved.has(dish.id)?"currentColor":"none"}/> {saved.has(dish.id)?"Saved":"Want to Try"}</button>
                     <a href={demoLink(dish.id)} onClick={e=>{e.preventDefault();go("dish",dish.id);}}><ArrowRight size={16}/> Dish details</a>
-                    <button type="button" onClick={()=>{
-                      const url=window.location.origin+demoLink(dish.id);
-                      if(navigator.clipboard)void navigator.clipboard.writeText(url).catch(()=>{});
-                    }} className="inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-xs font-semibold"
+                    <button type="button" onClick={()=>share("dish",dish.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-xs font-semibold"
                       style={{borderColor:"var(--ss-line)"}}><Share2 size={16}/> Share</button>
                   </div>
                 </div>
@@ -219,6 +219,7 @@ export function DemoSocialPreview({view="discover",id}: {view?:SocialDemoView;id
       {nav.map(({name,Icon})=><a key={name}
         href={name==="Explore"?"/demo?view=discover&classic=true":name==="Profile"?"/demo?view=me":
           name==="Activity"?"/demo?view=people":name==="Add"?"/demo?view=discover&classic=true":"/demo-social"}
+        onClick={name==="Add"?undefined:e=>{e.preventDefault();go(navView(name));}}
         className={"stitch-bottom-link"+(name==="Home"?" is-active":"")+
           (name==="Add"?" stitch-bottom-add":"")}>
         <Icon size={name==="Add"?24:21}/><span>{name}</span>
