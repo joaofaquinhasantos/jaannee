@@ -1,16 +1,16 @@
 /* Jaannee / Stitch Culinary Editorial — responsive social surfaces only.
    Scoped so restaurant admin and existing dark discovery remain untouched. */
 .stitch-social {
-  --ss-canvas: #faf7f2;
+  --ss-canvas: #faf9fd;
   --ss-card: #fff;
   --ss-ink: #1b1b1f;
-  --ss-muted: #695f5b;
-  --ss-line: #eae0d8;
-  --ss-soft: #f3eee7;
-  --ss-primary: #ad360f;
-  --ss-primary-soft: #fff1eb;
-  --ss-green: #245d38;
-  --ss-pill: #eee9e2;
+  --ss-muted: #59413a;
+  --ss-line: #e2bfb5;
+  --ss-soft: #f5f3f7;
+  --ss-primary: #aa3000;
+  --ss-primary-soft: #ffdbd0;
+  --ss-green: #006d36;
+  --ss-pill: #efedf1;
   background: var(--ss-canvas);
   color: var(--ss-ink);
   color-scheme: light;
