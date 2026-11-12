@@ -8,6 +8,7 @@ const sections=[
   {id:"business-ai",label:"AI review",icon:Sparkles},
   {id:"business-qr",label:"QR menu",icon:QrCode},
   {id:"business-plan",label:"Plans",icon:CreditCard},
+  {id:"business-audience",label:"Audience",icon:ShieldCheck},
   {id:"business-growth",label:"Growth",icon:Megaphone},
   {id:"business-ads",label:"Sponsored",icon:ShieldCheck},
 ] as const;
