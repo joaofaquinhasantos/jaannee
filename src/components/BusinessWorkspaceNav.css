@@ -7,6 +7,6 @@
 .stitch-business-nav-action{display:flex;align-items:center;justify-content:center;gap:.45rem;flex:0 0 auto;min-height:2.85rem;padding:.6rem .85rem;border-radius:.7rem;color:#eee;font-size:.73rem;font-weight:750;scroll-snap-align:start}
 .stitch-business-nav-action:hover,.stitch-business-nav-action:focus-visible{background:rgba(255,150,117,.16);color:#ffb19b}
 .stitch-business-nav-action:disabled{opacity:.35;cursor:not-allowed}
-#business-overview,#business-menu,#business-ai,#business-qr,#business-plan,#business-growth,#business-ads{scroll-margin-top:12.5rem}
+#business-overview,#business-menu,#business-ai,#business-qr,#business-plan,#business-audience,#business-growth,#business-ads{scroll-margin-top:12.5rem}
 @media(max-width:767px){.stitch-business-navigation{top:0;border-radius:.7rem}.stitch-business-nav-top{padding:.4rem .7rem}.stitch-business-nav-action{font-size:.71rem}}
 @media(min-width:1024px){.stitch-business-nav-scroll{justify-content:space-around}.stitch-business-nav-action{flex:1 1 auto}}
