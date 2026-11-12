@@ -57,13 +57,13 @@ export function DemoSocialPreview(){
       <p className="stitch-brand-subtitle">Your city. One delicious dish at a time.</p>
       <nav className="stitch-sidebar-links">
         {nav.map(({name,Icon})=><a key={name}
-          href={name==="Explore"?"/demo?view=discover&classic=1":name==="Profile"?"/demo?view=me":
-            name==="Activity"?"/demo?view=people":name==="Add"?"/demo?view=discover&classic=1":"/demo-social"}
+          href={name==="Explore"?"/demo?view=discover&classic=true":name==="Profile"?"/demo?view=me":
+            name==="Activity"?"/demo?view=people":name==="Add"?"/demo?view=discover&classic=true":"/demo-social"}
           className={"stitch-sidebar-link"+(name==="Home"?" is-active":"")}>
           <Icon size={21}/><span>{name}</span>
         </a>)}
       </nav>
-      <a href="/demo?view=discover&classic=1" className="stitch-sidebar-cta"><Plus size={17}/><span>Add a dish</span></a>
+      <a href="/demo?view=discover&classic=true" className="stitch-sidebar-cta"><Plus size={17}/><span>Add a dish</span></a>
       <div className="stitch-sidebar-bottom">
         <a href="/demo-business?screen=home" className="stitch-sidebar-business"><Store size={18}/><span>For restaurants</span></a>
         <p>Fictional social-design preview. No ordering or POS.</p>
@@ -80,20 +80,20 @@ export function DemoSocialPreview(){
           <span className="stitch-topbar-caption">Bangkok food discoveries</span>
         </div>
         <div className="stitch-top-actions">
-          <a href="/demo?view=discover&classic=1" className="stitch-icon-action" aria-label="Explore demo dishes"><Search size={19}/></a>
+          <a href="/demo?view=discover&classic=true" className="stitch-icon-action" aria-label="Explore demo dishes"><Search size={19}/></a>
           <button className="stitch-icon-action" type="button" onClick={()=>setDark(!dark)}
             aria-label={dark?"Light preview":"Dark preview"}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button>
           <span className="stitch-lang-toggle" aria-label="Sample preview language">EN</span>
         </div>
       </header>
       {menuOpen?<div className="stitch-mobile-shortcuts">
-        <a href="/demo?view=discover&classic=1"><Compass size={18}/> Explore sample dishes</a>
+        <a href="/demo?view=discover&classic=true"><Compass size={18}/> Explore sample dishes</a>
         <a href="/demo-business?screen=home"><Store size={18}/> Business concept</a>
       </div>:null}
       <div role="status" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wide"
         style={{background:"var(--ss-primary-soft)",color:"var(--ss-primary)"}}>
         {DEMO_DISCLAIMER} · Social UI preview
-        <a href="/demo?view=discover&classic=1"
+        <a href="/demo?view=discover&classic=true"
           className="ml-3 inline-flex min-h-9 items-center rounded-full border border-current px-3 align-middle text-[11px] font-extrabold normal-case tracking-normal underline-offset-2 hover:underline">
           Classic discovery demo
         </a>
@@ -160,7 +160,7 @@ export function DemoSocialPreview(){
               <h2 className="stitch-side-heading flex items-center gap-2">
                 <Sparkles size={17}/> Sample categories
               </h2>
-              {demoCategories.slice(0,7).map(c=><a key={c} href="/demo?view=discover&classic=1"
+              {demoCategories.slice(0,7).map(c=><a key={c} href="/demo?view=discover&classic=true"
                 className="stitch-side-link">{c}<ArrowRight size={16}/></a>)}
             </section>
             <section className="stitch-side-panel">
@@ -179,8 +179,8 @@ export function DemoSocialPreview(){
     </div>
     <nav className="stitch-bottom-navigation" aria-label="Mobile preview navigation">
       {nav.map(({name,Icon})=><a key={name}
-        href={name==="Explore"?"/demo?view=discover&classic=1":name==="Profile"?"/demo?view=me":
-          name==="Activity"?"/demo?view=people":name==="Add"?"/demo?view=discover&classic=1":"/demo-social"}
+        href={name==="Explore"?"/demo?view=discover&classic=true":name==="Profile"?"/demo?view=me":
+          name==="Activity"?"/demo?view=people":name==="Add"?"/demo?view=discover&classic=true":"/demo-social"}
         className={"stitch-bottom-link"+(name==="Home"?" is-active":"")+
           (name==="Add"?" stitch-bottom-add":"")}>
         <Icon size={name==="Add"?24:21}/><span>{name}</span>
