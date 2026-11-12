@@ -1,0 +1,28 @@
+.stitch-qr-studio{display:grid;grid-template-columns:minmax(0,1fr);gap:1.5rem;padding-top:1rem}
+.stitch-qr-preview-wrap{display:flex;justify-content:center;background:rgba(255,255,255,.045);padding:1.25rem;border:1px solid rgba(255,255,255,.1);border-radius:1rem}
+.stitch-qr-print-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;max-width:330px;width:100%;padding:1.6rem;border-radius:1rem;background:#fff;color:#1b1b1f;text-align:center;box-shadow:0 12px 32px rgba(0,0,0,.13)}
+.stitch-qr-brand{font-size:1.2rem;font-weight:900;letter-spacing:-.035em;color:#aa3000}
+.stitch-qr-intro{font-size:.7rem;text-transform:uppercase;letter-spacing:.11em;font-weight:750;color:#695b57}
+.stitch-qr-print-card h3{font-size:1.45rem;font-weight:850;line-height:1.2;letter-spacing:-.035em;overflow-wrap:anywhere}
+.stitch-qr-print-card img{width:min(100%,230px);height:auto;aspect-ratio:1;background:#fff;border:8px solid white}
+.stitch-qr-print-card p{font-size:.7rem;color:#655c50}
+.stitch-qr-print-url{max-width:100%;overflow-wrap:anywhere;color:#555;font-size:.58rem}
+.stitch-qr-steps{display:flex;flex-direction:column;align-items:flex-start;gap:.8rem}
+.stitch-qr-steps h3{font-size:1.5rem;font-weight:850;line-height:1.22}
+.stitch-qr-steps>p:not(.stitch-feed-eyebrow){font-size:.8rem;line-height:1.65;color:#bdb4ac}
+.stitch-qr-url{display:flex;gap:.65rem;align-items:start;padding:1rem;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.035);border-radius:.7rem;max-width:100%;width:100%}
+.stitch-qr-url svg{flex-shrink:0;color:#ff8a71}
+.stitch-qr-url span{overflow-wrap:anywhere;font-size:.77rem}
+.stitch-qr-action-row{display:flex;gap:.7rem;flex-wrap:wrap}
+.stitch-qr-note{display:flex;align-items:flex-start;gap:.6rem}
+.stitch-qr-note svg{flex-shrink:0;margin-top:.15rem;color:#8fc89c}
+.stitch-qr-thirdparty{font-size:.68rem!important}
+.stitch-qr-slug{font-size:.67rem!important;opacity:.8}
+@media(min-width:900px){.stitch-qr-studio{grid-template-columns:minmax(250px,.9fr) minmax(0,1.1fr);gap:2rem}.stitch-qr-preview-wrap{padding:2rem}}
+@media print{
+  body.jaannee-print-qr *{visibility:hidden!important}
+  body.jaannee-print-qr #stitch-qr-print-card,
+  body.jaannee-print-qr #stitch-qr-print-card *{visibility:visible!important}
+  body.jaannee-print-qr #stitch-qr-print-card{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;box-shadow:none!important;border:1pt solid #ddd!important;width:330px!important}
+  @page{size:A4; margin:14mm}
+}
