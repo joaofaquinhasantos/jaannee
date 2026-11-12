@@ -11,14 +11,14 @@ describe("Stitch social preview as default demo experience", () => {
     expect(main).toContain('createFileRoute("/demo")');
     expect(main).toContain("component: DemoRouteExperience");
     expect(main).toContain('view === "discover" && !classic ? <DemoSocialPreview /> : <DemoExperience />');
-    expect(main).toContain('search.classic === "1"');
+    expect(main).toContain('search.classic === 1');
   });
   it("preserves the original interactive demo and its eight routes", () => {
     expect(main).toContain('type View = "discover" | "rankings" | "people" | "dish" | "place" | "profile" | "saved" | "me"');
     expect(main).toContain("function DemoExperience()");
     expect(main).toContain("New social feed");
     expect(social).toContain("Classic discovery demo");
-    expect(social).toContain("/demo?view=discover&classic=1");
+    expect(social).toContain("/demo?view=discover&classic=true");
     expect(social).toContain('/demo?view=dish&id=');
   });
   it("works without Supabase and labels fictional social proof", () => {
